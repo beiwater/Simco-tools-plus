@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"name": "SimCompsTools",
+			"path": "."
+		},
+		{
+			"path": "../SimCompsTools-Electron"
+		},
+		{
+			"path": "../SimCompsTools-Android"
+		},
+		{
+			"path": "../SampleServerNode"
+		}
+	],
+	"settings": {}
+}
