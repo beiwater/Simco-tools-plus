@@ -21,18 +21,97 @@ div#script_hover_node {
     height: fit-content;
     position: fixed;
     bottom: -85px;
-    right: 10px;
+    left: 10px;
     background: rgb(0,0,0,0.5);
     z-index: 1050;
-    transition: ease-in 0.25s;
+    transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
     padding: 5px;
     border-radius: 5px;
     color: var(--fontColor);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
-// 鼠标悬停时，小窗上移到右下角
+// 鼠标悬停时，小窗下移完全显示
 div#script_hover_node:hover {
     bottom: 10px;
+    left: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+// 小窗内子元素的底部外边距
+div#script_hover_node>div {
+    margin-bottom: 5px;
+}
+// 小窗内 span 元素的样式
+div#script_hover_node span {
+    display: block;
+    height: 35px;
+    line-height: 35px;
+    width: 100%;
+    text-align: center;
+    transition: ease-in 0.25s;
+    color: var(--fontColor);
+    border-radius: 5px;
+}
+// 鼠标悬停时，小窗内 span 元素的背景色和文字颜色变化
+div#script_hover_node span:hover {
+    background-color: rgb(255,255,255) !important;
+    color: black !important;
+}
+// 小窗内按钮的样式
+div#script_hover_node button {
+    background-color: rgb(54,54,54);
+    color: var(--fontColor);
+}
+// 鼠标悬停时，小窗内按钮的背景色和字体粗细变化
+div#script_hover_node button:hover {
+    background-color: rgb(114,114,114);
+    font-weight: 700;
+}
+// 小窗横向排列时的样式
+div#script_hover_node.horizontal {
+    display: flex;
+    width: 200px;
+    justify-content: center;
+    bottom: 10px;
+    right: -140px;
+}
+// 鼠标悬停时，横向排列的小窗向左移动显示
+div#script_hover_node.horizontal:hover {
     right: 10px;
+}
+// 横向排列小窗内子元素的样式
+div#script_hover_node.horizontal>div {
+    margin: 0 5px;
+    flex: 1;
+}
+// 小窗固定显示时的位置
+// 修改前: div#script_hover_node.fixedDisplay {
+// 修改前:     bottom: 10px;
+// 修改前:     right: 10px;
+// 修改前: }
+// 小窗固定显示时的位置
+// 调整到左侧底部位置
+// 添加向下伸展拉取功能
+// 默认隐藏，鼠标悬停时向下展开显示完整按钮
+// 添加过渡动画和阴影效果
+div#script_hover_node {
+    width: fit-content;
+    height: fit-content;
+    position: fixed;
+    bottom: -85px;
+    left: 10px;
+    background: rgb(0,0,0,0.5);
+    z-index: 1050;
+    transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+    padding: 5px;
+    border-radius: 5px;
+    color: var(--fontColor);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+// 鼠标悬停时，小窗下移完全显示
+div#script_hover_node:hover {
+    bottom: 10px;
+    left: 50px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
 }
 // 小窗内子元素的底部外边距
 div#script_hover_node>div {
@@ -519,63 +598,91 @@ tbody>tr>td>input[type='checkbox'] {
   async startupSideBarMain() {
     // 创建侧边栏开启用的小窗
     let sideBarSmall = document.createElement("div");
-    sideBarSmall.innerHTML = `<div><span title='SimComp-tools By:道洛LTS_Kim' id='script_bar_text'>SCT</span></div><div><button id='script_msg_switch' class="btn form-control">信息</button></div><div><button id='script_cpt_switch' class="btn form-control">组件</button></div>`;
+    sideBarSmall.innerHTML = `<div><span title='SimComp-tools By:道洛LTS_Kim' id='script_bar_text'>SCT</span></div><div><button id='script_msg_switch' class="btn form-control">信息</button></div><div><button id='script_cpt_switch' class="btn form-control">组件</button></div><div><button id='script_oneClickHarvest_Btn' class="btn form-control">一键收菜</button></div>`;
     sideBarSmall.id = "script_hover_node";
     if (this.indexDBData.SCT_divHorizontal) sideBarSmall.className += ` horizontal`;
     if (this.indexDBData.SCT_divFixedDisplay) sideBarSmall.className += ` fixedDisplay`;
+    
     // 创建信息窗口
     let msgMainNode = document.createElement("div");
     msgMainNode.innerHTML = `<div id=scriptMsg_innerHead style=padding:10px><h1>消息<span sct_id=msgClear style=font-size:20px> <a>清空</a></span></h1></div><div id=scriptMsg_main><table><tbody id=scriptMsg_mainBody><tr><td>时间<td>内容</table></div>`;
     msgMainNode.id = "script_msg_node";
     msgMainNode.className = "script_base_container";
     tools.msgBodyNode = msgMainNode.querySelector("tbody#scriptMsg_mainBody");
+    
     // 创建组件窗口
     let cptSwitchNode = this.sideBarSub_componentNode();
     cptSwitchNode.id = "script_cpt_node";
     cptSwitchNode.className = "script_base_container";
+    
     // 绑定事件
     sideBarSmall.querySelector("button#script_msg_switch").addEventListener("click", (event) => {
-      // 取消背景色改变
-      clearInterval(tools.msgShowFlag.timer);
-      tools.msgShowFlag.timer = undefined;
-      tools.msgShowFlag.flag = false;
-      Object.assign(document.querySelector("div#script_hover_node>div>span").style, {
-        backgroundColor: "rgb(0,0,0,0)",
-      });
-      // 修改当前目标
-      Object.assign(document.querySelector("div#script_msg_node").style, {
-        right: this.componentData.msgNodeShow ? "-150%" : "0px",
-      });
-      this.componentData.msgNodeShow = !this.componentData.msgNodeShow;
-      // 重置原目标
-      if (this.componentData.cptSwitchShow) {
-        Object.assign(document.querySelector("div#script_cpt_node").style, { right: "-150%" });
-        this.componentData.cptSwitchShow = !this.componentData.cptSwitchShow;
-      }
-    });
-    sideBarSmall.querySelector("button#script_cpt_switch").addEventListener("click", (event) => {
-      // 修改当前目标
-      Object.assign(document.querySelector("div#script_cpt_node").style, {
-        right: this.componentData.cptSwitchShow ? "-150%" : "0px",
-      });
-      this.componentData.cptSwitchShow = !this.componentData.cptSwitchShow;
-      // 重置原目标
-      if (this.componentData.msgNodeShow) {
-        Object.assign(document.querySelector("div#script_msg_node").style, { right: "-150%" });
+        // 取消背景色改变
+        clearInterval(tools.msgShowFlag.timer);
+        tools.msgShowFlag.timer = undefined;
+        tools.msgShowFlag.flag = false;
+        Object.assign(document.querySelector("div#script_hover_node>div>span").style, {
+            backgroundColor: "rgb(0,0,0,0)",
+        });
+        // 修改当前目标
+        Object.assign(document.querySelector("div#script_msg_node").style, {
+            right: this.componentData.msgNodeShow ? "-150%" : "0px",
+        });
         this.componentData.msgNodeShow = !this.componentData.msgNodeShow;
-      }
+        // 重置原目标
+        if (this.componentData.cptSwitchShow) {
+            Object.assign(document.querySelector("div#script_cpt_node").style, { right: "-150%" });
+            this.componentData.cptSwitchShow = !this.componentData.cptSwitchShow;
+        }
     });
+    
+    sideBarSmall.querySelector("button#script_cpt_switch").addEventListener("click", (event) => {
+        // 修改当前目标
+        Object.assign(document.querySelector("div#script_cpt_node").style, {
+            right: this.componentData.cptSwitchShow ? "-150%" : "0px",
+        });
+        this.componentData.cptSwitchShow = !this.componentData.cptSwitchShow;
+        // 重置原目标
+        if (this.componentData.msgNodeShow) {
+            Object.assign(document.querySelector("div#script_msg_node").style, { right: "-150%" });
+            this.componentData.msgNodeShow = !this.componentData.msgNodeShow;
+        }
+    });
+    
+    // 一键收菜按钮点击事件处理
+    sideBarSmall.querySelector("button#script_oneClickHarvest_Btn").addEventListener("click", (event) => {
+        // 检查是否在地图页面
+        if (!Boolean(location.href.match(/landscape\/$/))) {
+            tools.alert("请在地图界面使用一键收菜功能");
+            return;
+        }
+        
+        // 获取节点并过滤
+        const nodeList = Object.values(document.querySelectorAll("div > div > div > a"))
+            .filter(node => !node.className.match("headquarter")) // 排除总部建筑
+            .filter(node => Object.values(node.querySelectorAll("img")).length === 4) // 排除没有四个图像的节点
+        
+        // 遍历节点并点击
+        for (let i = 0; i < nodeList.length; i++) {
+            nodeList[i].click();
+        }
+        
+        // 发送消息
+        tools.msg_send("一键收取", "完成收取啦!", 1);
+    });
+    
     msgMainNode.addEventListener("click", (e) => {
-      if (!e.target.closest("span[sct_id='msgClear']")) return;
-      document.querySelector(
-        "div#scriptMsg_main tbody#scriptMsg_mainBody"
-      ).innerHTML = `<tr><td>时间</td><td>内容</td></tr>`;
+        if (!e.target.closest("span[sct_id='msgClear']")) return;
+        document.querySelector(
+            "div#scriptMsg_main tbody#scriptMsg_mainBody"
+        ).innerHTML = `<tr><td>时间</td><td>内容</td></tr>`;
     });
+    
     // 挂载元素
     document.body.appendChild(sideBarSmall);
     document.body.appendChild(msgMainNode);
     document.body.appendChild(cptSwitchNode);
-  }
+}
   sideBarSub_componentNode() {
     let resultNode = document.createElement("div");
     // 拼接侧边栏头部
@@ -898,3 +1005,4 @@ tbody>tr>td>input[type='checkbox'] {
   }
 }
 new basisCPT();
+
