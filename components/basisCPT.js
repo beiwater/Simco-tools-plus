@@ -14,7 +14,350 @@ class basisCPT extends BaseComponent {
   }
   // css定义
   cssText = [
-    `div#script_hover_node{width:fit-content;height:fit-content;position:fixed;bottom:-85px;right:10px;background:rgb(0,0,0,0.5);z-index:1050;transition:ease-in 0.25s;padding:5px;border-radius:5px;color:var(--fontColor);}div#script_hover_node:hover{bottom:10px;right:10px;}div#script_hover_node>div{margin-bottom:5px;}div#script_hover_node span{display:block;height:35px;line-height:35px;width:100%;text-align:center;transition:ease-in 0.25s;color:var(--fontColor);border-radius:5px;}div#script_hover_node span:hover{background-color:rgb(255,255,255) !important;color:black !important;}div#script_hover_node button{background-color:rgb(54,54,54);color:var(--fontColor);}div#script_hover_node button:hover{background-color:rgb(114,114,114);font-weight:700;}div#script_hover_node.horizontal{display:flex;width:200px;justify-content:center;bottom:10px;right:-140px;}div#script_hover_node.horizontal:hover{right:10px;}div#script_hover_node.horizontal>div{margin:0 5px;flex:1;}div#script_hover_node.fixedDisplay{bottom:10px;right:10px;}div.script_base_container{min-width:450px;overflow-y:auto;overflow-x:hidden;position:fixed;top:0px;right:-150%;display:block;width:35%;height:100%;background-color:rgb(0,0,0,0.7);padding:10px;z-index:1049;transition:ease-in-out 0.25s;color:var(--fontColor);}div#script_msg_node table,div#script_cpt_node table{border-collapse:separate;border-spacing:10px;}div#script_msg_node table>tbody>tr,div#script_cpt_node table>tbody>tr{vertical-align:top;}div#script_cpt_node table{width:100%}div#script_msg_node table>tbody>tr>td:nth-child(1){width:70px;max-width:70px;text-align:center;}div#script_msg_node table>thead>tr>td{text-align:center;}div#script_cpt_node table>tbody>tr>td:nth-child(2){width:70px;text-align:center;}div#script_cpt_node table>tbody>tr>td>button{transition:ease-in-out 0.1s;max-width:300px;background-color:rgb(114,114,114);}div#script_cpt_node table>tbody>tr>td>button:hover{color:black;background-color:#ffffff;box-shadow:0 0 10px 3px wheat;}#script_cpt_setting_container{max-width:60%;min-width:435px;color:var(--fontColor);display:none;box-shadow:0 0 3px 1px rgb(0,0,0,0.5);border-radius:10px;padding:10px;position:fixed;transform:translateX(-50%) translateY(-50%);top:50%;left:50%;background-color:rgb(0,0,0,0.9);z-index:1051;}#script_setting_head{width:100%;margin-bottom:10px;max-height:26px;line-height:26px;height:26px;}#script_setting_head>div>span{position:relative;font-size:21px;left:-10px;display:block;}#script_setting_head>div:nth-child(2){text-align:end;}#script_setting_head>div>button{background-color:red;right:0;position:relative;text-align:center;height:26px;line-height:16px;}#script_setting_body{padding:5px;width:100%;max-height:400px;overflow-y:auto;overflow-x:hidden;}div.setting-container{color:var(--fontColor);}div.setting-container button,div.setting-container input,div.setting-container select{transition:ease-in-out 0.1s;background-color:rgb(76,76,76);color:var(--fontColor);}div.setting-container div.header{background-color:rgb(0,0,0);text-align:center;font-size:20px;font-weight:700;}div.setting-container div.container{width:100%;display:block;margin-top:10px;margin-bottom:10px;}div.setting-container div.container>table,div.setting-container div.container>div>table{border-collapse:separate;border-spacing:10px;text-align:center;width:100%;height:100%;}div.setting-container button.script_opt_submit{width:80%;height:49px;margin:auto;display:block;font-size:20px;transition:ease-in-out 0.1s;}div.setting-container div>table>thead>tr{height:50px;}div.setting-container button:hover{color:black;background-color:#ffffff;box-shadow:0 0 10px 3px wheat;}div#script_cpt_node>div#scriptCPT_mainBody::after{content:"";display:block;height:50px;}div#script_cpt_node table>tbody>tr>td>button.funcExist{background-color:green;}div#script_cpt_node table>tbody>tr>td>button.funcExist:hover{background-color:#ffffff;}div#scriptCPT_mainBody tbody>tr:hover{background-color:rgb(255,255,255,0.1);}#script_cptSearch_input{background:rgb(0,0,0,0.8);color:var(--fontColor);}div#script_cpt_node>div#scriptCPT_tagSerach{padding:10px;margin-top:10px;}div#script_cpt_node>div#scriptCPT_tagSerach>span{display:inline-block;width:max-content;height:fit-content;background-color:#000000;border:2px white solid;padding:2px 10px;border-radius:10px;cursor:pointer;margin:4px 5px;}div#script_cpt_node>div#scriptCPT_tagSerach>span:hover{background-color:#339841 !important;}div#script_cpt_node>div#scriptCPT_tagSerach>span.script_tagSearch_active{background-color:#14541d;}div#scriptCPT_mainBody>table>thead>tr>td:nth-of-type(2){text-align:center;}tbody>tr>td>input[type='checkbox']{height: 20px;}`,
+    `
+    /* ------------------------------ 悬浮节点样式 ------------------------------ */
+    /* 脚本悬浮节点基础样式 */
+    div#script_hover_node {
+        width: fit-content;
+        height: fit-content;
+        position: fixed;
+        bottom: -85px;
+        right: 10px;
+        background: rgb(0, 0, 0, 0.5);
+        z-index: 1050;
+        transition: ease-in 0.25s;
+        padding: 5px;
+        border-radius: 5px;
+        color: var(--fontColor);
+    }
+
+    /* 鼠标悬停时悬浮节点的样式 */
+    div#script_hover_node:hover {
+        bottom: 10px;
+        right: 10px;
+    }
+
+    /* 悬浮节点内子元素的样式 */
+    div#script_hover_node>div {
+        margin-bottom: 5px;
+    }
+
+    /* 悬浮节点内 span 元素的样式 */
+    div#script_hover_node span {
+        display: block;
+        height: 35px;
+        line-height: 35px;
+        width: 100%;
+        text-align: center;
+        transition: ease-in 0.25s;
+        color: var(--fontColor);
+        border-radius: 5px;
+    }
+
+    /* 鼠标悬停时悬浮节点内 span 元素的样式 */
+    div#script_hover_node span:hover {
+        background-color: rgb(255, 255, 255) !important;
+        color: black !important;
+    }
+
+    /* 悬浮节点内按钮的基础样式 */
+    div#script_hover_node button {
+        background-color: rgb(54, 54, 54);
+        color: var(--fontColor);
+    }
+
+    /* 鼠标悬停时悬浮节点内按钮的样式 */
+    div#script_hover_node button:hover {
+        background-color: rgb(114, 114, 114);
+        font-weight: 700;
+    }
+
+    /* 水平排列的悬浮节点样式 */
+    div#script_hover_node.horizontal {
+        display: flex;
+        width: 200px;
+        justify-content: center;
+        bottom: 10px;
+        right: -140px;
+    }
+
+    /* 鼠标悬停时水平排列的悬浮节点样式 */
+    div#script_hover_node.horizontal:hover {
+        right: 10px;
+    }
+
+    /* 水平排列的悬浮节点内子元素的样式 */
+    div#script_hover_node.horizontal>div {
+        margin: 0 5px;
+        flex: 1;
+    }
+
+    /* 固定显示的悬浮节点样式 */
+    div#script_hover_node.fixedDisplay {
+        bottom: 10px;
+        right: 10px;
+    }
+
+    /* ------------------------------ 基础容器样式 ------------------------------ */
+    /* 脚本基础容器样式 */
+    div.script_base_container {
+        min-width: 450px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        position: fixed;
+        top: 0px;
+        right: -150%;
+        display: block;
+        width: 35%;
+        height: 100%;
+        background-color: rgb(0, 0, 0, 0.7);
+        padding: 10px;
+        z-index: 1049;
+        transition: ease-in-out 0.25s;
+        color: var(--fontColor);
+    }
+
+    /* ------------------------------ 消息和组件节点表格样式 ------------------------------ */
+    /* 消息节点和组件节点内表格的样式 */
+    div#script_msg_node table,
+    div#script_cpt_node table {
+        border-collapse: separate;
+        border-spacing: 10px;
+    }
+
+    /* 消息节点和组件节点内表格行的垂直对齐方式 */
+    div#script_msg_node table>tbody>tr,
+    div#script_cpt_node table>tbody>tr {
+        vertical-align: top;
+    }
+
+    /* 组件节点内表格宽度 */
+    div#script_cpt_node table {
+        width: 100%
+    }
+
+    /* 消息节点内表格第一列样式 */
+    div#script_msg_node table>tbody>tr>td:nth-child(1) {
+        width: 70px;
+        max-width: 70px;
+        text-align: center;
+    }
+
+    /* 消息节点内表格表头单元格样式 */
+    div#script_msg_node table>thead>tr>td {
+        text-align: center;
+    }
+
+    /* 组件节点内表格第二列样式 */
+    div#script_cpt_node table>tbody>tr>td:nth-child(2) {
+        width: 70px;
+        text-align: center;
+    }
+
+    /* 组件节点内表格单元格内按钮基础样式 */
+    div#script_cpt_node table>tbody>tr>td>button {
+        transition: ease-in-out 0.1s;
+        max-width: 300px;
+        background-color: rgb(114, 114, 114);
+    }
+
+    /* 鼠标悬停时组件节点内表格单元格内按钮的样式 */
+    div#script_cpt_node table>tbody>tr>td>button:hover {
+        color: black;
+        background-color: #ffffff;
+        box-shadow: 0 0 10px 3px wheat;
+    }
+
+    /* ------------------------------ 组件设置容器样式 ------------------------------ */
+    /* 组件设置容器基础样式 */
+    #script_cpt_setting_container {
+        max-width: 60%;
+        min-width: 435px;
+        color: var(--fontColor);
+        display: none;
+        box-shadow: 0 0 3px 1px rgb(0, 0, 0, 0.5);
+        border-radius: 10px;
+        padding: 10px;
+        position: fixed;
+        transform: translateX(-50%) translateY(-50%);
+        top: 50%;
+        left: 50%;
+        background-color: rgb(0, 0, 0, 0.9);
+        z-index: 1051;
+    }
+
+    /* 组件设置头部样式 */
+    #script_setting_head {
+        width: 100%;
+        margin-bottom: 10px;
+        max-height: 26px;
+        line-height: 26px;
+        height: 26px;
+    }
+
+    /* 组件设置头部内 span 元素样式 */
+    #script_setting_head>div>span {
+        position: relative;
+        font-size: 21px;
+        left: -10px;
+        display: block;
+    }
+
+    /* 组件设置头部第二个子元素样式 */
+    #script_setting_head>div:nth-child(2) {
+        text-align: end;
+    }
+
+    /* 组件设置头部内按钮样式 */
+    #script_setting_head>div>button {
+        background-color: red;
+        right: 0;
+        position: relative;
+        text-align: center;
+        height: 26px;
+        line-height: 16px;
+    }
+
+    /* 组件设置主体样式 */
+    #script_setting_body {
+        padding: 5px;
+        width: 100%;
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    /* ------------------------------ 设置容器样式 ------------------------------ */
+    /* 设置容器基础样式 */
+    div.setting-container {
+        color: var(--fontColor);
+    }
+
+    /* 设置容器内按钮、输入框和选择框基础样式 */
+    div.setting-container button,
+    div.setting-container input,
+    div.setting-container select {
+        transition: ease-in-out 0.1s;
+        background-color: rgb(76, 76, 76);
+        color: var(--fontColor);
+    }
+
+    /* 设置容器内头部样式 */
+    div.setting-container div.header {
+        background-color: rgb(0, 0, 0);
+        text-align: center;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    /* 设置容器内内容区域样式 */
+    div.setting-container div.container {
+        width: 100%;
+        display: block;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+
+    /* 设置容器内表格样式 */
+    div.setting-container div.container>table,
+    div.setting-container div.container>div>table {
+        border-collapse: separate;
+        border-spacing: 10px;
+        text-align: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* 设置容器内提交按钮样式 */
+    div.setting-container button.script_opt_submit {
+        width: 80%;
+        height: 49px;
+        margin: auto;
+        display: block;
+        font-size: 20px;
+        transition: ease-in-out 0.1s;
+    }
+
+    /* 设置容器内表格表头行高度 */
+    div.setting-container div>table>thead>tr {
+        height: 50px;
+    }
+
+    /* 鼠标悬停时设置容器内按钮的样式 */
+    div.setting-container button:hover {
+        color: black;
+        background-color: #ffffff;
+        box-shadow: 0 0 10px 3px wheat;
+    }
+
+    /* ------------------------------ 组件节点相关样式 ------------------------------ */
+    /* 组件节点主体伪元素样式 */
+    div#script_cpt_node>div#scriptCPT_mainBody::after {
+        content: "";
+        display: block;
+        height: 50px;
+    }
+
+    /* 存在功能的组件按钮基础样式 */
+    div#script_cpt_node table>tbody>tr>td>button.funcExist {
+        background-color: green;
+    }
+
+    /* 鼠标悬停时存在功能的组件按钮样式 */
+    div#script_cpt_node table>tbody>tr>td>button.funcExist:hover {
+        background-color: #ffffff;
+    }
+
+    /* 鼠标悬停时组件主体表格行的样式 */
+    div#scriptCPT_mainBody tbody>tr:hover {
+        background-color: rgb(255, 255, 255, 0.1);
+    }
+
+    /* 组件搜索输入框样式 */
+    #script_cptSearch_input {
+        background: rgb(0, 0, 0, 0.8);
+        color: var(--fontColor);
+    }
+
+    /* 组件标签搜索区域样式 */
+    div#script_cpt_node>div#scriptCPT_tagSerach {
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    /* 组件标签搜索区域内标签样式 */
+    div#script_cpt_node>div#scriptCPT_tagSerach>span {
+        display: inline-block;
+        width: max-content;
+        height: fit-content;
+        background-color: #000000;
+        border: 2px white solid;
+        padding: 2px 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        margin: 4px 5px;
+    }
+
+    /* 鼠标悬停时组件标签搜索区域内标签的样式 */
+    div#script_cpt_node>div#scriptCPT_tagSerach>span:hover {
+        background-color: #339841 !important;
+    }
+
+    /* 激活状态的组件标签搜索区域内标签样式 */
+    div#script_cpt_node>div#scriptCPT_tagSerach>span.script_tagSearch_active {
+        background-color: #14541d;
+    }
+
+    /* 组件主体表格表头第二列样式 */
+    div#scriptCPT_mainBody>table>thead>tr>td:nth-of-type(2) {
+        text-align: center;
+    }
+
+    /* 表格行内复选框高度 */
+    tbody>tr>td>input[type='checkbox'] {
+        height: 20px;
+    }
+    `,
     `div#script_hover_node{width:fit-content;height:fit-content;position:fixed;bottom:-95px;right:-20px;background:rgb(0,0,0,0.5);z-index:1050;transition:ease-in 0.25s;padding:5px;border-radius:5px;color:var(--fontColor);}div#script_hover_node:hover{bottom:10px;right:10px;}div#script_hover_node>div{margin-bottom:5px;}div#script_hover_node span{display:block;height:35px;line-height:35px;width:100%;text-align:center;transition:ease-in 0.25s;color:var(--fontColor);border-radius:5px;}div#script_hover_node span:hover{background-color:rgb(255,255,255) !important;color:black !important;}div#script_hover_node button{background-color:rgb(54,54,54);color:var(--fontColor);}div#script_hover_node button:hover{background-color:rgb(114,114,114);font-weight:700;}div#script_hover_node.horizontal{display:flex;width:200px;justify-content:center;bottom:10px;right:-140px;}div#script_hover_node.horizontal:hover{right:10px;}div#script_hover_node.horizontal>div{margin:0 5px;flex:1;}div#script_hover_node.fixedDisplay{bottom:10px;right:10px;}div.script_base_container{width:100%;height:100%;overflow-y:auto;overflow-x:hidden;position:fixed;top:0px;right:-150%;display:block;background-color:rgb(0,0,0,0.7);padding:10px;z-index:1049;transition:ease-in-out 0.25s;color:var(--fontColor);}div#script_msg_node table,div#script_cpt_node table{border-collapse:separate;border-spacing:10px;}div#script_msg_node table>tbody>tr,div#script_cpt_node table>tbody>tr{vertical-align:top;}div#script_msg_node table>tbody>tr>td:nth-child(1){width:70px;max-width:70px;text-align:center;}div#script_cpt_node table{width:100%}div#script_cpt_node table>thead>tr>td{text-align:center;}div#script_cpt_node table>tbody>tr>td:nth-child(2){width:70px;text-align:center;}div#script_cpt_node table>tbody>tr>td>button{transition:ease-in-out 0.1s;max-width:300px;background-color:rgb(114,114,114);}div#script_cpt_node table>tbody>tr>td>button:hover{color:black;background-color:#ffffff;box-shadow:0 0 10px 3px wheat;}#script_cpt_setting_container{width:95%;min-width:300px;color:var(--fontColor);display:none;box-shadow:0 0 3px 1px rgb(0,0,0,0.5);border-radius:10px;padding:5px;position:fixed;transform:translateX(-50%) translateY(-50%);top:50%;left:50%;background-color:rgb(0,0,0,0.9);z-index:1051;}#script_setting_head{width:100%;margin-bottom:10px;max-height:26px;line-height:26px;height:26px;}#script_setting_head>div>span{position:relative;font-size:21px;left:-10px;display:block;}#script_setting_head>div:nth-child(2){text-align:end;}#script_setting_head>div>button{background-color:red;right:0;position:relative;text-align:center;height:26px;line-height:16px;}#script_setting_body{padding:5px;width:100%;max-height:400px;overflow-y:auto;overflow-x:hidden;}div.setting-container{color:var(--fontColor);}div.setting-container button,div.setting-container input,div.setting-container select{transition:ease-in-out 0.1s;background-color:rgb(76,76,76);color:var(--fontColor);}div.setting-container div.header{background-color:rgb(0,0,0);text-align:center;font-size:20px;font-weight:700;}div.setting-container div.container{width:100%;display:block;margin-top:10px;margin-bottom:10px;}div.setting-container div.container>table,div.setting-container div.container>div>table{border-collapse:separate;border-spacing:10px;text-align:center;width:100%;height:100%;}div.setting-container button.script_opt_submit{width:80%;height:49px;margin:auto;display:block;font-size:20px;transition:ease-in-out 0.1s;}div.setting-container div>table>thead>tr{height:50px;}div.setting-container button:hover{color:black;background-color:#ffffff;box-shadow:0 0 10px 3px wheat;}div#script_cpt_node>div#scriptCPT_mainBody::after{content:"";display:block;height:50px;}div#script_cpt_node table>tbody>tr>td>button.funcExist{background-color:green;}div#script_cpt_node table>tbody>tr>td>button.funcExist:hover{background-color:#ffffff;}div#scriptCPT_mainBody tbody>tr:hover{background-color:rgb(255,255,255,0.1);}#script_cptSearch_input{background:rgb(0,0,0,0.8);color:var(--fontColor);}div#script_cpt_node>div#scriptCPT_tagSerach{padding:10px;margin-top:10px;}div#script_cpt_node>div#scriptCPT_tagSerach>span{display:inline-block;width:max-content;height:fit-content;background-color:#000000;border:2px white solid;padding:2px 10px;border-radius:10px;cursor:pointer;margin:4px 5px;}div#script_cpt_node>div#scriptCPT_tagSerach>span:hover{background-color:#339841 !important;}div#script_cpt_node>div#scriptCPT_tagSerach>span.script_tagSearch_active{background-color:#14541d;}div#scriptCPT_mainBody>table>thead>tr>td:nth-of-type(2){text-align:center;}tbody>tr>td>input[type='checkbox']{height: 20px;}`,
   ];
   // 数据定义
