@@ -14,379 +14,7 @@ class basisCPT extends BaseComponent {
   }
   // css定义
   cssText = [
-    `
-// 定义侧边栏开启用的小窗样式
-div#script_hover_node {
-    width: fit-content;
-    height: fit-content;
-    position: fixed;
-    bottom: -85px;
-    left: 10px;
-    background: rgb(0,0,0,0.5);
-    z-index: 1050;
-    transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
-    padding: 5px;
-    border-radius: 5px;
-    color: var(--fontColor);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
-// 鼠标悬停时，小窗下移完全显示
-div#script_hover_node:hover {
-    bottom: 10px;
-    left: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-}
-// 小窗内子元素的底部外边距
-div#script_hover_node>div {
-    margin-bottom: 5px;
-}
-// 小窗内 span 元素的样式
-div#script_hover_node span {
-    display: block;
-    height: 35px;
-    line-height: 35px;
-    width: 100%;
-    text-align: center;
-    transition: ease-in 0.25s;
-    color: var(--fontColor);
-    border-radius: 5px;
-}
-// 鼠标悬停时，小窗内 span 元素的背景色和文字颜色变化
-div#script_hover_node span:hover {
-    background-color: rgb(255,255,255) !important;
-    color: black !important;
-}
-// 小窗内按钮的样式
-div#script_hover_node button {
-    background-color: rgb(54,54,54);
-    color: var(--fontColor);
-}
-// 鼠标悬停时，小窗内按钮的背景色和字体粗细变化
-div#script_hover_node button:hover {
-    background-color: rgb(114,114,114);
-    font-weight: 700;
-}
-// 小窗横向排列时的样式
-div#script_hover_node.horizontal {
-    display: flex;
-    width: 200px;
-    justify-content: center;
-    bottom: 10px;
-    right: -140px;
-}
-// 鼠标悬停时，横向排列的小窗向左移动显示
-div#script_hover_node.horizontal:hover {
-    right: 10px;
-}
-// 横向排列小窗内子元素的样式
-div#script_hover_node.horizontal>div {
-    margin: 0 5px;
-    flex: 1;
-}
-// 小窗固定显示时的位置
-// 修改前: div#script_hover_node.fixedDisplay {
-// 修改前:     bottom: 10px;
-// 修改前:     right: 10px;
-// 修改前: }
-// 小窗固定显示时的位置
-// 调整到左侧底部位置
-// 添加向下伸展拉取功能
-// 默认隐藏，鼠标悬停时向下展开显示完整按钮
-// 添加过渡动画和阴影效果
-div#script_hover_node {
-    width: fit-content;
-    height: fit-content;
-    position: fixed;
-    bottom: -85px;
-    left: 10px;
-    background: rgb(0,0,0,0.5);
-    z-index: 1050;
-    transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
-    padding: 5px;
-    border-radius: 5px;
-    color: var(--fontColor);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
-// 鼠标悬停时，小窗下移完全显示
-div#script_hover_node:hover {
-    bottom: 10px;
-    left: 50px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-}
-// 小窗内子元素的底部外边距
-div#script_hover_node>div {
-    margin-bottom: 5px;
-}
-// 小窗内 span 元素的样式
-div#script_hover_node span {
-    display: block;
-    height: 35px;
-    line-height: 35px;
-    width: 100%;
-    text-align: center;
-    transition: ease-in 0.25s;
-    color: var(--fontColor);
-    border-radius: 5px;
-}
-// 鼠标悬停时，小窗内 span 元素的背景色和文字颜色变化
-div#script_hover_node span:hover {
-    background-color: rgb(255,255,255) !important;
-    color: black !important;
-}
-// 小窗内按钮的样式
-div#script_hover_node button {
-    background-color: rgb(54,54,54);
-    color: var(--fontColor);
-}
-// 鼠标悬停时，小窗内按钮的背景色和字体粗细变化
-div#script_hover_node button:hover {
-    background-color: rgb(114,114,114);
-    font-weight: 700;
-}
-// 小窗横向排列时的样式
-div#script_hover_node.horizontal {
-    display: flex;
-    width: 200px;
-    justify-content: center;
-    bottom: 10px;
-    right: -140px;
-}
-// 鼠标悬停时，横向排列的小窗向左移动显示
-div#script_hover_node.horizontal:hover {
-    right: 10px;
-}
-// 横向排列小窗内子元素的样式
-div#script_hover_node.horizontal>div {
-    margin: 0 5px;
-    flex: 1;
-}
-// 小窗固定显示时的位置
-div#script_hover_node.fixedDisplay {
-    bottom: 10px;
-    right: 10px;
-}
-// 基础容器样式，用于信息窗口和组件窗口
-div.script_base_container {
-    min-width: 450px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    position: fixed;
-    top: 0px;
-    right: -150%;
-    display: block;
-    width: 35%;
-    height: 100%;
-    background-color: rgb(0,0,0,0.7);
-    padding: 10px;
-    z-index: 1049;
-    transition: ease-in-out 0.25s;
-    color: var(--fontColor);
-}
-// 信息窗口和组件窗口内表格的边框样式
-div#script_msg_node table,
-div#script_cpt_node table {
-    border-collapse: separate;
-    border-spacing: 10px;
-}
-// 信息窗口和组件窗口内表格行的垂直对齐方式
-div#script_msg_node table>tbody>tr,
-div#script_cpt_node table>tbody>tr {
-    vertical-align: top;
-}
-// 组件窗口内表格的宽度
-div#script_cpt_node table {
-    width: 100%
-}
-// 信息窗口内表格第一列单元格的宽度和对齐方式
-div#script_msg_node table>tbody>tr>td:nth-child(1) {
-    width: 70px;
-    max-width: 70px;
-    text-align: center;
-}
-// 信息窗口内表格表头单元格的对齐方式
-div#script_msg_node table>thead>tr>td {
-    text-align: center;
-}
-// 组件窗口内表格第二列单元格的宽度和对齐方式
-div#script_cpt_node table>tbody>tr>td:nth-child(2) {
-    width: 70px;
-    text-align: center;
-}
-// 组件窗口内表格单元格中按钮的样式
-div#script_cpt_node table>tbody>tr>td>button {
-    transition: ease-in-out 0.1s;
-    max-width: 300px;
-    background-color: rgb(114,114,114);
-}
-// 鼠标悬停时，组件窗口内表格单元格中按钮的样式变化
-div#script_cpt_node table>tbody>tr>td>button:hover {
-    color: black;
-    background-color: #ffffff;
-    box-shadow: 0 0 10px 3px wheat;
-}
-// 组件设置容器的样式
-#script_cpt_setting_container {
-    max-width: 60%;
-    min-width: 435px;
-    color: var(--fontColor);
-    display: none;
-    box-shadow: 0 0 3px 1px rgb(0,0,0,0.5);
-    border-radius: 10px;
-    padding: 10px;
-    position: fixed;
-    transform: translateX(-50%) translateY(-50%);
-    top: 50%;
-    left: 50%;
-    background-color: rgb(0,0,0,0.9);
-    z-index: 1051;
-}
-// 组件设置头部的样式
-#script_setting_head {
-    width: 100%;
-    margin-bottom: 10px;
-    max-height: 26px;
-    line-height: 26px;
-    height: 26px;
-}
-// 组件设置头部内 span 元素的样式
-#script_setting_head>div>span {
-    position: relative;
-    font-size: 21px;
-    left: -10px;
-    display: block;
-}
-// 组件设置头部第二个子元素的文本对齐方式
-#script_setting_head>div:nth-child(2) {
-    text-align: end;
-}
-// 组件设置头部内按钮的样式
-#script_setting_head>div>button {
-    background-color: red;
-    right: 0;
-    position: relative;
-    text-align: center;
-    height: 26px;
-    line-height: 16px;
-}
-// 组件设置主体的样式
-#script_setting_body {
-    padding: 5px;
-    width: 100%;
-    max-height: 400px;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-// 设置容器的文字颜色
-div.setting-container {
-    color: var(--fontColor);
-}
-// 设置容器内按钮、输入框和选择框的样式
-div.setting-container button,
-div.setting-container input,
-div.setting-container select {
-    transition: ease-in-out 0.1s;
-    background-color: rgb(76,76,76);
-    color: var(--fontColor);
-}
-// 设置容器内标题的样式
-div.setting-container div.header {
-    background-color: rgb(0,0,0);
-    text-align: center;
-    font-size: 20px;
-    font-weight: 700;
-}
-// 设置容器内内容区域的样式
-div.setting-container div.container {
-    width: 100%;
-    display: block;
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-// 设置容器内表格的边框和对齐方式
-div.setting-container div.container>table,
-div.setting-container div.container>div>table {
-    border-collapse: separate;
-    border-spacing: 10px;
-    text-align: center;
-    width: 100%;
-    height: 100%;
-}
-// 设置容器内提交按钮的样式
-div.setting-container button.script_opt_submit {
-    width: 80%;
-    height: 49px;
-    margin: auto;
-    display: block;
-    font-size: 20px;
-    transition: ease-in-out 0.1s;
-}
-// 设置容器内表格表头行的高度
-div.setting-container div>table>thead>tr {
-    height: 50px;
-}
-// 鼠标悬停时，设置容器内按钮的样式变化
-div.setting-container button:hover {
-    color: black;
-    background-color: #ffffff;
-    box-shadow: 0 0 10px 3px wheat;
-}
-// 在组件窗口主体内容后添加空白区域
-div#script_cpt_node>div#scriptCPT_mainBody::after {
-    content: "";
-    display: block;
-    height: 50px;
-}
-// 有功能存在的按钮的背景色
-div#script_cpt_node table>tbody>tr>td>button.funcExist {
-    background-color: green;
-}
-// 鼠标悬停时，有功能存在的按钮的背景色变化
-div#script_cpt_node table>tbody>tr>td>button.funcExist:hover {
-    background-color: #ffffff;
-}
-// 鼠标悬停时，组件窗口主体表格行的背景色变化
-div#scriptCPT_mainBody tbody>tr:hover {
-    background-color: rgb(255,255,255,0.1);
-}
-// 组件搜索输入框的样式
-#script_cptSearch_input {
-    background: rgb(0,0,0,0.8);
-    color: var(--fontColor);
-}
-// 组件标签搜索区域的样式
-div#script_cpt_node>div#scriptCPT_tagSerach {
-    padding: 10px;
-    margin-top: 10px;
-}
-// 组件标签搜索区域内标签的样式
-div#script_cpt_node>div#scriptCPT_tagSerach>span {
-    display: inline-block;
-    width: max-content;
-    height: fit-content;
-    background-color: #000000;
-    border: 2px white solid;
-    padding: 2px 10px;
-    border-radius: 10px;
-    cursor: pointer;
-    margin: 4px 5px;
-}
-// 鼠标悬停时，组件标签搜索区域内标签的背景色变化
-div#script_cpt_node>div#scriptCPT_tagSerach>span:hover {
-    background-color: #339841 !important;
-}
-// 激活状态下组件标签搜索区域内标签的背景色
-div#script_cpt_node>div#scriptCPT_tagSerach>span.script_tagSearch_active {
-    background-color: #14541d;
-}
-// 组件窗口主体表格表头第二列单元格的对齐方式
-div#scriptCPT_mainBody>table>thead>tr>td:nth-of-type(2) {
-    text-align: center;
-}
-// 表格行内复选框的高度
-tbody>tr>td>input[type='checkbox'] {
-    height: 20px;
-}
-`,
+    `div#script_hover_node{width:fit-content;height:fit-content;position:fixed;bottom:-85px;right:10px;background:rgb(0,0,0,0.5);z-index:1050;transition:ease-in 0.25s;padding:5px;border-radius:5px;color:var(--fontColor);}div#script_hover_node:hover{bottom:10px;right:10px;}div#script_hover_node>div{margin-bottom:5px;}div#script_hover_node span{display:block;height:35px;line-height:35px;width:100%;text-align:center;transition:ease-in 0.25s;color:var(--fontColor);border-radius:5px;}div#script_hover_node span:hover{background-color:rgb(255,255,255) !important;color:black !important;}div#script_hover_node button{background-color:rgb(54,54,54);color:var(--fontColor);}div#script_hover_node button:hover{background-color:rgb(114,114,114);font-weight:700;}div#script_hover_node.horizontal{display:flex;width:200px;justify-content:center;bottom:10px;right:-140px;}div#script_hover_node.horizontal:hover{right:10px;}div#script_hover_node.horizontal>div{margin:0 5px;flex:1;}div#script_hover_node.fixedDisplay{bottom:10px;right:10px;}div.script_base_container{min-width:450px;overflow-y:auto;overflow-x:hidden;position:fixed;top:0px;right:-150%;display:block;width:35%;height:100%;background-color:rgb(0,0,0,0.7);padding:10px;z-index:1049;transition:ease-in-out 0.25s;color:var(--fontColor);}div#script_msg_node table,div#script_cpt_node table{border-collapse:separate;border-spacing:10px;}div#script_msg_node table>tbody>tr,div#script_cpt_node table>tbody>tr{vertical-align:top;}div#script_cpt_node table{width:100%}div#script_msg_node table>tbody>tr>td:nth-child(1){width:70px;max-width:70px;text-align:center;}div#script_msg_node table>thead>tr>td{text-align:center;}div#script_cpt_node table>tbody>tr>td:nth-child(2){width:70px;text-align:center;}div#script_cpt_node table>tbody>tr>td>button{transition:ease-in-out 0.1s;max-width:300px;background-color:rgb(114,114,114);}div#script_cpt_node table>tbody>tr>td>button:hover{color:black;background-color:#ffffff;box-shadow:0 0 10px 3px wheat;}#script_cpt_setting_container{max-width:60%;min-width:435px;color:var(--fontColor);display:none;box-shadow:0 0 3px 1px rgb(0,0,0,0.5);border-radius:10px;padding:10px;position:fixed;transform:translateX(-50%) translateY(-50%);top:50%;left:50%;background-color:rgb(0,0,0,0.9);z-index:1051;}#script_setting_head{width:100%;margin-bottom:10px;max-height:26px;line-height:26px;height:26px;}#script_setting_head>div>span{position:relative;font-size:21px;left:-10px;display:block;}#script_setting_head>div:nth-child(2){text-align:end;}#script_setting_head>div>button{background-color:red;right:0;position:relative;text-align:center;height:26px;line-height:16px;}#script_setting_body{padding:5px;width:100%;max-height:400px;overflow-y:auto;overflow-x:hidden;}div.setting-container{color:var(--fontColor);}div.setting-container button,div.setting-container input,div.setting-container select{transition:ease-in-out 0.1s;background-color:rgb(76,76,76);color:var(--fontColor);}div.setting-container div.header{background-color:rgb(0,0,0);text-align:center;font-size:20px;font-weight:700;}div.setting-container div.container{width:100%;display:block;margin-top:10px;margin-bottom:10px;}div.setting-container div.container>table,div.setting-container div.container>div>table{border-collapse:separate;border-spacing:10px;text-align:center;width:100%;height:100%;}div.setting-container button.script_opt_submit{width:80%;height:49px;margin:auto;display:block;font-size:20px;transition:ease-in-out 0.1s;}div.setting-container div>table>thead>tr{height:50px;}div.setting-container button:hover{color:black;background-color:#ffffff;box-shadow:0 0 10px 3px wheat;}div#script_cpt_node>div#scriptCPT_mainBody::after{content:"";display:block;height:50px;}div#script_cpt_node table>tbody>tr>td>button.funcExist{background-color:green;}div#script_cpt_node table>tbody>tr>td>button.funcExist:hover{background-color:#ffffff;}div#scriptCPT_mainBody tbody>tr:hover{background-color:rgb(255,255,255,0.1);}#script_cptSearch_input{background:rgb(0,0,0,0.8);color:var(--fontColor);}div#script_cpt_node>div#scriptCPT_tagSerach{padding:10px;margin-top:10px;}div#script_cpt_node>div#scriptCPT_tagSerach>span{display:inline-block;width:max-content;height:fit-content;background-color:#000000;border:2px white solid;padding:2px 10px;border-radius:10px;cursor:pointer;margin:4px 5px;}div#script_cpt_node>div#scriptCPT_tagSerach>span:hover{background-color:#339841 !important;}div#script_cpt_node>div#scriptCPT_tagSerach>span.script_tagSearch_active{background-color:#14541d;}div#scriptCPT_mainBody>table>thead>tr>td:nth-of-type(2){text-align:center;}tbody>tr>td>input[type='checkbox']{height: 20px;}`,
     `div#script_hover_node{width:fit-content;height:fit-content;position:fixed;bottom:-95px;right:-20px;background:rgb(0,0,0,0.5);z-index:1050;transition:ease-in 0.25s;padding:5px;border-radius:5px;color:var(--fontColor);}div#script_hover_node:hover{bottom:10px;right:10px;}div#script_hover_node>div{margin-bottom:5px;}div#script_hover_node span{display:block;height:35px;line-height:35px;width:100%;text-align:center;transition:ease-in 0.25s;color:var(--fontColor);border-radius:5px;}div#script_hover_node span:hover{background-color:rgb(255,255,255) !important;color:black !important;}div#script_hover_node button{background-color:rgb(54,54,54);color:var(--fontColor);}div#script_hover_node button:hover{background-color:rgb(114,114,114);font-weight:700;}div#script_hover_node.horizontal{display:flex;width:200px;justify-content:center;bottom:10px;right:-140px;}div#script_hover_node.horizontal:hover{right:10px;}div#script_hover_node.horizontal>div{margin:0 5px;flex:1;}div#script_hover_node.fixedDisplay{bottom:10px;right:10px;}div.script_base_container{width:100%;height:100%;overflow-y:auto;overflow-x:hidden;position:fixed;top:0px;right:-150%;display:block;background-color:rgb(0,0,0,0.7);padding:10px;z-index:1049;transition:ease-in-out 0.25s;color:var(--fontColor);}div#script_msg_node table,div#script_cpt_node table{border-collapse:separate;border-spacing:10px;}div#script_msg_node table>tbody>tr,div#script_cpt_node table>tbody>tr{vertical-align:top;}div#script_msg_node table>tbody>tr>td:nth-child(1){width:70px;max-width:70px;text-align:center;}div#script_cpt_node table{width:100%}div#script_cpt_node table>thead>tr>td{text-align:center;}div#script_cpt_node table>tbody>tr>td:nth-child(2){width:70px;text-align:center;}div#script_cpt_node table>tbody>tr>td>button{transition:ease-in-out 0.1s;max-width:300px;background-color:rgb(114,114,114);}div#script_cpt_node table>tbody>tr>td>button:hover{color:black;background-color:#ffffff;box-shadow:0 0 10px 3px wheat;}#script_cpt_setting_container{width:95%;min-width:300px;color:var(--fontColor);display:none;box-shadow:0 0 3px 1px rgb(0,0,0,0.5);border-radius:10px;padding:5px;position:fixed;transform:translateX(-50%) translateY(-50%);top:50%;left:50%;background-color:rgb(0,0,0,0.9);z-index:1051;}#script_setting_head{width:100%;margin-bottom:10px;max-height:26px;line-height:26px;height:26px;}#script_setting_head>div>span{position:relative;font-size:21px;left:-10px;display:block;}#script_setting_head>div:nth-child(2){text-align:end;}#script_setting_head>div>button{background-color:red;right:0;position:relative;text-align:center;height:26px;line-height:16px;}#script_setting_body{padding:5px;width:100%;max-height:400px;overflow-y:auto;overflow-x:hidden;}div.setting-container{color:var(--fontColor);}div.setting-container button,div.setting-container input,div.setting-container select{transition:ease-in-out 0.1s;background-color:rgb(76,76,76);color:var(--fontColor);}div.setting-container div.header{background-color:rgb(0,0,0);text-align:center;font-size:20px;font-weight:700;}div.setting-container div.container{width:100%;display:block;margin-top:10px;margin-bottom:10px;}div.setting-container div.container>table,div.setting-container div.container>div>table{border-collapse:separate;border-spacing:10px;text-align:center;width:100%;height:100%;}div.setting-container button.script_opt_submit{width:80%;height:49px;margin:auto;display:block;font-size:20px;transition:ease-in-out 0.1s;}div.setting-container div>table>thead>tr{height:50px;}div.setting-container button:hover{color:black;background-color:#ffffff;box-shadow:0 0 10px 3px wheat;}div#script_cpt_node>div#scriptCPT_mainBody::after{content:"";display:block;height:50px;}div#script_cpt_node table>tbody>tr>td>button.funcExist{background-color:green;}div#script_cpt_node table>tbody>tr>td>button.funcExist:hover{background-color:#ffffff;}div#scriptCPT_mainBody tbody>tr:hover{background-color:rgb(255,255,255,0.1);}#script_cptSearch_input{background:rgb(0,0,0,0.8);color:var(--fontColor);}div#script_cpt_node>div#scriptCPT_tagSerach{padding:10px;margin-top:10px;}div#script_cpt_node>div#scriptCPT_tagSerach>span{display:inline-block;width:max-content;height:fit-content;background-color:#000000;border:2px white solid;padding:2px 10px;border-radius:10px;cursor:pointer;margin:4px 5px;}div#script_cpt_node>div#scriptCPT_tagSerach>span:hover{background-color:#339841 !important;}div#script_cpt_node>div#scriptCPT_tagSerach>span.script_tagSearch_active{background-color:#14541d;}div#scriptCPT_mainBody>table>thead>tr>td:nth-of-type(2){text-align:center;}tbody>tr>td>input[type='checkbox']{height: 20px;}`,
   ];
   // 数据定义
@@ -598,91 +226,63 @@ tbody>tr>td>input[type='checkbox'] {
   async startupSideBarMain() {
     // 创建侧边栏开启用的小窗
     let sideBarSmall = document.createElement("div");
-    sideBarSmall.innerHTML = `<div><span title='SimComp-tools By:道洛LTS_Kim' id='script_bar_text'>SCT</span></div><div><button id='script_msg_switch' class="btn form-control">信息</button></div><div><button id='script_cpt_switch' class="btn form-control">组件</button></div><div><button id='script_oneClickHarvest_Btn' class="btn form-control">一键收菜</button></div>`;
+    sideBarSmall.innerHTML = `<div><span title='SimComp-tools By:道洛LTS_Kim' id='script_bar_text'>SCT</span></div><div><button id='script_msg_switch' class="btn form-control">信息</button></div><div><button id='script_cpt_switch' class="btn form-control">组件</button></div>`;
     sideBarSmall.id = "script_hover_node";
     if (this.indexDBData.SCT_divHorizontal) sideBarSmall.className += ` horizontal`;
     if (this.indexDBData.SCT_divFixedDisplay) sideBarSmall.className += ` fixedDisplay`;
-    
     // 创建信息窗口
     let msgMainNode = document.createElement("div");
     msgMainNode.innerHTML = `<div id=scriptMsg_innerHead style=padding:10px><h1>消息<span sct_id=msgClear style=font-size:20px> <a>清空</a></span></h1></div><div id=scriptMsg_main><table><tbody id=scriptMsg_mainBody><tr><td>时间<td>内容</table></div>`;
     msgMainNode.id = "script_msg_node";
     msgMainNode.className = "script_base_container";
     tools.msgBodyNode = msgMainNode.querySelector("tbody#scriptMsg_mainBody");
-    
     // 创建组件窗口
     let cptSwitchNode = this.sideBarSub_componentNode();
     cptSwitchNode.id = "script_cpt_node";
     cptSwitchNode.className = "script_base_container";
-    
     // 绑定事件
     sideBarSmall.querySelector("button#script_msg_switch").addEventListener("click", (event) => {
-        // 取消背景色改变
-        clearInterval(tools.msgShowFlag.timer);
-        tools.msgShowFlag.timer = undefined;
-        tools.msgShowFlag.flag = false;
-        Object.assign(document.querySelector("div#script_hover_node>div>span").style, {
-            backgroundColor: "rgb(0,0,0,0)",
-        });
-        // 修改当前目标
-        Object.assign(document.querySelector("div#script_msg_node").style, {
-            right: this.componentData.msgNodeShow ? "-150%" : "0px",
-        });
-        this.componentData.msgNodeShow = !this.componentData.msgNodeShow;
-        // 重置原目标
-        if (this.componentData.cptSwitchShow) {
-            Object.assign(document.querySelector("div#script_cpt_node").style, { right: "-150%" });
-            this.componentData.cptSwitchShow = !this.componentData.cptSwitchShow;
-        }
-    });
-    
-    sideBarSmall.querySelector("button#script_cpt_switch").addEventListener("click", (event) => {
-        // 修改当前目标
-        Object.assign(document.querySelector("div#script_cpt_node").style, {
-            right: this.componentData.cptSwitchShow ? "-150%" : "0px",
-        });
+      // 取消背景色改变
+      clearInterval(tools.msgShowFlag.timer);
+      tools.msgShowFlag.timer = undefined;
+      tools.msgShowFlag.flag = false;
+      Object.assign(document.querySelector("div#script_hover_node>div>span").style, {
+        backgroundColor: "rgb(0,0,0,0)",
+      });
+      // 修改当前目标
+      Object.assign(document.querySelector("div#script_msg_node").style, {
+        right: this.componentData.msgNodeShow ? "-150%" : "0px",
+      });
+      this.componentData.msgNodeShow = !this.componentData.msgNodeShow;
+      // 重置原目标
+      if (this.componentData.cptSwitchShow) {
+        Object.assign(document.querySelector("div#script_cpt_node").style, { right: "-150%" });
         this.componentData.cptSwitchShow = !this.componentData.cptSwitchShow;
-        // 重置原目标
-        if (this.componentData.msgNodeShow) {
-            Object.assign(document.querySelector("div#script_msg_node").style, { right: "-150%" });
-            this.componentData.msgNodeShow = !this.componentData.msgNodeShow;
-        }
+      }
     });
-    
-    // 一键收菜按钮点击事件处理
-    sideBarSmall.querySelector("button#script_oneClickHarvest_Btn").addEventListener("click", (event) => {
-        // 检查是否在地图页面
-        if (!Boolean(location.href.match(/landscape\/$/))) {
-            tools.alert("请在地图界面使用一键收菜功能");
-            return;
-        }
-        
-        // 获取节点并过滤
-        const nodeList = Object.values(document.querySelectorAll("div > div > div > a"))
-            .filter(node => !node.className.match("headquarter")) // 排除总部建筑
-            .filter(node => Object.values(node.querySelectorAll("img")).length === 4) // 排除没有四个图像的节点
-        
-        // 遍历节点并点击
-        for (let i = 0; i < nodeList.length; i++) {
-            nodeList[i].click();
-        }
-        
-        // 发送消息
-        tools.msg_send("一键收取", "完成收取啦!", 1);
+    sideBarSmall.querySelector("button#script_cpt_switch").addEventListener("click", (event) => {
+      // 修改当前目标
+      Object.assign(document.querySelector("div#script_cpt_node").style, {
+        right: this.componentData.cptSwitchShow ? "-150%" : "0px",
+      });
+      this.componentData.cptSwitchShow = !this.componentData.cptSwitchShow;
+      // 重置原目标
+      if (this.componentData.msgNodeShow) {
+        Object.assign(document.querySelector("div#script_msg_node").style, { right: "-150%" });
+        this.componentData.msgNodeShow = !this.componentData.msgNodeShow;
+      }
     });
-    
     msgMainNode.addEventListener("click", (e) => {
-        if (!e.target.closest("span[sct_id='msgClear']")) return;
-        document.querySelector(
-            "div#scriptMsg_main tbody#scriptMsg_mainBody"
-        ).innerHTML = `<tr><td>时间</td><td>内容</td></tr>`;
+      if (!e.target.closest("span[sct_id='msgClear']")) return;
+      document.querySelector(
+        "div#scriptMsg_main tbody#scriptMsg_mainBody"
+      ).innerHTML = `<tr><td>时间</td><td>内容</td></tr>`;
     });
-    
     // 挂载元素
     document.body.appendChild(sideBarSmall);
     document.body.appendChild(msgMainNode);
     document.body.appendChild(cptSwitchNode);
-}
+  }
   sideBarSub_componentNode() {
     let resultNode = document.createElement("div");
     // 拼接侧边栏头部
@@ -1005,4 +605,3 @@ tbody>tr>td>input[type='checkbox'] {
   }
 }
 new basisCPT();
-
