@@ -20,6 +20,8 @@ class autoMaxAccessibility extends BaseComponent {
     this.name = "AutoMax 聊天与地图辅助";
     this.describe = "提供色弱文字标识、空闲建筑高亮、PA 答案、Snipboard 预览和聊天输入框扩大。";
     this.enable = true;
+    this.canDisable = false;
+    this.hideSetting = true;
     this.tagList = ["AutoMax", "聊天", "地图", "辅助"];
   }
 
@@ -72,12 +74,13 @@ class autoMaxAccessibility extends BaseComponent {
     this.refresh();
   }
 
-  settings() {
-    return componentList.autoMaxPanel?.indexDBData?.settings;
-  }
-
   isActionEnabled(key) {
-    return getPageActionEnabled(this.settings(), key);
+    if (key === "chatAccessibility") return Boolean(componentList.autoMaxChatColorBlind?.enable);
+    if (key === "landscapeHighlight") return Boolean(componentList.autoMaxMapIdleHighlight?.enable);
+    if (key === "paQuestAnswers") return Boolean(componentList.autoMaxPAAnswer?.enable);
+    if (key === "snipboardPreview") return Boolean(componentList.autoMaxSnipboardPreview?.enable);
+    if (key === "chatInputExpander") return Boolean(componentList.autoMaxChatAutoExpand?.enable);
+    return false;
   }
 
   refresh() {
@@ -319,3 +322,63 @@ class autoMaxAccessibility extends BaseComponent {
 }
 
 new autoMaxAccessibility();
+
+class autoMaxChatColorBlind extends BaseComponent {
+  constructor() {
+    super();
+    this.name = "聊天室色弱辅助";
+    this.describe = "在销售频道消息中的各产品色彩图示旁，添加直观的文字辅助。";
+    this.enable = false;
+    this.canDisable = true;
+    this.tagList = ["AutoMax", "辅助"];
+  }
+}
+new autoMaxChatColorBlind();
+
+class autoMaxMapIdleHighlight extends BaseComponent {
+  constructor() {
+    super();
+    this.name = "地图空闲建筑高亮";
+    this.describe = "在总公司地图页面，对闲置、无生产/销售安排的建筑进行色彩高亮提醒。";
+    this.enable = true;
+    this.canDisable = true;
+    this.tagList = ["AutoMax", "辅助"];
+  }
+}
+new autoMaxMapIdleHighlight();
+
+class autoMaxPAAnswer extends BaseComponent {
+  constructor() {
+    super();
+    this.name = "PA 任务答案";
+    this.describe = "在助理（PA）答题任务中，直接高亮正确答案。";
+    this.enable = true;
+    this.canDisable = true;
+    this.tagList = ["AutoMax", "辅助"];
+  }
+}
+new autoMaxPAAnswer();
+
+class autoMaxSnipboardPreview extends BaseComponent {
+  constructor() {
+    super();
+    this.name = "Snipboard 图片预览";
+    this.describe = "在聊天消息中直接渲染 Snipboard 链接图片的悬浮或内联预览图。";
+    this.enable = true;
+    this.canDisable = true;
+    this.tagList = ["AutoMax", "辅助"];
+  }
+}
+new autoMaxSnipboardPreview();
+
+class autoMaxChatAutoExpand extends BaseComponent {
+  constructor() {
+    super();
+    this.name = "聊天输入框自动扩大";
+    this.describe = "在鼠标聚焦在聊天输入框时，自动拉高输入区域以方便输入多行内容。";
+    this.enable = true;
+    this.canDisable = true;
+    this.tagList = ["AutoMax", "辅助"];
+  }
+}
+new autoMaxChatAutoExpand();

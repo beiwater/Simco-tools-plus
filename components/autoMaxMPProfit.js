@@ -137,7 +137,7 @@ class autoMaxMPProfit extends BaseComponent {
     const constants = cache?.constants;
     const resource = constants?.constantsResources?.[resourceId];
     const buildingKind = Object.entries(constants?.data?.SALES ?? {}).find(([, ids]) => Array.isArray(ids) && ids.map(Number).includes(resourceId))?.[0];
-    const custom = getPageActionEnabled(componentList.autoMaxPanel?.indexDBData?.settings, "executiveCustomToggle")
+    const custom = componentList.autoMaxExecutiveCustomToggle?.enable
       ? componentList.autoMaxExecutive?.customBonuses?.(realmId)
       : undefined;
     return Number.isInteger(resourceId) && (realmId === 0 || realmId === 1) && constants && region && resource && buildingKind

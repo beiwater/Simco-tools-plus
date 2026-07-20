@@ -630,7 +630,7 @@ class basisCPT extends BaseComponent {
     let resultNode = document.createElement("div");
     // 拼接侧边栏头部
     let htmlText = `<div id="scriptCPT_innerHead"><h1 style="margin-left:10px;">组件</h1><div style="padding:0 10px;"><input type="text" id="script_cptSearch_input" class="form-control" placeholder="搜索组件名..."></div></div>`;
-    let sortComponentsList = Object.values(componentList).sort((cptA, cptB) => cptB.tapCount - cptA.tapCount);
+    let sortComponentsList = Object.values(componentList).filter(component => !component.hideSetting).sort((cptA, cptB) => cptB.tapCount - cptA.tapCount);
     // 拼接侧边栏tag搜索
     htmlText += `<div id="scriptCPT_tagSerach">`;
     let tagList = [];
@@ -651,7 +651,7 @@ class basisCPT extends BaseComponent {
       if (component.enable == false && component.canDisable) continue;
       let name = component.constructor.name;
       let frontName = component.name;
-      let frontExist = Boolean(component.frontUI) ? "funcExist" : "";
+      let frontExist = (Boolean(component.frontUI) || Boolean(component.inlineSettingUI)) ? "funcExist" : "";
       let settingExist = Boolean(component.inlineSettingUI || component.settingUI || component.settingAction) ? "funcExist" : "";
       htmlText += `<tr class="script_cpt_node" id='${name}'><td><button class="btn CPTOptionLeft ${frontExist}">${frontName}</button></td><td><button class="btn CPTOptionRight ${settingExist}">设置</button></td></tr>`;
     }
@@ -662,9 +662,11 @@ class basisCPT extends BaseComponent {
     for (let i = 0; i < trList.length; i++) {
       let element = trList[i];
       let component = componentList[element.id];
-      let frontUI = !Boolean(component.frontUI)
-        ? () => this.sideBarSub_noFront()
-        : () => this.sideBarSub_showFront(component);
+      let frontUI = component.inlineSettingUI
+        ? () => this.sideBarSub_toggleInlineSetting(element, component)
+        : !Boolean(component.frontUI)
+          ? () => this.sideBarSub_noFront()
+          : () => this.sideBarSub_showFront(component);
       let settingUI = component.inlineSettingUI
         ? () => this.sideBarSub_toggleInlineSetting(element, component)
         : component.settingAction
@@ -773,7 +775,7 @@ class basisCPT extends BaseComponent {
 
     // 关闭按钮绑定事件
     settingContainerNode.querySelector("div#script_setting_head button").addEventListener("click", () => {
-      this.componentData.cptSettingBodyNode.querySelectorAll("div").forEach((node) => node.remove());
+      this.componentData.cptSettingBodyNode.replaceChildren();
       Object.assign(document.querySelector("div#script_cpt_setting_container").style, { display: "none" });
       this.componentData.cptSettingShow = false;
     });
@@ -786,7 +788,7 @@ class basisCPT extends BaseComponent {
     newNode.id = "script_setting_basisCPT";
     newNode.className = "col-sm-12 setting-container";
     let htmlText = `<div><div class="header">插件基础功能设置</div><div class="container"><div><div><button class="btn script_opt_submit">保存</button></div></div><div><table><thead><tr><td>组件名</td><td>开关</td></tr></thead><tbody>`;
-    let tempCPTList = Object.values(componentList);
+    let tempCPTList = Object.values(componentList).filter(c => !c.hideSetting);
     for (let i = 0; i < tempCPTList.length; i++) {
       let component = tempCPTList[i];
       let name = component.name;
@@ -797,7 +799,7 @@ class basisCPT extends BaseComponent {
         enable ? "checked" : ""
       } ${canDisable ? "" : "disabled"}></td></tr>`;
     }
-    htmlText += `</table></div><div><table><thead><tr><td>功能<td>设置<tbody><tr><td title=打开debug模式会有大量信息输出,可能会影响到性能,如非必要不要打开.>DEBUG模式<td><input class='form-control' type='checkbox' #####><tr><td title="只有插件主动发起的请求会被此项目限制\n官方文档说明低于5分钟就不安全了,用户请酌情设置. \n默认[10000ms]=10s">插件主动网络请求最小间隔<td><input type=number class=form-control value=#####><tr><td title="允许使用hex代码和rgb标号. \n默认 #ffffff">插件通用文字配色<td><input class=form-control value=#####><tr><td title="允许使用hex代码和rgb标号. \n默认 100 ">网页缩放比例<td><input type=number class=form-control value=#####> <tr><td title='地图界面上方的间隔，注意与网页缩放比例搭配使用。'>地图上方间距<td><input type='number' class=form-control value=#####>  <tr><td title="首要通知模式,默认是 网页内通知">主要通知模式<td><select class=form-control><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="次要通知模式,默认是 无">次要通知模式<td><select class=form-control><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="默认不勾选,勾选后SCT悬浮窗使用横向布局">悬浮窗横向排列</td><td><input type="checkbox" class="form-control" ${
+    htmlText += `</table></div><div><table><thead><tr><td>功能<td>设置<tbody><tr><td title=打开debug模式会有大量信息输出,可能会影响到性能,如非必要不要打开.>DEBUG模式<td><input class='form-control' type='checkbox' #####><tr><td title="只有插件主动发起的请求会被此项目限制\n官方文档说明低于5分钟就不安全了,用户请酌情设置. \n默认[10000ms]=10s">插件主动网络请求最小间隔<td><input type=number class=form-control value=#####><tr><td title="允许使用hex代码 and rgb标号. \n默认 #ffffff">插件通用文字配色<td><input class=form-control value=#####><tr><td title="允许使用hex代码和rgb标号. \n默认 100 ">网页缩放比例<td><input type=number class=form-control value=#####> <tr><td title='地图界面上方的间隔，注意与网页缩放比例搭配使用。'>地图上方间距<td><input type='number' class=form-control value=#####>  <tr><td title="首要通知模式,默认是 网页内通知">主要通知模式<td><select class=form-control><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="次要通知模式,默认是 无">次要通知模式<td><select class=form-control><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="默认不勾选,勾选后SCT悬浮窗使用横向布局">悬浮窗横向排列</td><td><input type="checkbox" class="form-control" ${
       this.indexDBData.SCT_divHorizontal ? "checked" : ""
     } ></td></tr><tr><td title="默认不勾选,勾选后SCT悬浮窗会固定在右下角不受hover影响">悬浮窗固定位置</td><td><input type="checkbox" class="form-control" ${
       this.indexDBData.SCT_divFixedDisplay ? "checked" : ""
@@ -826,7 +828,8 @@ class basisCPT extends BaseComponent {
   uisettingSub() {
     let valueList = [];
     let flagCount = 0;
-    let cptCount = Object.keys(componentList).length;
+    let visibleCPTs = Object.values(componentList).filter(c => !c.hideSetting);
+    let cptCount = visibleCPTs.length;
     document
       .querySelectorAll("div#script_setting_basisCPT input, div#script_setting_basisCPT select")
       .forEach((node) => {
@@ -852,7 +855,7 @@ class basisCPT extends BaseComponent {
     if (valueList[cptCount + 5] == valueList[cptCount + 6] && valueList[cptCount + 5] != -1)
       return tools.alert("没必要都设置一样的.");
     // 挂载内容
-    Object.values(componentList).forEach((component) => (component.enable = valueList[flagCount++]));
+    visibleCPTs.forEach((component) => (component.enable = valueList[flagCount++]));
     feature_config.debug = valueList[cptCount + 0];
     feature_config.net_gap_ms = Math.floor(valueList[cptCount + 1]);
     feature_config.fontColor = valueList[cptCount + 2];

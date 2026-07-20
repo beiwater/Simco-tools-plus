@@ -11,7 +11,7 @@ const SELL_STEPS = Object.freeze([[20000, 500], [10000, 100], [5000, 25], [1000,
 class autoMaxOutgoingMP extends BaseComponent {
   constructor() {
     super();
-    this.name = "AutoMax 出库 MP 价格";
+    this.name = "出库合同 MP-?%";
     this.describe = "为出库合同和交易所上架提供 MP/VWAP 预设价格按钮。";
     this.enable = true;
     this.canDisable = true;
@@ -42,12 +42,8 @@ class autoMaxOutgoingMP extends BaseComponent {
     `,
   ]
 
-  settings() {
-    return componentList.autoMaxPanel?.indexDBData?.settings;
-  }
-
   enabled() {
-    return getPageActionEnabled(this.settings(), "outgoingMP");
+    return Boolean(this.enable);
   }
 
   settingUI = () => this.buildSettings()
@@ -62,6 +58,7 @@ class autoMaxOutgoingMP extends BaseComponent {
 
   clear() {
     for (const node of document.querySelectorAll(`[${CONTROL_MARKER}]`)) node.remove();
+    for (const node of document.querySelectorAll(".automax-transport-profit-display")) node.remove();
     for (const input of document.querySelectorAll('[data-automax-outgoing-mounted]')) delete input.dataset.automaxOutgoingMounted;
   }
 
@@ -83,6 +80,9 @@ class autoMaxOutgoingMP extends BaseComponent {
     controls.append(info);
     priceInput.parentElement.append(controls);
     this.renderControls(priceInput, controls, info, context).finally(() => this.componentData.pending.delete(priceInput));
+
+    // Mount transport profit display
+    this.mountProfitDisplay(priceInput, context);
   }
 
   async renderControls(priceInput, controls, info, context) {
@@ -228,7 +228,7 @@ class autoMaxOutgoingMP extends BaseComponent {
   }
 
   isContractPage() {
-    return /\/contract\/?$/.test(location.pathname);
+    return typeof location !== "undefined" && /\/contract\/?$/.test(location.pathname);
   }
 
   sellStep(price) {
@@ -280,6 +280,174 @@ class autoMaxOutgoingMP extends BaseComponent {
 
   format(value) {
     return Number(value).toLocaleString(undefined, { maximumFractionDigits: 3, minimumFractionDigits: 3 });
+  }
+
+  mountProfitDisplay(priceInput, context) {
+    const root = priceInput.closest("form") ?? priceInput.parentElement?.parentElement ?? document.body;
+    const qtyInput = root.querySelector('input[name="amount"], input[name="quantity"]');
+    if (!qtyInput) return;
+
+    const rowContainer = priceInput.closest(".row");
+    if (!rowContainer || !rowContainer.parentNode) return;
+
+    let displayDiv = rowContainer.parentNode.querySelector(".automax-transport-profit-display");
+    if (!displayDiv) {
+      displayDiv = document.createElement("div");
+      displayDiv.className = "automax-transport-profit-display";
+      displayDiv.style.cssText = `
+        margin: 8px 0;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: var(--sct-surface-muted, rgba(0, 0, 0, 0.7));
+        border: 1px solid var(--sct-control-hover, rgb(114, 114, 114));
+        line-height: 1.6;
+        color: var(--fontColor);
+        font-family: sans-serif;
+        user-select: none;
+      `;
+      rowContainer.parentNode.insertBefore(displayDiv, rowContainer.nextSibling);
+    }
+
+    const recalculate = () => {
+      const price = parseFloat(priceInput.value) || 0;
+      const quantity = parseFloat(qtyInput.value) || 0;
+      if (price <= 0 || quantity <= 0) {
+        displayDiv.style.display = "none";
+        return;
+      }
+      displayDiv.style.display = "";
+      this.calculateAndRenderProfit(displayDiv, price, quantity, context, priceInput);
+    };
+
+    priceInput.addEventListener("input", recalculate);
+    qtyInput.addEventListener("input", recalculate);
+
+    recalculate();
+  }
+
+  calculateAndRenderProfit(displayDiv, price, quantity, context, priceInput) {
+    const cache = componentList.autoMaxFoundation?.indexDBData?.cache;
+    if (!cache) return;
+
+    const constants = cache.constants;
+    if (!constants) return;
+
+    const perUnitTransport = constants.constantsResources?.[context.resourceId]?.transportation ?? 0;
+    const isContract = this.isContractPage();
+
+    const contractExactTransport = perUnitTransport * quantity * 0.5;
+    const contractTransportTotal = Math.ceil(contractExactTransport);
+    const sellExactTransport = perUnitTransport * quantity * 1;
+    const sellTransportTotal = Math.ceil(sellExactTransport);
+
+    const region = cache.regions?.[String(context.realmId)];
+    const warehouse = region?.warehouseResources;
+    if (!warehouse || !Array.isArray(warehouse)) {
+      displayDiv.textContent = "仓库数据加载中...";
+      return;
+    }
+
+    const quality = this.quality(priceInput);
+
+    let productUnitCost = 0;
+    const productEntries = warehouse.filter(e => Number(e.kind) === context.resourceId && Number(e.quality) === quality);
+    if (productEntries.length > 0) {
+      const e = productEntries[0];
+      const costSum = Object.values(e.cost || {}).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0);
+      const amount = Number(e.amount || e.quantity || 0);
+      productUnitCost = amount > 0 ? costSum / amount : 0;
+    }
+
+    let transportUnitCost = 0;
+    const transportEntries = warehouse.filter(e => Number(e.kind) === 13);
+    if (transportEntries.length > 0) {
+      const e = transportEntries[0];
+      const costSum = Object.values(e.cost || {}).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0);
+      const amount = Number(e.amount || e.quantity || 0);
+      transportUnitCost = amount > 0 ? costSum / amount : 0;
+    }
+
+    const revenue = price * quantity;
+    const productCost = productUnitCost * quantity;
+    const contractTransportCost = contractTransportTotal * transportUnitCost;
+    const sellTransportCost = sellTransportTotal * transportUnitCost;
+    const contractNet = revenue - productCost - contractTransportCost;
+    const marketNet = revenue * 0.96 - productCost - sellTransportCost;
+
+    const sellWasteTransport = sellTransportTotal - sellExactTransport;
+    const transportWasteNote = (sellWasteTransport > 0.001 && perUnitTransport > 0)
+      ? `运输向上取整：消耗 ${sellTransportTotal} 运输单位，浪费 ${sellWasteTransport.toFixed(2)} 单位` : '';
+
+    const marketFee = revenue * 0.04;
+
+    const profitColor = (v) => v >= 0 ? "var(--sct-enabled, #14541d)" : "var(--sct-error, red)";
+    const fmt = (v) => '$' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    let expanded = displayDiv.getAttribute("data-expanded") === "true";
+
+    displayDiv.replaceChildren();
+
+    const header = document.createElement("div");
+    header.style.cssText = "font-weight:bold;cursor:pointer;display:flex;align-items:center;gap:4px;";
+    const arrow = document.createElement("span");
+    arrow.textContent = expanded ? "▼" : "▶";
+    header.append(arrow, " 📊 利润明细");
+    header.addEventListener("click", () => {
+      expanded = !expanded;
+      displayDiv.setAttribute("data-expanded", expanded ? "true" : "false");
+      arrow.textContent = expanded ? "▼" : "▶";
+      detail.style.display = expanded ? "block" : "none";
+    });
+    displayDiv.appendChild(header);
+
+    const summary = document.createElement("div");
+    summary.style.cssText = "display:flex;flex-wrap:wrap;gap:16px;margin-top:4px;";
+    if (isContract) {
+      summary.innerHTML = `<span>合同利润: <b style="color:${profitColor(contractNet)};">${fmt(contractNet)}</b></span>`;
+    } else {
+      summary.innerHTML = `<span>市场利润: <b style="color:${profitColor(marketNet)};">${fmt(marketNet)}</b></span>` +
+        `<span>合同利润: <b style="color:${profitColor(contractNet)};">${fmt(contractNet)}</b></span>`;
+    }
+    displayDiv.appendChild(summary);
+
+    const detail = document.createElement("div");
+    detail.style.cssText = `display:${expanded ? "block" : "none"};margin-top:6px;`;
+    const table = document.createElement("table");
+    table.style.cssText = "border-collapse:collapse;width:100%;";
+
+    const thStyle = "padding:2px 6px;text-align:right;font-weight:bold;color:var(--fontColor);";
+    const tdStyle = "padding:2px 6px;text-align:right;white-space:nowrap;";
+    const rowStyle = "border-bottom:1px solid var(--sct-control-hover, rgb(114, 114, 114));";
+    const labelTd = (t, bold) => `<td style="${thStyle}text-align:left;${bold ? 'font-weight:bold;' : ''}">${t}</td>`;
+
+    if (isContract) {
+      table.innerHTML = `
+        <tr>${labelTd('')}<th style="${thStyle}">合同</th></tr>
+        <tr style="${rowStyle}">${labelTd('收入')}<td style="${tdStyle}">${fmt(revenue)}</td></tr>
+        <tr style="${rowStyle}">${labelTd('成本')}<td style="${tdStyle};color:var(--sct-error, red);">-${fmt(productCost)}</td></tr>
+        <tr style="${rowStyle}">${labelTd('手续费')}<td style="${tdStyle}">${fmt(0)}</td></tr>
+        <tr style="${rowStyle}">${labelTd('运输费用')}<td style="${tdStyle};color:var(--sct-error, red);">-${fmt(contractTransportCost)}</td></tr>
+        <tr>${labelTd('利润', true)}<td style="${tdStyle};font-weight:bold;color:${profitColor(contractNet)};">${fmt(contractNet)}</td></tr>
+      `;
+    } else {
+      table.innerHTML = `
+        <tr>${labelTd('')}<th style="${thStyle}">市场</th><th style="${thStyle}">合同</th></tr>
+        <tr style="${rowStyle}">${labelTd('收入')}<td style="${tdStyle}">${fmt(revenue)}</td><td style="${tdStyle}">${fmt(revenue)}</td></tr>
+        <tr style="${rowStyle}">${labelTd('成本')}<td style="${tdStyle};color:var(--sct-error, red);">-${fmt(productCost)}</td><td style="${tdStyle};color:var(--sct-error, red);">-${fmt(productCost)}</td></tr>
+        <tr style="${rowStyle}">${labelTd('手续费')}<td style="${tdStyle};color:var(--sct-error, red);">-${fmt(marketFee)}</td><td style="${tdStyle}">${fmt(0)}</td></tr>
+        <tr style="${rowStyle}">${labelTd('运输费用')}<td style="${tdStyle};color:var(--sct-error, red);">-${fmt(sellTransportCost)}</td><td style="${tdStyle};color:var(--sct-error, red);">-${fmt(contractTransportCost)}</td></tr>
+        <tr>${labelTd('利润', true)}<td style="${tdStyle};font-weight:bold;color:${profitColor(marketNet)};">${fmt(marketNet)}</td><td style="${tdStyle};font-weight:bold;color:${profitColor(contractNet)};">${fmt(contractNet)}</td></tr>
+      `;
+    }
+    detail.appendChild(table);
+    displayDiv.appendChild(detail);
+
+    if (transportWasteNote) {
+      const waste = document.createElement("div");
+      waste.style.cssText = "color:var(--sct-focus, wheat);margin-top:4px;";
+      waste.textContent = `⚠️ ${transportWasteNote}`;
+      displayDiv.appendChild(waste);
+    }
   }
 }
 

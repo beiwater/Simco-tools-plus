@@ -11,7 +11,7 @@ const MARKET_CACHE_TTL = 60_000;
 class autoMaxIncomingContractProfit extends BaseComponent {
   constructor() {
     super();
-    this.name = "AutoMax 入库合同利润";
+    this.name = "合同计算时利润";
     this.describe = "在入库合同中显示零售最大时利润、MP 差价和可选的市场最大时利润。";
     this.enable = true;
     this.canDisable = true;
@@ -55,12 +55,8 @@ class autoMaxIncomingContractProfit extends BaseComponent {
     });
   }
 
-  settings() {
-    return componentList.autoMaxPanel?.indexDBData?.settings;
-  }
-
   enabled() {
-    return getPageActionEnabled(this.settings(), "contractProfit");
+    return Boolean(this.enable);
   }
 
   refresh() {
@@ -92,7 +88,7 @@ class autoMaxIncomingContractProfit extends BaseComponent {
     const constants = this.cache()?.constants;
     const region = this.region();
     const realmId = getRealmIdFromDocument(document) ?? region?.realmId;
-    const custom = getPageActionEnabled(this.settings(), "executiveCustomToggle")
+    const custom = componentList.autoMaxExecutiveCustomToggle?.enable
       ? componentList.autoMaxExecutive?.customBonuses?.(realmId)
       : undefined;
     return constants && region && (realmId === 0 || realmId === 1) ? { constants, custom, realmId, region } : undefined;
@@ -166,7 +162,7 @@ class autoMaxIncomingContractProfit extends BaseComponent {
     const contractProfit = await this.searchRetailProfit(contract, contract.unitPrice, contract.quality, context);
     let marketProfit;
     let marketChoice;
-    if (getPageActionEnabled(this.settings(), "marketMaxProfitToggle") && Array.isArray(market.data)) {
+    if (componentList.autoMaxMarketProfit?.enable && Array.isArray(market.data)) {
       const candidates = this.marketCandidates(contract, market.data).slice(0, 40);
       const results = await Promise.all(candidates.map(async (candidate) => ({
         candidate,

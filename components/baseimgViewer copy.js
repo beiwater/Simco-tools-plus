@@ -337,13 +337,13 @@ class imgViewer extends BaseComponent {
     // 绑定函数
     newNode.addEventListener("mousedown", event => this.startDragging(event));
     newNode.addEventListener("touchstart", event => this.startDragging(event));
-    newNode.querySelector("div#script_imgViewer_close").addEventListener('click', () => this.closeRootDisplay());
-    newNode.querySelector("div#script_imgViewer_hide").addEventListener('click', () => this.switchHide());
-    newNode.querySelector("div#script_imgViewer_prev").addEventListener('click', () => this.showPrevImage());
-    newNode.querySelector("div#script_imgViewer_next").addEventListener('click', () => this.showNextImage());
-    newNode.querySelector("div#script_imgViewer_addImage").addEventListener('click', () => this.crawlImages());
-      newNode.querySelector("div#script_imgViewer_removeImage").addEventListener('click', () => this.removeCurrentImage());
-      newNode.querySelector("div#script_imgViewer_replaceImage").addEventListener('click', () => this.replaceCurrentImage());
+    newNode.querySelector("div#script_imgViewer_close")?.addEventListener('click', () => this.closeRootDisplay());
+    newNode.querySelector("div#script_imgViewer_hide")?.addEventListener('click', () => this.switchHide());
+    newNode.querySelector("div#script_imgViewer_prev")?.addEventListener('click', () => this.showPrevImage());
+    newNode.querySelector("div#script_imgViewer_next")?.addEventListener('click', () => this.showNextImage());
+    newNode.querySelector("div#script_imgViewer_addImage")?.addEventListener('click', () => this.crawlImages());
+    newNode.querySelector("div#script_imgViewer_removeImage")?.addEventListener('click', () => this.removeCurrentImage());
+    newNode.querySelector("div#script_imgViewer_replaceImage")?.addEventListener('click', () => this.replaceCurrentImage());
       
       // 添加还原按钮
       const restoreButton = document.createElement('div');

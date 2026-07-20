@@ -18,9 +18,10 @@ const CONTROLS_MARKER = "data-automax-runtime-controls";
 class autoMaxRuntimeSaturation extends BaseComponent {
   constructor() {
     super();
-    this.name = "AutoMax 运行时长与饱和度";
-    this.describe = "在生产/零售卡片中填入自定义时长，并查看当前领域的零售饱和度。";
+    this.name = "自定义运行时长";
+    this.describe = "在生产/零售卡片中填入自定义时长，并可点击展开查看领域饱和度。";
     this.enable = true;
+    this.canDisable = true;
     this.tagList = ["AutoMax", "快捷", "零售"];
   }
 
@@ -89,7 +90,7 @@ class autoMaxRuntimeSaturation extends BaseComponent {
   }
 
   runtimeEnabled() {
-    return getPageActionEnabled(componentList.autoMaxPanel?.indexDBData?.settings, "runtimeDuration");
+    return Boolean(this.enable);
   }
 
   syncRuntimeControls() {
@@ -188,13 +189,26 @@ class autoMaxRuntimeSaturation extends BaseComponent {
     return values.length === 1 ? values[0] : undefined;
   }
 
-  toggleSaturationTable() {
+  toggleSaturationTable(container) {
     if (this.componentData.saturationPanel?.isConnected) return this.closeSaturationTable();
     const region = this.currentRegion();
     const constants = componentList.autoMaxFoundation?.indexDBData?.cache?.constants?.constantsResources ?? {};
     this.componentData.saturationRows = createSaturationRows(region, constants, (id) => tools.itemIndex2Name(id));
     const panel = this.buildSaturationPanel(region);
-    document.body.appendChild(panel);
+    if (container) {
+      panel.style.position = "static";
+      panel.style.maxWidth = "100%";
+      panel.style.maxHeight = "none";
+      panel.style.boxShadow = "none";
+      panel.style.border = "none";
+      panel.style.background = "transparent";
+      panel.style.padding = "0";
+      const header = panel.querySelector("header");
+      if (header) header.remove();
+      container.appendChild(panel);
+    } else {
+      document.body.appendChild(panel);
+    }
     this.componentData.saturationPanel = panel;
   }
 
@@ -275,6 +289,20 @@ class autoMaxRuntimeSaturation extends BaseComponent {
       }
       body.appendChild(row);
     }
+  }
+
+  inlineSettingUI = () => {
+    const container = document.createElement("div");
+    container.className = "automax-saturation-container";
+    container.style.padding = "10px";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn form-control";
+    btn.textContent = "查看领域饱和度";
+    btn.style.cssText = "background-color: #00bcd4; font-weight: bold; border: none; color: white;";
+    btn.addEventListener("click", () => this.toggleSaturationTable(container));
+    container.append(btn);
+    return container;
   }
 }
 

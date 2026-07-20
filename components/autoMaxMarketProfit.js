@@ -10,7 +10,7 @@ const CELL_MARKER = "data-automax-market-profit";
 class autoMaxMarketProfit extends BaseComponent {
   constructor() {
     super();
-    this.name = "AutoMax 交易所时利润";
+    this.name = "交易所计算时利润";
     this.describe = "在交易所资源订单中显示按零售模型计算的最大每级时利润。";
     this.enable = true;
     this.canDisable = true;
@@ -35,17 +35,13 @@ class autoMaxMarketProfit extends BaseComponent {
     `,
   ]
 
-  settings() {
-    return componentList.autoMaxPanel?.indexDBData?.settings;
-  }
-
   resourceId() {
     const match = location.pathname.match(/\/market\/resource\/(\d+)\/?$/);
     return match ? Number(match[1]) : undefined;
   }
 
   enabled() {
-    return getPageActionEnabled(this.settings(), "marketMaxProfitToggle");
+    return Boolean(this.enable);
   }
 
   refresh() {
@@ -59,9 +55,8 @@ class autoMaxMarketProfit extends BaseComponent {
   }
 
   clear() {
-    this.componentData.refreshVersion += 1;
     for (const cell of document.querySelectorAll(`td[${CELL_MARKER}]`)) cell.remove();
-    for (const row of document.querySelectorAll("tr[data-automax-market-best]")) delete row.dataset.automaxMarketBest;
+    for (const row of document.querySelectorAll("tr[data-automax-market-best]")) row.removeAttribute("data-automax-market-best");
   }
 
   cache() {
@@ -88,7 +83,7 @@ class autoMaxMarketProfit extends BaseComponent {
       ? Number(region?.sellingSpeedMultiplier?.sellingSpeedMultiplier ?? region?.sellingSpeedMultiplier)
       : undefined;
     const realmId = getRealmIdFromDocument(document) ?? region?.realmId;
-    const custom = getPageActionEnabled(this.settings(), "executiveCustomToggle")
+    const custom = componentList.autoMaxExecutiveCustomToggle?.enable
       ? componentList.autoMaxExecutive?.customBonuses?.(realmId)
       : undefined;
     return { buildingKind, constants, custom, economyState, realmId, region, resource, resourceId, wages, weatherMultiplier };
@@ -103,10 +98,10 @@ class autoMaxMarketProfit extends BaseComponent {
     ];
     const match = patterns.map((pattern) => label.match(pattern)).find(Boolean);
     if (!match) return undefined;
-    const [price, quantity, quality] = match.slice(1).map((value) => Number(value.replaceAll(",", "")));
-    return Number.isFinite(price) && price > 0 && Number.isFinite(quantity) && quantity > 0 && Number.isInteger(quality)
-      ? { price, quality, quantity }
-      : undefined;
+    const price = Number(match[1].replace(/,/g, ""));
+    const quantity = Number(match[2].replace(/,/g, ""));
+    const quality = Number(match[3]);
+    return Number.isFinite(price) && Number.isFinite(quantity) && Number.isFinite(quality) ? { price, quality, quantity } : undefined;
   }
 
   enqueueRow(row, context, version) {
@@ -116,24 +111,32 @@ class autoMaxMarketProfit extends BaseComponent {
     this.componentData.pending.add(row);
     const cell = document.createElement("td");
     cell.setAttribute(CELL_MARKER, "true");
-    const output = document.createElement("span");
-    output.textContent = "时利润：计算中";
-    cell.append(output);
-    row.append(cell);
-    this.calculateOrder(order, context).then((result) => {
+    cell.style.textAlign = "center";
+    const inner = document.createElement("span");
+    inner.textContent = "计算中...";
+    cell.appendChild(inner);
+    const target = row.children[row.children.length - 1];
+    if (target) row.insertBefore(cell, target);
+    else row.appendChild(cell);
+    this.calculateProfit(order, context).then((profit) => {
       this.componentData.pending.delete(row);
-      if (!row.isConnected || version !== this.componentData.refreshVersion || !cell.isConnected) return;
-      if (!result) {
-        output.textContent = "时利润：无有效零售模型";
+      if (!cell.isConnected || version !== this.componentData.refreshVersion) return;
+      if (profit === undefined) {
+        inner.textContent = "计算失败";
         return;
       }
-      row.__automaxMarketProfit = result.hourlyProfit;
-      output.textContent = `时利润：$${this.money(result.hourlyProfit)}；用时：${this.duration(result.seconds)}`;
+      row.__automaxMarketProfit = profit;
+      inner.textContent = `$${this.money(profit)}/h`;
       this.markBestRow(row);
+    }).catch((err) => {
+      this.componentData.pending.delete(row);
+      if (!cell.isConnected || version !== this.componentData.refreshVersion) return;
+      inner.textContent = "计算失败";
+      tools.errorLog("[AutoMax:MARKET_PROFIT]", err);
     });
   }
 
-  async calculateOrder(order, context) {
+  async calculateProfit(order, context) {
     const forceQuality = context.resourceId === 150 ? order.quality : undefined;
     const calculationQuality = forceQuality === undefined ? order.quality : 0;
     const modeledData = modeledRetailData(context.constants.retailInfo, context.economyState, context.resource.dbLetter, forceQuality ?? null);
@@ -156,7 +159,7 @@ class autoMaxMarketProfit extends BaseComponent {
       weatherMultiplier: Number.isFinite(context.weatherMultiplier) && context.weatherMultiplier > 0 ? context.weatherMultiplier : undefined,
     };
     const result = await runWorkerTask(retailSearchWorkerSource(), { input, mode: "hourly", maxIterations: 15_000 });
-    return result.ok && result.value ? result.value : undefined;
+    return result.ok && result.value ? result.value.hourlyProfit : undefined;
   }
 
   saturationFor(region, resource, quality, resourceId) {
@@ -171,7 +174,7 @@ class autoMaxMarketProfit extends BaseComponent {
     const all = [...document.querySelectorAll("tr")].filter((candidate) => Number.isFinite(candidate.__automaxMarketProfit));
     const best = all.reduce((result, candidate) => !result || candidate.__automaxMarketProfit > result.__automaxMarketProfit ? candidate : result, undefined);
     for (const candidate of all) candidate.toggleAttribute("data-automax-market-best", candidate === best);
-    if (best === row && getPageActionEnabled(this.settings(), "autoSelectBestMarketRow")) best.click();
+    if (best === row && componentList.autoMaxMarketAutoHighlight?.enable) best.click();
   }
 
   duration(seconds) {
@@ -185,4 +188,16 @@ class autoMaxMarketProfit extends BaseComponent {
   }
 }
 
+class autoMaxMarketAutoHighlight extends BaseComponent {
+  constructor() {
+    super();
+    this.name = "交易所自动选中高亮行";
+    this.describe = "自动高亮并选中交易所最划算的一行。";
+    this.enable = false;
+    this.canDisable = true;
+    this.tagList = ["AutoMax", "交易所"];
+  }
+}
+
 new autoMaxMarketProfit();
+new autoMaxMarketAutoHighlight();

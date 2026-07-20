@@ -10,7 +10,7 @@ const PROFIT_MARKER = "data-automax-warehouse-profit";
 class autoMaxWarehouseProfit extends BaseComponent {
   constructor() {
     super();
-    this.name = "AutoMax 仓库零售利润";
+    this.name = "仓库时利润计算";
     this.describe = "在仓库零售物品堆叠旁显示按当前成本计算的最大时利润。";
     this.enable = true;
     this.canDisable = true;
@@ -34,16 +34,12 @@ class autoMaxWarehouseProfit extends BaseComponent {
     `,
   ]
 
-  settings() {
-    return componentList.autoMaxPanel?.indexDBData?.settings;
-  }
-
   isWarehouseItemPage() {
     return /\/headquarters\/warehouse\/(?!.*\/(?:sell|contract)\/?$)[^/]+\/?$/.test(location.pathname);
   }
 
   enabled() {
-    return getPageActionEnabled(this.settings(), "warehouseProfit");
+    return Boolean(this.enable);
   }
 
   refresh() {
@@ -69,7 +65,7 @@ class autoMaxWarehouseProfit extends BaseComponent {
     const resource = constants.constantsResources?.[resourceId];
     const buildingKind = Object.entries(constants.data?.SALES ?? {}).find(([, ids]) => Array.isArray(ids) && ids.map(Number).includes(resourceId))?.[0];
     if (!resource || !buildingKind) return undefined;
-    const custom = getPageActionEnabled(this.settings(), "executiveCustomToggle") ? componentList.autoMaxExecutive?.customBonuses?.(realmId) : undefined;
+    const custom = componentList.autoMaxExecutiveCustomToggle?.enable ? componentList.autoMaxExecutive?.customBonuses?.(realmId) : undefined;
     return { buildingKind, constants, custom, realmId, region, resource, resourceId };
   }
 
