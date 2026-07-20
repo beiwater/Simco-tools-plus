@@ -42,25 +42,25 @@
    - `components/autoMaxAccessibility.js`
    - `tools/automax/assist.js`
 
-## 本次面板修复
+## 本次 SCT 融合修复
 
-用户截图中的第二层来自 `autoMaxPanel.settingUI` 被 SCT 的通用“组件设置界面”再包了一层。
+此前的实现仍会通过 `#automax_panel_root` 生成一个独立 AutoMax 浮层，因此没有真正融入 SCT。
 
 现在的行为是：
 
-- SCT 的 AutoMax 前台按钮：打开唯一的 AutoMax 控制面板。
-- SCT 的 AutoMax 设置按钮：打开同一个 AutoMax 控制面板，并直接展开“页面动作”。
-- 不再生成 SCT 通用的第二层设置模态。
+- AutoMax 不再创建独立控制面板、拖拽位置或全局启动入口。
+- SCT 的 AutoMax「设置」按钮会直接在现有组件表中展开内联开关。
+- `basisCPT` 仅为声明 `inlineSettingUI` 的组件新增表格内联行；其它组件仍使用原有设置弹窗。
 
 实现位置：
 
-- `components/autoMaxPanel.js`：使用 `settingAction`，移除了独立的 `settingUI` 模态内容。
-- `components/basisCPT.js`：支持组件可选的 `settingAction`；其余组件仍走原有 `settingUI`。
+- `components/autoMaxPanel.js`：保留共享设置、兼容导入和事件通知，移除浮层 UI。
+- `components/basisCPT.js`：支持 `inlineSettingUI`，将内容嵌入 SCT 组件表。
 
 ## 用户确认过的产品约束
 
-- 不添加第二个全局 AutoMax 启动按钮。
-- AutoMax 只能复用现有 SCT 组件入口。
+- 不添加第二个全局 AutoMax 启动按钮或独立控制面板。
+- AutoMax 设置只能复用现有 SCT 组件表内联区域。
 - 先写真实功能，统一验证延后。
 - 当前回合到此结束；如恢复工作，先从构建和游戏内验证开始。
 

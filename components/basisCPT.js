@@ -652,7 +652,7 @@ class basisCPT extends BaseComponent {
       let name = component.constructor.name;
       let frontName = component.name;
       let frontExist = Boolean(component.frontUI) ? "funcExist" : "";
-      let settingExist = Boolean(component.settingUI || component.settingAction) ? "funcExist" : "";
+      let settingExist = Boolean(component.inlineSettingUI || component.settingUI || component.settingAction) ? "funcExist" : "";
       htmlText += `<tr class="script_cpt_node" id='${name}'><td><button class="btn CPTOptionLeft ${frontExist}">${frontName}</button></td><td><button class="btn CPTOptionRight ${settingExist}">设置</button></td></tr>`;
     }
     htmlText += `</tbody></table></div>`;
@@ -665,8 +665,10 @@ class basisCPT extends BaseComponent {
       let frontUI = !Boolean(component.frontUI)
         ? () => this.sideBarSub_noFront()
         : () => this.sideBarSub_showFront(component);
-      let settingUI = component.settingAction
-        ? () => component.settingAction.call(component)
+      let settingUI = component.inlineSettingUI
+        ? () => this.sideBarSub_toggleInlineSetting(element, component)
+        : component.settingAction
+          ? () => component.settingAction.call(component)
         : !Boolean(component.settingUI)
           ? () => this.sideBarSub_noSetting()
           : () => this.sideBarSub_showSetting(component);
@@ -696,6 +698,23 @@ class basisCPT extends BaseComponent {
     this.componentData.cptSettingBodyNode.appendChild(cptSettingNode);
     Object.assign(document.querySelector("div#script_cpt_setting_container").style, { display: "block" });
     this.componentData.cptSettingShow = true;
+  }
+  async sideBarSub_toggleInlineSetting(componentRow, component) {
+    component.tapCount++;
+    const existingRow = componentRow.nextElementSibling;
+    if (existingRow?.dataset.sctInlineSettings === component.constructor.name) {
+      existingRow.remove();
+      return;
+    }
+    const content = await component.inlineSettingUI.call(component);
+    if (!content?.nodeType) return;
+    const inlineRow = document.createElement("tr");
+    inlineRow.dataset.sctInlineSettings = component.constructor.name;
+    const cell = document.createElement("td");
+    cell.colSpan = 2;
+    cell.append(content);
+    inlineRow.append(cell);
+    componentRow.after(inlineRow);
   }
   sideBarSub_noFront() {
     tools.alert("该组件没有前台窗口设计");
@@ -727,6 +746,10 @@ class basisCPT extends BaseComponent {
   sideBarSub_updateButtonList() {
     let nodeList = Object.values(document.querySelectorAll("div#scriptCPT_mainBody tbody>tr"));
     for (let i = 0; i < nodeList.length; i++) {
+      if (nodeList[i].dataset.sctInlineSettings) {
+        Object.assign(nodeList[i].style, { display: nodeList[i].previousElementSibling?.style.display === "none" ? "none" : "" });
+        continue;
+      }
       let tagMatch = false;
       let textMatch = false;
       let name = nodeList[i].id;

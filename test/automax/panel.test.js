@@ -14,8 +14,6 @@ class FakeElement {
     this.id = "";
     this.isConnected = false;
     this.listeners = new Map();
-    this.offsetHeight = 36;
-    this.offsetWidth = 74;
     this.parentNode = undefined;
     this.style = {};
     this.textContent = "";
@@ -45,10 +43,6 @@ class FakeElement {
 
   removeEventListener(type) {
     this.listeners.delete(type);
-  }
-
-  contains(node) {
-    return node === this || this.children.some((child) => child.contains(node));
   }
 
   setAttribute(name, value) {
@@ -91,15 +85,17 @@ function createDom() {
   };
 }
 
-test("AutoMax panel uses the SCT front entry, imports legacy choices once, and persists page-action changes", async () => {
+test("AutoMax settings stay inside SCT, import legacy choices once, and persist page-action changes", async () => {
   require("../../components/autoMaxPanel.js");
   const component = componentList.autoMaxPanel;
   const originalDocument = global.document;
   const originalLocalStorageDescriptor = Object.getOwnPropertyDescriptor(global, "localStorage");
   const originalWindow = global.window;
+  const originalCustomEvent = global.CustomEvent;
   const originalPersist = tools.indexDB_updateIndexDBData;
   const document = createDom();
   const windowListeners = new Map();
+  const dispatchedEvents = [];
   let persistCount = 0;
   global.document = document;
   Object.defineProperty(global, "localStorage", { configurable: true, value: {
@@ -112,75 +108,43 @@ test("AutoMax panel uses the SCT front entry, imports legacy choices once, and p
   global.window = {
     addEventListener(type, listener) { windowListeners.set(type, listener); },
     clearTimeout() {},
-    innerHeight: 600,
-    innerWidth: 800,
+    dispatchEvent(event) { dispatchedEvents.push(event.type); },
     removeEventListener(type) { windowListeners.delete(type); },
     setTimeout(callback) { callback(); return 1; },
   };
+  global.CustomEvent = class CustomEvent { constructor(type) { this.type = type; } };
   tools.indexDB_updateIndexDBData = async () => { persistCount += 1; };
 
   try {
-    component.componentData = {
-      drag: undefined,
-      panel: undefined,
-      panelStatus: undefined,
-      panelSettings: undefined,
-      open: false,
-      outsideListener: undefined,
-      resizeListener: undefined,
-    };
     component.indexDBData.settings = createAutoMaxSettings();
 
     component.startup();
     component.startup();
 
-    assert.equal(document.body.children.length, 1);
-    assert.equal(document.getElementById("automax_panel_launcher"), undefined);
+    assert.equal(document.body.children.length, 0);
+    assert.equal(component.frontUI, undefined);
+    assert.equal(component.settingUI, undefined);
     assert.equal(component.indexDBData.settings.pageActions.marketMaxProfitToggle, true);
     assert.equal(component.indexDBData.settings.legacyImportVersion, 1);
     assert.equal(persistCount, 1);
 
-    component.componentData.panel.offsetWidth = 320;
-    component.componentData.panel.offsetHeight = 480;
-    component.indexDBData.settings.panelPosition = { left: 301, bottom: 631 };
-    global.window.innerWidth = 375;
-    global.window.innerHeight = 667;
-    component.syncPosition();
-    assert.equal(component.componentData.panel.style.left, "55px");
-    assert.equal(component.componentData.panel.style.bottom, "187px");
-
-    component.frontUI();
-    assert.equal(component.componentData.panel.dataset.open, "true");
-    assert.equal(component.componentData.panel.getAttribute("aria-hidden"), "false");
-
-    component.toggleInlineSettings();
-    const actionControls = component.componentData.panelSettings.children[0];
-    assert.equal(actionControls.className, "automax-action-controls");
-    assert.equal(actionControls.children[1].className, "automax-action-label");
-    const checkbox = findByTag(component.componentData.panelSettings, "input");
+    const settings = component.inlineSettingUI();
+    assert.equal(settings.tagName, "SECTION");
+    assert.equal(settings.className, "automax-sct-settings");
+    const checkbox = findByTag(settings, "input");
     checkbox.checked = false;
     checkbox.listeners.get("change")();
     await Promise.resolve();
     assert.equal(component.indexDBData.settings.pageActions.runtimeDuration, false);
     assert.equal(persistCount, 2);
-
-    component.closePanel();
-    assert.equal(component.componentData.panel.getAttribute("aria-hidden"), "true");
+    assert.deepEqual(dispatchedEvents, ["automax-settings-changed"]);
   } finally {
-    component.componentData = {
-      drag: undefined,
-      panel: undefined,
-      panelStatus: undefined,
-      panelSettings: undefined,
-      open: false,
-      outsideListener: undefined,
-      resizeListener: undefined,
-    };
     component.indexDBData.settings = createAutoMaxSettings();
     global.document = originalDocument;
     if (originalLocalStorageDescriptor) Object.defineProperty(global, "localStorage", originalLocalStorageDescriptor);
     else delete global.localStorage;
     global.window = originalWindow;
+    global.CustomEvent = originalCustomEvent;
     tools.indexDB_updateIndexDBData = originalPersist;
   }
 });
