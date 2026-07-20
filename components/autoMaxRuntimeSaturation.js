@@ -76,11 +76,8 @@ class autoMaxRuntimeSaturation extends BaseComponent {
     const storage = typeof localStorage === "undefined" ? undefined : localStorage;
     const rawPresets = storage?.getItem?.("SC_AutoAmount_CustomAmounts");
     if (typeof rawPresets === "string") this.indexDBData.runtimePresets = normalizeRuntimePresets(rawPresets, []);
-    const legacyEnabled = storage?.getItem?.("SC_AutoAmount_Enabled");
-    const panelSettings = componentList.autoMaxPanel?.indexDBData?.settings;
-    if (legacyEnabled === "false" && panelSettings && !Object.hasOwn(panelSettings.pageActions ?? {}, "runtimeDuration")) {
-      panelSettings.pageActions.runtimeDuration = false;
-    }
+    // Note: autoMaxPanel was removed; legacy runtimeDuration setting is no longer imported
+    // since the panel's settings object no longer exists. The feature defaults to enabled.
     this.indexDBData.legacyImportVersion = 1;
     tools.indexDB_updateIndexDBData();
   }

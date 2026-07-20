@@ -75,12 +75,33 @@ class autoMaxWarehouseProfit extends BaseComponent {
     return match ? Number(match[1]) : undefined;
   }
 
+  findCostElements() {
+    // Find elements showing cost data (e.g. "$123") within the warehouse item detail area
+    const root = document.querySelector('[class*="warehouse"], [class*="resource"], main, #root') ?? document;
+    const candidates = root.querySelectorAll("span, div, td");
+    return Array.from(candidates).filter(el => {
+      if (el.children.length > 0) return false;
+      const text = el.textContent || "";
+      return /^\$[\d,]+/.test(text.trim()) || text.includes("成本") || text.toLowerCase().includes("cost");
+    });
+  }
+
+  findQuantityElement(node) {
+    if (!node) return null;
+    const candidates = node.querySelectorAll("b, strong");
+    for (const el of candidates) {
+      const text = el.textContent?.replaceAll(",", "").trim();
+      if (text && /^\d+$/.test(text)) return el;
+    }
+    return null;
+  }
+
   itemStacks() {
     const stacks = new Set();
-    for (const costRow of document.querySelectorAll(".css-16qjhms")) {
+    for (const costRow of this.findCostElements()) {
       let node = costRow.parentElement;
       while (node && node !== document.body) {
-        if (node.querySelector("span.css-nzibbl > b")) { stacks.add(node); break; }
+        if (this.findQuantityElement(node)) { stacks.add(node); break; }
         node = node.parentElement;
       }
     }
@@ -106,11 +127,15 @@ class autoMaxWarehouseProfit extends BaseComponent {
       }
       output.textContent = `时利润：$${this.money(result.hourlyProfit)}（建议 $${this.money(result.price)}）`;
       output.toggleAttribute("data-negative", result.hourlyProfit < 0);
+    }).catch((error) => {
+      this.componentData.pending.delete(stack);
+      if (!output.isConnected || revision !== this.componentData.revision) return;
+      output.textContent = "时利润：计算失败";
     });
   }
 
   itemFromStack(stack, context) {
-    const quantityText = stack.querySelector("span.css-nzibbl > b")?.textContent?.replaceAll(",", "");
+    const quantityText = this.findQuantityElement(stack)?.textContent?.replaceAll(",", "");
     const quantity = Number(quantityText);
     if (!(quantity > 0)) return undefined;
     const quality = this.quality(stack);
@@ -133,7 +158,7 @@ class autoMaxWarehouseProfit extends BaseComponent {
   }
 
   quantityRow(stack) {
-    const amount = stack.querySelector("span.css-nzibbl > b");
+    const amount = this.findQuantityElement(stack);
     let node = amount?.parentElement;
     while (node && node.parentElement !== stack) node = node.parentElement;
     return node;

@@ -106,6 +106,13 @@ function createAutoMaxCache(seed = {}, nowProvider = () => Date.now()) {
   };
 }
 
+function executiveSkillTaper(value) {
+  let result = Math.floor(value);
+  if (result > 80) result = 80 + Math.floor((result - 80) / 2);
+  if (result > 60) result = 60 + Math.floor((result - 60) / 2);
+  return result;
+}
+
 function calculateExecutiveBonus(executives, academyActive = 15) {
   const skills = (Array.isArray(executives) ? executives : []).reduce((result, executive) => {
     const position = executive?.currentWorkHistory?.position;
@@ -115,14 +122,8 @@ function calculateExecutiveBonus(executives, academyActive = 15) {
   const skill = (position, name) => Number(skills[position]?.[name]) || 0;
   const cooApprentice = academyActive >= 5 ? skill("v", "coo") / 2 : 0;
   const cmoApprentice = academyActive >= 15 ? skill("y", "cmo") / 2 : 0;
-  const taper = (value) => {
-    let result = Math.floor(value);
-    if (result > 80) result = 80 + Math.floor((result - 80) / 2);
-    if (result > 60) result = 60 + Math.floor((result - 60) / 2);
-    return result;
-  };
-  const adminBonus = taper(skill("o", "coo") + cooApprentice + (skill("f", "coo") + skill("m", "coo") + skill("t", "coo")) / 4);
-  const saleBonus = Math.floor(taper(skill("m", "cmo") + cmoApprentice + (skill("o", "cmo") + skill("f", "cmo") + skill("t", "cmo")) / 4) / 3);
+  const adminBonus = executiveSkillTaper(skill("o", "coo") + cooApprentice + (skill("f", "coo") + skill("m", "coo") + skill("t", "coo")) / 4);
+  const saleBonus = Math.floor(executiveSkillTaper(skill("m", "cmo") + cmoApprentice + (skill("o", "cmo") + skill("f", "cmo") + skill("t", "cmo")) / 4) / 3);
   return { adminBonus, saleBonus };
 }
 
@@ -184,6 +185,7 @@ module.exports = {
   createAutoMaxCache,
   createRegionService,
   createRequestClient,
+  executiveSkillTaper,
   isFresh,
   mergeRegionData,
   mergeWarehouseResources,

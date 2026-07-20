@@ -52,7 +52,7 @@ async function scriptMainInit() {
   for (const key in componentList) {
     if (!Object.hasOwnProperty.call(componentList, key) || (!componentList[key].enable && componentList[key].canDisable)) continue;
     let component = componentList[key];
-    await component.startupFuncList.forEach(async func => await func.call(component, this));
+    for (const func of component.startupFuncList) await func.call(component, this);
     if (component.cssText) tools.CSSMount(component.constructor.name, component.cssText[tools.clientHorV] || component.cssText[0]);
   }
   // 更新标记
@@ -69,7 +69,7 @@ function scriptEventStart() {
   document.addEventListener("keydown", (event) => tools.eventBus(event));
   let rootObserveServer = new MutationObserver((mutation) => tools.mutationHandle(mutation));
   rootObserveServer.observe(document.querySelector("div#root"), { childList: true, subtree: true });
-  setInterval(tools.intervalEventBus.apply(tools), 100);
+  setInterval(tools.intervalEventBus.bind(tools), 100);
   const originalXHR = window.XMLHttpRequest;
   window.XMLHttpRequest = function () {
     let xhr = new originalXHR();

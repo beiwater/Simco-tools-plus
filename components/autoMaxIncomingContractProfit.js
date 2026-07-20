@@ -22,6 +22,7 @@ class autoMaxIncomingContractProfit extends BaseComponent {
     marketCache: new Map(),
     pending: new WeakSet(),
     generation: 0,
+    settingsListener: undefined,
   }
 
   indexDBData = {
@@ -49,10 +50,13 @@ class autoMaxIncomingContractProfit extends BaseComponent {
   ]
 
   startup() {
-    window.addEventListener("automax-settings-changed", () => {
-      this.clear();
-      this.refresh();
-    });
+    if (!this.componentData.settingsListener) {
+      this.componentData.settingsListener = () => {
+        this.clear();
+        this.refresh();
+      };
+      window.addEventListener("automax-settings-changed", this.componentData.settingsListener);
+    }
   }
 
   enabled() {

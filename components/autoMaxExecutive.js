@@ -2,6 +2,7 @@ const BaseComponent = require("../tools/baseComponent.js");
 const { componentList, tools } = require("../tools/tools.js");
 const { getPageActionEnabled } = require("../tools/automax/settings.js");
 const { getRealmIdFromDocument, installFetchCapture } = require("../tools/automax/lifecycle.js");
+const { executiveSkillTaper } = require("../tools/automax/data.js");
 
 const BASE_WAGES = Object.freeze({
   0: 759, 1: 448.5, 2: 379.5, 3: 0, 4: 0, 5: 0, 6: 241.5, 7: 586.5, 8: 724.5, 9: 759,
@@ -165,7 +166,7 @@ class autoMaxExecutive extends BaseComponent {
   }
 
   renderDetailPanel(data) {
-    const target = document.querySelector("button.css-1r3lxky")?.parentElement;
+    const target = document.querySelector('[class*="executive"] button[type="button"], [role="dialog"] button[type="button"]')?.parentElement;
     if (!target || document.getElementById("automax_executive_detail")) return;
     const panel = document.createElement("section");
     panel.id = "automax_executive_detail";
@@ -194,11 +195,9 @@ class autoMaxExecutive extends BaseComponent {
   }
 
   injectBoardroomButtons() {
-    const container = document.querySelector('.css-1wne25x');
-    if (!container) return;
-
-    const targetHeader = container.querySelector('h3');
-    if (!targetHeader) return;
+    const targetHeader = document.querySelector('h3');
+    const container = targetHeader?.closest('[class]');
+    if (!container || !targetHeader) return;
 
     if (!targetHeader.querySelector('#sc-custom-exec-btn')) {
       const btnCustom = document.createElement('button');
@@ -233,9 +232,12 @@ class autoMaxExecutive extends BaseComponent {
     if (!componentList.autoMaxFormerExecEnhance?.enable) return;
     const former = this.realmData()?.formerExecutives ?? [];
     if (!former.length) return;
-    for (const row of document.querySelectorAll(".css-19er0v9")) {
+    for (const row of document.querySelectorAll("li, tr, div")) {
+      if (row.childElementCount < 2) continue;
       if (row.querySelector("[data-automax-former-exec]")) continue;
-      const name = row.children[1]?.children[0]?.textContent?.replace(/\s*\(.*$/, "").trim();
+      const text = row.children[1]?.children[0]?.textContent;
+      if (!text) continue;
+      const name = text.replace(/\s*\(.*$/, "").trim();
       const executive = former.find((item) => item?.name === name);
       if (!executive?.id) continue;
       const button = document.createElement("button");
@@ -823,17 +825,10 @@ class autoMaxExecutive extends BaseComponent {
       (getSkill('o', 'cto') + getSkill('f', 'cto') + getSkill('m', 'cto')) / 4
     );
 
-    const applyDecay = (raw) => {
-      let val = raw;
-      if (val > 80) val = 80 + (val - 80) / 2;
-      if (val > 60) val = 60 + (val - 60) / 2;
-      return Math.floor(val);
-    };
-
-    const effCoo = applyDecay(rawCoo);
-    const effCfo = applyDecay(rawCfo);
-    const effCmo = applyDecay(rawCmo);
-    const effCto = applyDecay(rawCto);
+    const effCoo = executiveSkillTaper(rawCoo);
+    const effCfo = executiveSkillTaper(rawCfo);
+    const effCmo = executiveSkillTaper(rawCmo);
+    const effCto = executiveSkillTaper(rawCto);
 
     const realmId = this.realmId();
     const cache = componentList.autoMaxFoundation?.indexDBData?.cache;
