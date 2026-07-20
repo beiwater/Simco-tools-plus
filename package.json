@@ -4,13 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
     "build": "npx webpack --config webpack.config.js",
-    "postbuild": "node postBuild.js"
+    "postbuild": "node postBuild.js",
+    "verify:userscript": "node scripts/verify-userscript.js dist/build.user.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "@babel/core": "^7.23.3",
     "babel-loader": "^9.1.3",
