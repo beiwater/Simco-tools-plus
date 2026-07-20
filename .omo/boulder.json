@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "active_work_id": "migrate-automaxpphpl",
+  "works": {
+    "migrate-automaxpphpl": {
+      "work_id": "migrate-automaxpphpl",
+      "active_plan": ".omo/plans/migrate-automaxpphpl.md",
+      "plan_name": "migrate-automaxpphpl",
+      "session_ids": ["codex:019f7d88-5200-7bf2-a6ed-49da65cbeed4"],
+      "status": "active",
+      "worktree_path": "/Users/fox/Documents/New project 4/simco-pluginDLchagne"
+    }
+  }
+}

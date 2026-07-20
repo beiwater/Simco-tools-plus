@@ -652,7 +652,7 @@ class basisCPT extends BaseComponent {
       let name = component.constructor.name;
       let frontName = component.name;
       let frontExist = Boolean(component.frontUI) ? "funcExist" : "";
-      let settingExist = Boolean(component.settingUI) ? "funcExist" : "";
+      let settingExist = Boolean(component.settingUI || component.settingAction) ? "funcExist" : "";
       htmlText += `<tr class="script_cpt_node" id='${name}'><td><button class="btn CPTOptionLeft ${frontExist}">${frontName}</button></td><td><button class="btn CPTOptionRight ${settingExist}">设置</button></td></tr>`;
     }
     htmlText += `</tbody></table></div>`;
@@ -665,9 +665,11 @@ class basisCPT extends BaseComponent {
       let frontUI = !Boolean(component.frontUI)
         ? () => this.sideBarSub_noFront()
         : () => this.sideBarSub_showFront(component);
-      let settingUI = !Boolean(component.settingUI)
-        ? () => this.sideBarSub_noSetting()
-        : () => this.sideBarSub_showSetting(component);
+      let settingUI = component.settingAction
+        ? () => component.settingAction.call(component)
+        : !Boolean(component.settingUI)
+          ? () => this.sideBarSub_noSetting()
+          : () => this.sideBarSub_showSetting(component);
       element.querySelector("button.CPTOptionLeft").addEventListener("click", frontUI);
       element.querySelector("button.CPTOptionRight").addEventListener("click", settingUI);
     }

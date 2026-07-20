@@ -1,0 +1,168 @@
+TASK 4 DIRECT VERIFICATION RERUN
+Date: 2026-07-20 Australia/Sydney
+Working directory: /Users/fox/Documents/New project 4/simco-pluginDLchagne
+
+COMMAND 1
+$ node --test test/automax/interception-router.test.js
+EXIT: 0
+RAW OUTPUT:
+✔ fetch capture clones one eligible response and duplicate installation preserves fetch behavior (3.996292ms)
+✔ fetch rejection remains the original rejection and is not reported as a capture failure (0.352792ms)
+✔ XHR capture uses the existing dispatch seam without replacing constructor, open, or onload (0.446875ms)
+✔ always-on component initializes once and persists XHR captures through the existing IndexedDB method (10.006541ms)
+✔ route monitor initializes once, dispatches only matching SPA handlers, and cleans up (0.58525ms)
+✔ TTL scheduler refreshes one stale current realm, skips fresh data, and coalesces concurrent checks (0.413959ms)
+✔ expired weather makes a fresh region stale without crossing realm boundaries (0.157208ms)
+✔ 500 and malformed JSON responses report recoverable failures without cache mutation (0.588458ms)
+✔ an unknown realm never falls through to realm zero (0.290208ms)
+✔ building refresh runs only when academy active changes while repeated cache merges remain idempotent (0.409375ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 82.158
+JUDGMENT: PASS. Every targeted behavior ran; no test was skipped or cancelled.
+
+COMMAND 2
+$ npm test
+EXIT: 0
+RAW OUTPUT:
+
+> simcompstools@1.0.0 test
+> node --test
+
+✔ retries failed JSON requests before returning a successful result (1.353667ms)
+✔ returns a typed request failure after retry exhaustion (0.336875ms)
+✔ calculates academy and bank state without mutating source buildings (0.30325ms)
+✔ keeps data isolated by realm and rejects stale cache records (1.389791ms)
+✔ merges warehouse resources without dropping existing region details (0.114875ms)
+✔ parses source-compatible constants without executing bundle text (1.093959ms)
+✔ rejects a constants bundle without required source fields (0.125584ms)
+✔ resolves a worker result and releases its Blob URL exactly once (1.543042ms)
+✔ returns an explicit failure for a malformed worker message (0.260125ms)
+✔ returns a recoverable result when Workers are unavailable (0.174834ms)
+✔ fetch capture clones one eligible response and duplicate installation preserves fetch behavior (3.117583ms)
+✔ fetch rejection remains the original rejection and is not reported as a capture failure (0.309791ms)
+✔ XHR capture uses the existing dispatch seam without replacing constructor, open, or onload (0.3195ms)
+✔ always-on component initializes once and persists XHR captures through the existing IndexedDB method (3.175625ms)
+✔ route monitor initializes once, dispatches only matching SPA handlers, and cleans up (0.411667ms)
+✔ TTL scheduler refreshes one stale current realm, skips fresh data, and coalesces concurrent checks (0.331458ms)
+✔ expired weather makes a fresh region stale without crossing realm boundaries (0.24825ms)
+✔ 500 and malformed JSON responses report recoverable failures without cache mutation (0.298583ms)
+✔ an unknown realm never falls through to realm zero (0.112791ms)
+✔ building refresh runs only when academy active changes while repeated cache merges remain idempotent (0.229125ms)
+✔ verifies the required AutoMax userscript contract (42.847ms)
+✔ rejects a missing GM grant (36.650041ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 161.273167
+JUDGMENT: PASS. Full repository test suite passed 22/22.
+
+COMMAND 3
+$ npm run build
+EXIT: 0
+RAW OUTPUT:
+
+> simcompstools@1.0.0 build
+> npx webpack --config webpack.config.js
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+asset build.user.js 301 KiB [emitted] [minimized] [big] (name: main) 1 related asset
+runtime modules 88 bytes 1 module
+optional modules 328 KiB [optional]
+  ./components/ACCAutomaticInquiry.js 18.9 KiB [optional] [built] [code generated]
+  + 45 modules
+modules by path ./tools/ 74.2 KiB
+  modules by path ./tools/automax/*.js 29.5 KiB 6 modules
+  modules by path ./tools/*.js 44.7 KiB 2 modules
+modules by path ./node_modules/ 10.3 KiB
+  ./node_modules/md5/md5.js 5.89 KiB [built] [code generated]
+  ./node_modules/crypt/crypt.js 2.9 KiB [built] [code generated]
+  + 2 modules
+./index.js 3.44 KiB [built] [code generated]
+./components/basisCPT.js 42.8 KiB [built] [code generated]
+./components/ sync \.js$ 1.39 KiB [built] [code generated]
+./components/ImageProcessor.js 9.32 KiB [built] [code generated]
+
+WARNING in asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+This can impact web performance.
+Assets:
+  build.user.js (301 KiB)
+
+WARNING in entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  main (301 KiB)
+      build.user.js
+
+WARNING in webpack performance recommendations:
+You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
+For more info visit https://webpack.js.org/guides/code-splitting/
+
+webpack 5.101.3 compiled with 3 warnings in 1142 ms
+
+> simcompstools@1.0.0 postbuild
+> node postBuild.js
+
+Add Success.  2.29.260720151032
+JUDGMENT: PASS. Webpack and postbuild exited successfully. The three size/data-age warnings are non-fatal and were reported, not hidden.
+
+COMMAND 4
+$ npm run verify:userscript
+EXIT: 0
+RAW OUTPUT:
+
+> simcompstools@1.0.0 verify:userscript
+> node scripts/verify-userscript.js dist/build.user.js
+
+Userscript metadata verified: /Users/fox/Documents/New project 4/simco-pluginDLchagne/dist/build.user.js
+JUDGMENT: PASS. The just-built userscript passed the repository metadata verifier.
+
+COMMAND 5
+$ git diff --check
+EXIT: 0
+RAW OUTPUT: <empty>
+JUDGMENT: PASS. Tracked diff has no whitespace errors.
+
+COMMAND 6
+$ git diff --cached --name-only
+EXIT: 0
+RAW OUTPUT: <empty>
+JUDGMENT: PASS. Nothing is staged.
+
+COMMAND 7
+$ git status --short --branch
+EXIT: 0
+RAW OUTPUT:
+## codex/dev-bench-automaxpphpl...origin/codex/dev-bench-automaxpphpl
+ M dist/build.user.js
+ M dist/version.json
+ M tools/automax/index.js
+?? .omo/
+?? components/autoMaxFoundation.js
+?? test/automax/interception-router.test.js
+?? tools/automax/lifecycle.js
+JUDGMENT: PASS. Expected task files and generated distribution outputs are dirty; no staged paths are present. Pre-existing .omo state remains untracked.
+
+COMMAND 8
+$ rg -n "window\.XMLHttpRequest\s*=|XMLHttpRequest\.prototype\.open\s*=|unsafeWindow|GM_registerMenuCommand|new Function|eval\(" tools/automax/lifecycle.js components/autoMaxFoundation.js
+EXIT: 1
+RAW OUTPUT: <empty>
+JUDGMENT: PASS. ripgrep exit 1 is the expected no-match result: the new production files contain no second XHR replacement or forbidden execution/integration APIs.
+
+COMMAND 9
+$ node -e "require('./components/autoMaxFoundation.js'); const { componentList } = require('./tools/tools.js'); const c = componentList.autoMaxFoundation; if (!c || c.canDisable || c.netFuncList.length !== 1 || c.startupFuncList.length !== 1) process.exit(1); console.log('component-registration: PASS');"
+EXIT: 0
+RAW OUTPUT:
+component-registration: PASS
+JUDGMENT: PASS. The built source registers one authoritative always-on component with one existing-dispatch XHR handler and one startup hook.
+
+FINAL DIRECT-VERIFICATION VERDICT: PASS
+All required commands were executed after the completion challenge. No failures were found, so no production repair was necessary. Raw outputs and explicit judgments are recorded above.
