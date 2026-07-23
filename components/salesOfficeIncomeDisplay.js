@@ -6,7 +6,7 @@ class salesOfficeIncomeDisplay extends BaseComponent {
     super();
     this.name = "销售办公室收入显示";
     this.describe = "在销售办公室的订单页面,可以查看各个q的分别收入";
-    this.enable = true;
+    this.enable = false;
     this.tagList = ['样式', "零售"];
   }
   commonFuncList = [{
