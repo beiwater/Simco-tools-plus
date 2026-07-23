@@ -9,7 +9,7 @@ const source = fs.readFileSync(
   "utf8"
 );
 
-function createHarness(buildings) {
+function createHarness(buildings, { allKinds = true, selectedKinds = [] } = {}) {
   const componentList = {};
   const links = buildings.map((building) => ({
     className: `test-building-${building.kind}`,
@@ -62,6 +62,8 @@ function createHarness(buildings) {
     window: { addEventListener() {}, setTimeout() {} },
   }, { filename: "autoMaxAccessibility.js" });
   componentList.autoMaxMapIdleHighlight.enable = true;
+  componentList.autoMaxMapIdleHighlight.indexDBData.allKinds = allKinds;
+  componentList.autoMaxMapIdleHighlight.indexDBData.selectedKinds = selectedKinds;
   return { component: componentList.autoMaxAccessibility, links };
 }
 
@@ -86,6 +88,30 @@ test("map highlighting clears stale markers when a building becomes busy", () =>
   const { component, links } = createHarness(buildings);
   component.refreshIdleHighlights();
   buildings[0].busy = { production: true };
+
+  component.refreshIdleHighlights();
+
+  assert.equal(links[0].dataset.automaxIdleHighlight, undefined);
+});
+
+test("map highlighting can be limited to selected building types", () => {
+  const { component, links } = createHarness([
+    { id: 1, kind: "a", busy: undefined },
+    { id: 2, kind: "b", busy: undefined },
+    { id: 3, kind: "B", busy: undefined },
+  ], { allKinds: false, selectedKinds: ["b", "B"] });
+
+  component.refreshIdleHighlights();
+
+  assert.equal(links[0].dataset.automaxIdleHighlight, undefined);
+  assert.equal(links[1].dataset.automaxIdleHighlight, "true");
+  assert.equal(links[2].dataset.automaxIdleHighlight, "true");
+});
+
+test("map highlighting custom mode with no selection highlights nothing", () => {
+  const { component, links } = createHarness([
+    { id: 1, kind: "a", busy: undefined },
+  ], { allKinds: false, selectedKinds: [] });
 
   component.refreshIdleHighlights();
 
