@@ -1,6 +1,7 @@
 # SimComps Tools 功能说明与使用方法
 
-作者：LIYUE。许可证：AGPL-3.0-or-later。项目引用了
+作者：LIYUE。框架及 LIYUE 组件采用 MIT；AutoMax 相关组件采用
+AGPL-3.0-or-later；完整划分见 `LICENSE-MAP.md`。项目引用了
 [`gangbaRuby/SimCompanies-Scripts`](https://github.com/gangbaRuby/SimCompanies-Scripts)
 与 [`ShenHaiSu/SimComp-Tools`](https://github.com/ShenHaiSu/SimComp-Tools) 的部分代码和实现思路。
 
