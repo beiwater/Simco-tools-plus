@@ -8,6 +8,8 @@ class oneClickRebuild extends BaseComponent {
     this.describe = `可以自定义矿井/油井/采石场的重建丰度检测,只要不满足就会显示一键重建按钮`;
     this.enable = false;
     this.tagList = ['实用'];
+    this.requiresRiskAcknowledgement = true;
+    this.riskNotice = "会连续触发建筑的拆除、选择和重建点击。这类自动化操作可能不在游戏开发者允许范围内，并可能造成账号处罚、资源损失或错误重建。";
   }
   indexDBData = {
     // 矿井
@@ -22,6 +24,7 @@ class oneClickRebuild extends BaseComponent {
     // 油井
     minAbundance_10: 99.9, // 原油
     minAbundance_74: 99.9, // 甲烷
+    riskAcknowledged: false,
   }
   cssText = [
     `button#script_mineRebuild_btn{color:var(--fontColor);display: block;width: 90%;margin: 10px auto;background-color: rgb(165,42,42);}button#script_mineRebuild_btn:hover{background-color:rgb(103 34 34);color:white;}`,
