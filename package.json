@@ -11,8 +11,13 @@
     "verify:userscript": "node scripts/verify-userscript.js dist/build.user.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "LIYUE",
   "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beiwater/simco-pluginDLchagne.git"
+  },
+  "homepage": "https://github.com/beiwater/simco-pluginDLchagne",
   "devDependencies": {
     "@babel/core": "^7.23.3",
     "babel-loader": "^9.1.3",
