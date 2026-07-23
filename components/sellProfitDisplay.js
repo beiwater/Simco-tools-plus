@@ -7,7 +7,7 @@ class sellProfitDisplay extends BaseComponent {
     super();
     this.name = "交易所上架/合同交易时显示利润";
     this.describe = "在仓库发送物品到交易所或者通过合同出售的界面会自动计算收入总量与利润值";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ['交易所', '利润'];
   }
