@@ -7,6 +7,12 @@ function isImageFile(file) {
   return Boolean(file && (file.type?.startsWith("image/") || IMAGE_EXTENSION.test(file.name || "")));
 }
 
+function normalizeBlur(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Math.max(0, Math.min(32, Math.round(number)));
+}
+
 function selectFirstImageFile(files) {
   return Array.from(files || []).find(isImageFile);
 }
@@ -76,6 +82,7 @@ class customBackgroundImage extends BaseComponent {
   indexDBData = {
     cssText: "",
     imageName: "",
+    blurPx: 0,
   }
 
   cssText = [`
@@ -89,6 +96,8 @@ class customBackgroundImage extends BaseComponent {
     #setting-container-4 table { table-layout: fixed; width: 100%; }
     #setting-container-4 td { overflow-wrap: anywhere; }
     #setting-container-4 textarea { background-color: rgb(34, 34, 34); box-sizing: border-box; color: var(--fontColor); min-height: 120px; resize: vertical; width: 100%; }
+    #setting-container-4 .sct-background-blur { align-items: center; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) 52px; }
+    #setting-container-4 .sct-background-blur input[type="range"] { width: 100%; }
     @media (max-width: 480px) {
       #setting-container-4 .sct-background-actions { flex-direction: column; width: 100%; }
       #setting-container-4 table, #setting-container-4 tbody, #setting-container-4 tr, #setting-container-4 td { display: block; width: 100%; }
@@ -121,6 +130,7 @@ class customBackgroundImage extends BaseComponent {
           <table>
             <tr><td>功能</td><td>设置</td></tr>
             <tr><td title="可填写颜色或 HTTPS 图片地址">背景 CSS 内容</td><td><textarea aria-label="背景 CSS 内容"></textarea></td></tr>
+            <tr><td title="仅模糊背景图片，不影响页面文字与按钮">高斯模糊</td><td><label class="sct-background-blur"><input type="range" min="0" max="32" step="1" aria-label="背景高斯模糊"><output>0 px</output></label></td></tr>
           </table>
           <button class="btn script_opt_submit" type="button">保存 CSS 内容</button>
         </div>
@@ -130,12 +140,17 @@ class customBackgroundImage extends BaseComponent {
     const fileInput = mainSetNode.querySelector(".sct-background-file-input");
     const folderInput = mainSetNode.querySelector(".sct-background-folder-input");
     const dropzone = mainSetNode.querySelector(".sct-background-dropzone");
+    const blurInput = mainSetNode.querySelector('input[type="range"]');
+    const blurOutput = mainSetNode.querySelector("output");
     textarea.value = this.indexDBData.cssText;
+    blurInput.value = String(normalizeBlur(this.indexDBData.blurPx));
+    blurOutput.textContent = `${blurInput.value} px`;
     this.updateStatus(mainSetNode, this.indexDBData.imageName
       ? `已保存在浏览器：${this.indexDBData.imageName}`
       : "支持 PNG、JPEG、WebP、GIF、AVIF 和 SVG；文件夹中使用第一张图片。");
 
     mainSetNode.querySelector("button.script_opt_submit").addEventListener("click", () => this.settingSubmitHandle());
+    blurInput.addEventListener("input", () => { blurOutput.textContent = `${blurInput.value} px`; });
     mainSetNode.querySelector("button.sct-background-file").addEventListener("click", (event) => {
       event.stopPropagation();
       fileInput.click();
@@ -193,7 +208,8 @@ class customBackgroundImage extends BaseComponent {
   }
 
   async settingSubmitHandle() {
-    const itemValue = document.querySelector("div#setting-container-4 textarea").value.trim();
+    const root = document.querySelector("div#setting-container-4");
+    const itemValue = root.querySelector("textarea").value.trim();
     const urlReg = /^https:\/\/[\w.-]+\.[a-zA-Z]{2,}/;
     const colorValid = tools.hexArgbCheck(itemValue);
 
@@ -208,6 +224,7 @@ class customBackgroundImage extends BaseComponent {
       return;
     }
     this.indexDBData.imageName = "";
+    this.indexDBData.blurPx = normalizeBlur(root.querySelector('input[type="range"]').value);
     await tools.indexDB_updateIndexDBData();
     this.mainFunc();
     tools.alert("更改已提交");
@@ -221,10 +238,12 @@ class customBackgroundImage extends BaseComponent {
     const newNode = document.createElement("style");
     newNode.setAttribute("sct_cpt", "customBackgroundImage");
     newNode.setAttribute("type", "text/css");
-    newNode.textContent = `div#root div#page>div {
-      background: ${this.indexDBData.cssText} no-repeat center top !important;
-      background-size: cover !important;
-    }`;
+    const blur = normalizeBlur(this.indexDBData.blurPx);
+    newNode.textContent = blur === 0
+      ? `div#root div#page>div { background: ${this.indexDBData.cssText} no-repeat center top !important; background-size: cover !important; }`
+      : `div#root div#page>div { background: transparent !important; isolation: isolate; position: relative; }
+         div#root div#page>div::before { background: ${this.indexDBData.cssText} no-repeat center top; background-size: cover; content: ""; filter: blur(${blur}px); inset: -${blur}px; pointer-events: none; position: absolute; z-index: 0; }
+         div#root div#page>div > * { position: relative; z-index: 1; }`;
     this.componentData.styleNode = newNode;
     document.head.appendChild(newNode);
   }
@@ -236,5 +255,6 @@ module.exports = {
   collectDroppedFiles,
   imageFileToCssValue,
   isImageFile,
+  normalizeBlur,
   selectFirstImageFile,
 };
