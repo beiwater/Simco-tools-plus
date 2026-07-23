@@ -302,12 +302,14 @@ test("basisCPT integration: inlineSettingUI behaves as both frontUI and settingU
   require("../../components/basisCPT.js");
   const satComponent = componentList.autoMaxRuntimeSaturation;
   const basisComponent = componentList.basisCPT;
+  const originalEnabled = satComponent.enable;
 
   const originalDocument = global.document;
   const document = createDom();
   global.document = document;
 
   try {
+    satComponent.enable = true;
     const sideBarNode = basisComponent.sideBarSub_componentNode();
     const row = sideBarNode.children.find((child) => child.id === "autoMaxRuntimeSaturation");
     assert.ok(row);
@@ -333,6 +335,7 @@ test("basisCPT integration: inlineSettingUI behaves as both frontUI and settingU
     rightButton.listeners.get("click")();
     assert.equal(toggledCount, 2);
   } finally {
+    satComponent.enable = originalEnabled;
     global.document = originalDocument;
   }
 });
