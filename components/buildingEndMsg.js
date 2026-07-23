@@ -7,7 +7,7 @@ class buildingEndMsg extends BaseComponent {
     super();
     this.name = "建筑生产完工提示";
     this.describe = "建筑生产完成或者升级完成后会有消息提示，防止你泡在ChatRoom全给忘了。";
-    this.enable = true;
+    this.enable = false;
     this.tagList = ["建筑", "追踪"]
   }
   startupFuncList = [
