@@ -158,6 +158,7 @@ class autoMaxMarketProfit extends BaseComponent {
       row.__automaxMarketResult = result;
       inner.textContent = `$${formatMoney(result.hourlyProfit)}/h`;
       this.markBestRow(row);
+      if (this.componentData.pendingCount === 0) this.markBestRow(null, true);
       this.renderSummary();
     }).catch((error) => {
       this.componentData.pending.delete(row);
@@ -206,11 +207,11 @@ class autoMaxMarketProfit extends BaseComponent {
     return Number(preferred?.saturation ?? rows.find(resourceMatch)?.saturation);
   }
 
-  markBestRow(row) {
+  markBestRow(row, allComplete = false) {
     const all = [...document.querySelectorAll("tr")].filter((candidate) => Number.isFinite(candidate.__automaxMarketResult?.hourlyProfit));
     const best = all.reduce((result, candidate) => !result || candidate.__automaxMarketResult.hourlyProfit > result.__automaxMarketResult.hourlyProfit ? candidate : result, undefined);
     for (const candidate of all) candidate.toggleAttribute("data-automax-market-best", candidate === best);
-    if (best === row && componentList.autoMaxMarketAutoHighlight?.enable) best.click();
+    if (allComplete && best && componentList.autoMaxMarketAutoHighlight?.enable) best.click();
   }
 
   mountControls() {

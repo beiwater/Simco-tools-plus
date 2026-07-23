@@ -1,6 +1,5 @@
 const BaseComponent = require("../tools/baseComponent.js");
 const { componentList, tools } = require("../tools/tools.js");
-const { getPageActionEnabled } = require("../tools/automax/settings.js");
 const { getRealmIdFromDocument, installFetchCapture } = require("../tools/automax/lifecycle.js");
 const { executiveSkillTaper } = require("../tools/automax/data.js");
 
