@@ -8,7 +8,7 @@ class mapHideScroll extends BaseComponent {
     super();
     this.name = "公司地图界面隐藏滚动条";
     this.describe = "如名";
-    this.enable = true;
+    this.enable = false;
     this.tagList = ['样式'];
   }
   commonFuncList = [{
