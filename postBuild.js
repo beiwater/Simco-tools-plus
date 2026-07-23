@@ -19,6 +19,8 @@ const addPreText = (nowVersion) => {
     `// @license      AGPL-3.0-or-later`,
     `// @grant        GM_xmlhttpRequest`,
     `// @connect      api.simcotools.com`,
+    `// @connect      docs.google.com`,
+    `// @connect      translate.googleapis.com`,
     `// @noframes`,
     `// ==/UserScript==`,
     ``,
