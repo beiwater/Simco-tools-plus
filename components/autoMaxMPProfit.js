@@ -11,7 +11,7 @@ class autoMaxMPProfit extends BaseComponent {
     super();
     this.name = "AutoMax MP 折扣利润";
     this.describe = "按 MP-?% 或固定减价模拟市场订单转合同后的最大时利润。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "交易所", "MP", "利润"];
   }
