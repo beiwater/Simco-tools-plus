@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const EXECUTIVE_STYLES = `      .automax-exec-panel { background: var(--sct-surface-muted, rgba(0, 0, 0, 0.7)); border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); color: var(--fontColor); display: grid; gap: 8px; margin-top: 12px; padding: 12px; }
       .automax-exec-panel p { margin: 0; overflow-wrap: anywhere; }
       .automax-exec-button, .automax-exec-modal button, .automax-exec-settings button { background: var(--sct-control, rgb(76, 76, 76)); border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); color: var(--fontColor); min-height: 30px; border-radius: 4px; padding: 4px 10px; cursor: pointer; }
