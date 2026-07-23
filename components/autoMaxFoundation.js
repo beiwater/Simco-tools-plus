@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const BaseComponent = require("../tools/baseComponent.js");
 const { tools } = require("../tools/tools.js");
 const {
