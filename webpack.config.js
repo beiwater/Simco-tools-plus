@@ -14,7 +14,7 @@ const genVersion = () => {
   let cptCount = fs.readdirSync(path.join(__dirname, "components")).length;
   let oldFile = JSON.parse(fs.readFileSync(path.join(distPath, "version.json")));
   let offset = -20;
-  let timeVersion = moment().format(`YYMMDDHHmmss`);
+  let timeVersion = Number(moment().format(`YYMMDDHHmmss`));
   // 原注释掉的代码，推测是旧逻辑，将组件数量加上偏移量赋值给版本号数组的第二个元素
   // nowVersion[1] = cptCount + offset;
 
@@ -27,8 +27,9 @@ const genVersion = () => {
     nowVersion[1] = oldFile.version[1] + 1;
   }
 
-  // 将当前时间戳转换为数字类型，赋值给版本号数组的第三个元素
-  nowVersion[2] = Number(timeVersion);
+  // 构建机时区可能与上一版不同。版本号必须单调递增，否则 userscript
+  // 管理器会把新构建误判为旧版本而拒绝更新。
+  nowVersion[2] = Math.max(timeVersion, Number(oldFile.version[2] || 0) + 1);
 
   // 返回生成好的版本号数组
   return nowVersion;
