@@ -1,5 +1,69 @@
 const BaseComponent = require("../tools/baseComponent.js");
 const { tools, componentList, runtimeData, indexDBData, feature_config, langData } = require("../tools/tools.js");
+const { enableFloatingPanelDrag } = require("../tools/automax/floatingPanel.js");
+
+const SETTINGS_WINDOW_THEME = `
+  #script_cpt_setting_container {
+    background: linear-gradient(145deg, var(--sct-surface-elevated, rgba(26, 32, 29, 0.96)), var(--sct-surface, rgba(15, 19, 17, 0.96)) 58%) !important;
+    border: 1px solid var(--sct-border-strong, rgba(255, 255, 255, 0.24));
+    border-radius: 12px;
+    box-shadow: var(--sct-panel-shadow, 0 24px 64px rgba(0, 0, 0, 0.55), 0 2px 12px rgba(0, 0, 0, 0.28));
+    box-sizing: border-box;
+    max-height: min(84dvh, 760px);
+    max-width: calc(100vw - 16px);
+    min-width: min(435px, calc(100vw - 16px));
+    overflow: hidden;
+    padding: 16px;
+    width: min(680px, calc(100vw - 16px));
+  }
+  #script_setting_head {
+    align-items: center;
+    background: var(--sct-surface-opaque, #0f1311);
+    border-bottom: 1px solid var(--sct-border, rgba(255, 255, 255, 0.14));
+    cursor: grab;
+    display: flex;
+    font-size: 20px;
+    font-weight: 700;
+    justify-content: space-between;
+    line-height: 1.25;
+    margin: -16px -16px 16px;
+    max-height: none;
+    min-height: 56px;
+    padding: 10px 16px;
+    touch-action: none;
+    user-select: none;
+  }
+  #script_cpt_setting_container[data-sct-dragging="true"] #script_setting_head { cursor: grabbing; }
+  #script_setting_head > span { font-size: inherit !important; left: auto !important; position: static !important; }
+  #script_setting_head > button {
+    background: var(--sct-control, rgba(255, 255, 255, 0.08)) !important;
+    border: 1px solid var(--sct-border, rgba(255, 255, 255, 0.14));
+    border-radius: 8px;
+    color: var(--fontColor);
+    cursor: pointer;
+    height: 36px !important;
+    line-height: normal !important;
+    min-width: 60px;
+    position: static !important;
+  }
+  #script_setting_head > button:hover { background: var(--sct-control-hover, rgba(255, 255, 255, 0.15)) !important; }
+  #script_setting_body { box-sizing: border-box; max-height: calc(min(84dvh, 760px) - 88px); overflow: auto; padding: 0; scrollbar-color: var(--sct-control-hover, rgba(255, 255, 255, 0.15)) transparent; }
+  #script_setting_body .setting-container .header { background: transparent; color: var(--fontColor); font-size: 18px; text-align: left; }
+  #script_setting_body .setting-container :is(button, input, select, textarea) { border: 1px solid var(--sct-border, rgba(255, 255, 255, 0.14)); border-radius: 8px; }
+  @media (max-width: 576px) {
+    #script_cpt_setting_container { max-height: calc(100dvh - 16px); min-width: 0; padding: 12px; width: calc(100vw - 16px); }
+    #script_setting_head { margin: -12px -12px 12px; padding: 10px 12px; }
+    #script_setting_body { max-height: calc(100dvh - 84px); }
+  }
+`;
+
+function mountSettingsWindowTheme() {
+  if (document.getElementById("script_cpt_setting_theme")) return;
+  const style = document.createElement("style");
+  style.id = "script_cpt_setting_theme";
+  style.textContent = SETTINGS_WINDOW_THEME;
+  document.head.append(style);
+}
 
 // 基础组件
 class basisCPT extends BaseComponent {
@@ -766,10 +830,12 @@ class basisCPT extends BaseComponent {
   }
   // 组件设置界面构建
   async startupSettingContainer() {
+    mountSettingsWindowTheme();
     let settingContainerNode = document.createElement("div");
-    settingContainerNode.innerHTML = `<div id=script_setting_head><div class="col-sm-10 col-xs-9"><span>组件设置界面</span></div><div class="col-sm-2 col-xs-2"><button class=btn>关闭</button></div></div><div id=script_setting_body></div>`;
+    settingContainerNode.innerHTML = `<div id=script_setting_head><span>组件设置</span><button type="button" class="btn" aria-label="关闭组件设置">关闭</button></div><div id=script_setting_body></div>`;
     settingContainerNode.id = "script_cpt_setting_container";
     document.body.appendChild(settingContainerNode);
+    enableFloatingPanelDrag(settingContainerNode, settingContainerNode.querySelector("#script_setting_head"));
     this.componentData.cptSettingContainerNode = settingContainerNode;
     this.componentData.cptSettingBodyNode = settingContainerNode.querySelector("div#script_setting_body");
 
