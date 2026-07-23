@@ -1,6 +1,21 @@
 const BaseComponent = require("../tools/baseComponent.js");
 const { tools, componentList, runtimeData, indexDBData, feature_config, langData } = require("../tools/tools.js");
-const { enableFloatingPanelDrag } = require("../tools/automax/floatingPanel.js");
+const { closeSecondaryWindow, ensureSecondaryWindow, openSecondaryWindow } = require("../tools/secondaryWindowHost.js");
+
+const TAG_ORDER = ["AutoMax", "交易", "仓库", "聊天", "工具", "外观"];
+const TAG_GROUPS = Object.freeze({
+  AutoMax: "AutoMax",
+  "交易所": "交易", "询价": "交易", "合同": "交易", MP: "交易", "利润": "交易",
+  "仓库": "仓库", "入库": "仓库", "出库": "仓库", "物资": "仓库", "物品": "仓库", ID: "仓库", "零售": "仓库", "建筑": "仓库",
+  "聊天": "聊天", "备注": "聊天", "信息": "聊天",
+  "样式": "外观", "个性化": "外观",
+});
+
+function normalizedTags(component) {
+  const tags = new Set();
+  for (const tag of component.tagList ?? []) tags.add(TAG_GROUPS[tag] ?? "工具");
+  return TAG_ORDER.filter((tag) => tags.has(tag));
+}
 
 const SETTINGS_WINDOW_THEME = `
   #script_cpt_setting_container {
@@ -693,25 +708,18 @@ class basisCPT extends BaseComponent {
     let resultNode = document.createElement("div");
     // 拼接侧边栏头部
     let htmlText = `<div id="scriptCPT_innerHead"><h1 style="margin-left:10px;">组件</h1><div style="padding:0 10px;"><input type="text" id="script_cptSearch_input" class="form-control" placeholder="搜索组件名..."></div></div>`;
-    let sortComponentsList = Object.values(componentList).filter(component => !component.hideSetting).sort((cptA, cptB) => cptB.tapCount - cptA.tapCount);
+    let sortComponentsList = Object.values(componentList)
+      .filter((component) => !component.hideSetting && (component.enable || !component.canDisable))
+      .sort((cptA, cptB) => cptB.tapCount - cptA.tapCount);
     // 拼接侧边栏tag搜索
     htmlText += `<div id="scriptCPT_tagSerach">`;
-    let tagList = [];
-    for (let i = 0; i < sortComponentsList.length; i++) {
-      if (sortComponentsList[i].tagList.length == 0) continue;
-      for (let j = 0; j < sortComponentsList[i].tagList.length; j++) {
-        let tag = sortComponentsList[i].tagList[j];
-        if (tagList.includes(tag)) continue;
-        tagList.push(tag);
-        htmlText += `<button type="button" data-sct-tag>${tag}</button>`;
-      }
-    }
+    const tagList = TAG_ORDER.filter((tag) => sortComponentsList.some((component) => normalizedTags(component).includes(tag)));
+    for (const tag of tagList) htmlText += `<button type="button" data-sct-tag>${tag}</button>`;
     htmlText += `</div>`;
     // 拼接侧边栏主体
     htmlText += `<div id="scriptCPT_mainBody"><table><thead><tr><td>前台功能</td><td>设置</td></tr></thead><tbody>`;
     for (let i = 0; i < sortComponentsList.length; i++) {
       let component = sortComponentsList[i];
-      if (component.enable == false && component.canDisable) continue;
       let name = component.constructor.name;
       let frontName = component.name;
       let frontExist = (Boolean(component.frontUI) || Boolean(component.inlineSettingUI)) ? "funcExist" : "";
@@ -760,8 +768,14 @@ class basisCPT extends BaseComponent {
     // 添加默认class
     if (!cptSettingNode.className.includes("col-sm-12 setting-container"))
       cptSettingNode.className += " col-sm-12 setting-container";
-    this.componentData.cptSettingBodyNode.appendChild(cptSettingNode);
-    Object.assign(document.querySelector("div#script_cpt_setting_container").style, { display: "block" });
+    const window = openSecondaryWindow({
+      id: "component-settings",
+      title: `${component.name}设置`,
+      content: cptSettingNode,
+      onClose: () => { this.componentData.cptSettingShow = false; },
+    });
+    this.componentData.cptSettingContainerNode = window.root;
+    this.componentData.cptSettingBodyNode = window.body;
     this.componentData.cptSettingShow = true;
   }
   async sideBarSub_toggleInlineSetting(componentRow, component) {
@@ -823,7 +837,7 @@ class basisCPT extends BaseComponent {
       // 任一包含匹配模式
       // if (componentList[name].tagList.some(item => this.componentData.avtiveTagList.includes(item))) tagMatch = true;
       // 完全包含匹配命令
-      if (this.componentData.avtiveTagList.every((item) => componentList[name].tagList.includes(item))) tagMatch = true;
+      if (this.componentData.avtiveTagList.every((item) => normalizedTags(componentList[name]).includes(item))) tagMatch = true;
       if (nodeList[i].innerText.match(this.componentData.cptSearchText)) textMatch = true;
       Object.assign(nodeList[i].style, { display: tagMatch && textMatch ? "" : "none" });
     }
@@ -831,20 +845,9 @@ class basisCPT extends BaseComponent {
   // 组件设置界面构建
   async startupSettingContainer() {
     mountSettingsWindowTheme();
-    let settingContainerNode = document.createElement("div");
-    settingContainerNode.innerHTML = `<div id=script_setting_head><span>组件设置</span><button type="button" class="btn" aria-label="关闭组件设置">关闭</button></div><div id=script_setting_body></div>`;
-    settingContainerNode.id = "script_cpt_setting_container";
-    document.body.appendChild(settingContainerNode);
-    enableFloatingPanelDrag(settingContainerNode, settingContainerNode.querySelector("#script_setting_head"));
+    let settingContainerNode = ensureSecondaryWindow();
     this.componentData.cptSettingContainerNode = settingContainerNode;
     this.componentData.cptSettingBodyNode = settingContainerNode.querySelector("div#script_setting_body");
-
-    // 关闭按钮绑定事件
-    settingContainerNode.querySelector("div#script_setting_head button").addEventListener("click", () => {
-      this.componentData.cptSettingBodyNode.replaceChildren();
-      Object.assign(document.querySelector("div#script_cpt_setting_container").style, { display: "none" });
-      this.componentData.cptSettingShow = false;
-    });
   }
   // 基础组件设置界面
   uisetting() {
@@ -959,7 +962,7 @@ class basisCPT extends BaseComponent {
   // 插件缓存读写界面构建
   async scriptConfEdit_build() {
     // 关闭设置界面
-    document.querySelector("div#script_cpt_setting_container>#script_setting_head button").click();
+    closeSecondaryWindow(this.componentData.cptSettingContainerNode);
     // 构建节点
     let newNode = document.createElement("div");
     let cssNode = document.createElement("style");
