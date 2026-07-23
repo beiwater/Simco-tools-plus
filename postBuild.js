@@ -13,7 +13,7 @@ const addPreText = (nowVersion) => {
     `// @version      ${nowVersion.join(".")}`,
     `// @description  SimCompanies 中文辅助工具；默认关闭全部可选功能。`,
     `// @author       LIYUE`,
-    `// @copyright    Copyright (C) LIYUE; incorporates code from gangbaRuby/SimCompanies-Scripts and ShenHaiSu/SimComp-Tools.`,
+    `// @copyright    Copyright (C) 2026 LIYUE. Framework and LIYUE components: MIT; AutoMax components: AGPL-3.0-or-later.`,
     `// @match        https://www.simcompanies.com/*`,
     `// @homepageURL  https://github.com/beiwater/simco-pluginDLchagne`,
     `// @license      AGPL-3.0-or-later`,
