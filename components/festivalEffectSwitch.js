@@ -6,7 +6,7 @@ class festivalEffectSwitch extends BaseComponent {
     super();
     this.name = "节日效果开关";
     this.describe = "如题";
-    this.enable = true;
+    this.enable = false;
     this.tagList = ['样式'];
   }
   indexDBData = {
