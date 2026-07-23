@@ -474,8 +474,8 @@ class autoMaxUITheme extends BaseComponent {
     super();
     this.name = "AutoMax 界面主题";
     this.describe = "统一 AutoMax 面板、表格和控件的视觉与无障碍状态。";
-    this.enable = true;
-    this.canDisable = false;
+    this.enable = false;
+    this.canDisable = true;
     this.hideSetting = true;
     this.tagList = ["AutoMax", "基础"];
   }
