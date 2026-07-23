@@ -7,7 +7,7 @@ class profileBigAvatar extends BaseComponent {
     super();
     this.name = "资料页头像点击放大";
     this.describe = "在资料页点击头像会方法";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ['样式'];
   }
