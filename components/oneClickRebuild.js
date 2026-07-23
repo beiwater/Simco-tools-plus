@@ -6,7 +6,7 @@ class oneClickRebuild extends BaseComponent {
     super();
     this.name = "更好的一键重建";
     this.describe = `可以自定义矿井/油井/采石场的重建丰度检测,只要不满足就会显示一键重建按钮`;
-    this.enable = true;
+    this.enable = false;
     this.tagList = ['实用'];
   }
   indexDBData = {
