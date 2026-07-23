@@ -25,7 +25,7 @@ class autoMaxIncomingContractProfit extends BaseComponent {
     super();
     this.name = "合同计算时利润";
     this.describe = "在入库合同中显示零售最大时利润、MP 差价和可选的市场最大时利润。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "合同", "利润"];
   }
