@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 const BaseComponent = require("../tools/baseComponent.js");
-const { componentList, runtimeData, tools } = require("../tools/tools.js");
+const { componentList, indexDBData, runtimeData, tools } = require("../tools/tools.js");
 const {
   COLOR_EMOJI_LABELS,
   findChatContainers,
@@ -19,8 +19,8 @@ class autoMaxAccessibility extends BaseComponent {
     super();
     this.name = "AutoMax 聊天与地图辅助";
     this.describe = "提供色弱文字标识、空闲建筑高亮、PA 答案和 Snipboard 预览。";
-    this.enable = false;
-    this.canDisable = true;
+    this.enable = true;
+    this.canDisable = false;
     this.hideSetting = true;
     this.tagList = ["AutoMax", "聊天", "地图", "辅助"];
   }
@@ -45,7 +45,9 @@ class autoMaxAccessibility extends BaseComponent {
       .automax-chat-color-text { display: none; font-size: inherit; font-style: normal; vertical-align: middle; }
       .automax-chat-color-assist .automax-chat-color-text { display: inline; }
       .automax-chat-color-assist .automax-chat-color-wrapper img.emoji { display: none; }
-      [data-automax-idle-highlight] { background: #ffeb3b !important; color: #212121 !important; border-radius: 4px; font-weight: 700; padding: 1px 4px; }
+      a[data-automax-idle-highlight] { border-radius: 8px; outline: 4px solid #ffeb3b !important; outline-offset: 2px; }
+      a[data-automax-idle-highlight] span > span,
+      a[data-automax-idle-highlight] span > small > span { background: #ffeb3b !important; color: #212121 !important; border-radius: 4px; font-weight: 700; padding: 1px 4px; }
       .automax-pa-answer { background: var(--sct-surface-muted, rgba(0, 0, 0, 0.7)); border: 1px solid var(--sct-enabled, #14541d); border-radius: 4px; display: grid; gap: 4px; margin-top: 8px; padding: 8px; }
       .automax-pa-answer p { margin: 0; overflow-wrap: anywhere; }
       .automax-pa-answer button { align-self: start; background: var(--sct-control, rgb(76, 76, 76)); border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); color: var(--fontColor); min-height: 28px; }
@@ -125,21 +127,27 @@ class autoMaxAccessibility extends BaseComponent {
     const fromFoundation = componentList.autoMaxFoundation?.indexDBData?.cache?.regions ?? {};
     const realmId = getRealmIdFromDocument(document) ?? runtimeData.basisCPT?.realm;
     if ((realmId === 0 || realmId === 1) && fromFoundation[String(realmId)]) return fromFoundation[String(realmId)];
+    const legacyBuildings = indexDBData.basisCPT?.building?.[realmId];
+    if (Array.isArray(legacyBuildings)) return { buildings: legacyBuildings, realmId };
     const keyed = Object.keys(fromFoundation);
     if (keyed.length === 1) return fromFoundation[keyed[0]];
     return undefined;
   }
 
   refreshIdleHighlights() {
+    this.clearIdleHighlights();
     if (!/\/landscape\/?$/.test(location.pathname) || !this.isActionEnabled("landscapeHighlight")) return this.clearIdleHighlights();
     const buildings = this.currentRealm()?.buildings;
-    const byId = new Map((Array.isArray(buildings) ? buildings : []).map((item) => [String(item.id), item]));
+    if (!Array.isArray(buildings)) return;
+    const byId = new Map(buildings.map((item) => [String(item.id), item]));
     for (const link of document.querySelectorAll("a[href*='/b/']")) {
       const id = link.href.match(/\/b\/(\d+)/)?.[1];
-      const kind = link.className.match(/test-building-([A-Za-z0-9])/i)?.[1] ?? byId.get(id)?.kind;
+      const building = byId.get(id);
+      if (!building || building.busy != null) continue;
+      const kind = building.kind ?? link.className.match(/test-building-([A-Za-z0-9])/i)?.[1];
       if (!kind || ["n", "y", "3", "4", "5"].includes(String(kind))) continue;
-      const level = [...link.querySelectorAll("span")].find((node) => /lvl\s+\d+/i.test(node.textContent));
-      for (const span of level?.parentElement?.querySelectorAll(":scope > span") ?? []) span.dataset.automaxIdleHighlight = "true";
+      if (String(kind) === "B" && building.salesContract) continue;
+      link.dataset.automaxIdleHighlight = "true";
     }
   }
 
@@ -148,7 +156,10 @@ class autoMaxAccessibility extends BaseComponent {
   }
 
   async refreshQuestAnswers() {
-    if (!/\/messages(?:\/|$)/.test(location.pathname) || !this.isActionEnabled("paQuestAnswers")) return this.stopQuestObserver();
+    if (!/\/messages(?:\/|$)/.test(location.pathname) || !this.isActionEnabled("paQuestAnswers")) {
+      this.clearQuestAnswers();
+      return this.stopQuestObserver();
+    }
     const quests = await this.loadQuestData();
     if (!quests?.length) return;
     for (const container of this.questMessageContainers()) this.annotateQuestMessages(container, quests);
@@ -164,6 +175,10 @@ class autoMaxAccessibility extends BaseComponent {
   stopQuestObserver() {
     this.componentData.questObserver?.disconnect();
     this.componentData.questObserver = undefined;
+  }
+
+  clearQuestAnswers() {
+    for (const node of document.querySelectorAll(".automax-pa-answer")) node.remove();
   }
 
   async loadQuestData() {
@@ -245,8 +260,13 @@ class autoMaxAccessibility extends BaseComponent {
   }
 
   refreshSnipboardPreviews() {
-    if (!this.isActionEnabled("snipboardPreview")) return;
+    if (!this.isActionEnabled("snipboardPreview")) return this.clearSnipboardPreviews();
     for (const link of document.querySelectorAll('a[href*="snipboard.io"]:not([data-automax-snipboard])')) this.mountSnipboardPreview(link);
+  }
+
+  clearSnipboardPreviews() {
+    for (const image of document.querySelectorAll(".automax-snipboard-preview")) image.remove();
+    for (const link of document.querySelectorAll("[data-automax-snipboard]")) delete link.dataset.automaxSnipboard;
   }
 
   mountSnipboardPreview(link) {
