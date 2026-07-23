@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const BaseComponent = require("../tools/baseComponent.js");
 
 // allow: SIZE_OK — declarative, order-sensitive stylesheet; splitting would change cascade ownership.
