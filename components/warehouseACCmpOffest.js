@@ -7,7 +7,7 @@ class warehouseACCmpOffest extends BaseComponent {
     super();
     this.name = "仓库出售界面显示mp偏移";
     this.describe = "在仓库出售表格中,填写单价的下面会自动根据当前市场最低价以及设置的计算方法来显示";
-    this.enable = true;
+    this.enable = false;
   }
   indexDBData = {
     offestList: [["mp+0", "mp*0.97"], ["mp+0", "mp*0.97"]], // 不同分区的偏移列表 内容是字符串 使用mp作为占位符
