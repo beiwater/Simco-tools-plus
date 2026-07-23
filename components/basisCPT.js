@@ -466,6 +466,7 @@ class basisCPT extends BaseComponent {
     SCT_divHorizontal: false, // SCT 悬浮窗横向排列
     SCT_divFixedDisplay: false, // SCT 悬浮窗固定显示
     mapMarginTop: 0, // 地图上边界
+    firstLaunchAcknowledged: false, // 首次使用说明已确认
   };
   componentData = {
     settingNodeList: {}, // 设置界面
@@ -486,6 +487,7 @@ class basisCPT extends BaseComponent {
     this.startupUserInfo,
     this.startupSideBarMain,
     this.startupSettingContainer,
+    this.startupFirstLaunchNotice,
     this.startupExecutives,
     // this.startupForDonation,
     this.startupForLang,
@@ -860,6 +862,55 @@ class basisCPT extends BaseComponent {
     let settingContainerNode = ensureSecondaryWindow();
     this.componentData.cptSettingContainerNode = settingContainerNode;
     this.componentData.cptSettingBodyNode = settingContainerNode.querySelector("div#script_setting_body");
+  }
+  // 第一次启动时先致谢、再介绍功能，最后显示免责声明与风险提示。
+  startupFirstLaunchNotice() {
+    if (this.indexDBData.firstLaunchAcknowledged) return;
+    const content = document.createElement("section");
+    content.className = "sct-first-launch-notice";
+
+    const thanksTitle = document.createElement("h3"); thanksTitle.textContent = "致谢";
+    const thanks = document.createElement("p");
+    thanks.textContent = "感谢 SimComp-Tools 原作者道洛 LTS_Kim、所有贡献者，以及 AutoMax / 兔屋相关技术的原作者和贡献者。本插件引用、参考了他们公开项目中的部分代码与实现思路。";
+    const sources = document.createElement("p");
+    const simCompaniesScripts = document.createElement("a");
+    simCompaniesScripts.href = "https://github.com/gangbaRuby/SimCompanies-Scripts";
+    simCompaniesScripts.target = "_blank";
+    simCompaniesScripts.rel = "noreferrer";
+    simCompaniesScripts.textContent = "SimCompanies-Scripts";
+    const simCompTools = document.createElement("a");
+    simCompTools.href = "https://github.com/ShenHaiSu/SimComp-Tools";
+    simCompTools.target = "_blank";
+    simCompTools.rel = "noreferrer";
+    simCompTools.textContent = "SimComp-Tools";
+    sources.append("上游项目：", simCompaniesScripts, " ｜ ", simCompTools);
+
+    const introductionTitle = document.createElement("h3"); introductionTitle.textContent = "简介";
+    const introduction = document.createElement("p");
+    introduction.textContent = "欢迎使用 SimCompanies Tools。以下是可在设置中按需启用的功能；默认只有基础功能开启。";
+    const featureTitle = document.createElement("h3"); featureTitle.textContent = "功能概览";
+    const list = document.createElement("ul");
+    Object.values(componentList).filter((component) => !component.hideSetting).forEach((component) => {
+      const item = document.createElement("li");
+      item.textContent = `${component.name}：${component.describe || "暂无功能说明"}`;
+      list.append(item);
+    });
+
+    const disclaimerTitle = document.createElement("h3"); disclaimerTitle.textContent = "免责声明与风险提示";
+    const disclaimer = document.createElement("p");
+    disclaimer.textContent = "本插件仅提供辅助信息与界面工具，不保证数据准确、收益或任何操作结果。本插件与游戏开发者无关联，也不代表获得游戏开发者许可；游戏规则、许可范围和账号处置均以游戏开发者规定为准。请自行确认市场、合同、生产及自动化操作的风险，相关后果由使用者自行承担。";
+    const acknowledgement = document.createElement("label");
+    const checkbox = document.createElement("input"); checkbox.type = "checkbox";
+    acknowledgement.append(checkbox, document.createTextNode(" 我已知晓并同意自行承担使用责任"));
+    const button = document.createElement("button"); button.type = "button"; button.className = "btn"; button.textContent = "我已知晓"; button.disabled = true;
+    checkbox.addEventListener("change", () => { button.disabled = !checkbox.checked; });
+    button.addEventListener("click", async () => {
+      this.indexDBData.firstLaunchAcknowledged = true;
+      await tools.indexDB_updateIndexDBData();
+      closeSecondaryWindow();
+    });
+    content.append(thanksTitle, thanks, sources, introductionTitle, introduction, featureTitle, list, disclaimerTitle, disclaimer, acknowledgement, button);
+    openSecondaryWindow({ id: "first-launch-notice", title: "首次使用说明", content });
   }
   // 基础组件设置界面
   uisetting() {
