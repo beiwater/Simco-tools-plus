@@ -57,6 +57,13 @@ class tools {
     // 高管信息
     executives: "https://www.simcompanies.com/api/v3/companies/me/executives/",
   };
+  static getPageWindow() {
+    try {
+      return typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+    } catch {
+      return window;
+    }
+  }
   static log() {
     if (!feature_config.debug) return;
     console.log.call(this, ...arguments);
@@ -300,7 +307,7 @@ class tools {
       return false;
     }
   }
-  static async getNetText(target, method = "GET", body = undefined) {
+  static async getNetText(target, method = "GET", body = undefined, header = []) {
     let netResp = await this.netRequest(target, method, body, header);
     if (!netResp) return false;
     return await netResp.text();
