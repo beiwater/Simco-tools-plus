@@ -11,7 +11,7 @@ class autoMaxWarehouseProfit extends BaseComponent {
     super();
     this.name = "仓库时利润计算";
     this.describe = "在仓库零售物品堆叠旁显示按当前成本计算的最大时利润。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "仓库", "利润"];
   }
