@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const BaseComponent = require("../tools/baseComponent.js");
 const { componentList } = require("../tools/tools.js");
 const { administrationMultiplier, modeledRetailData, retailSearchWorkerSource } = require("../tools/automax/retailMath.js");
