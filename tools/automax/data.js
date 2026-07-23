@@ -114,17 +114,33 @@ function executiveSkillTaper(value) {
   return result;
 }
 
-function calculateExecutiveBonus(executives, academyActive = 15) {
+function calculateExecutiveSkills(executives, academyActive = 15) {
   const skills = (Array.isArray(executives) ? executives : []).reduce((result, executive) => {
     const position = executive?.currentWorkHistory?.position;
     if (position) result[position] = executive.skills ?? {};
     return result;
   }, {});
   const skill = (position, name) => Number(skills[position]?.[name]) || 0;
-  const cooApprentice = academyActive >= 5 ? skill("v", "coo") / 2 : 0;
-  const cmoApprentice = academyActive >= 15 ? skill("y", "cmo") / 2 : 0;
-  const adminBonus = executiveSkillTaper(skill("o", "coo") + cooApprentice + (skill("f", "coo") + skill("m", "coo") + skill("t", "coo")) / 4);
-  const saleBonus = Math.floor(executiveSkillTaper(skill("m", "cmo") + cmoApprentice + (skill("o", "cmo") + skill("f", "cmo") + skill("t", "cmo")) / 4) / 3);
+  const raw = {
+    coo: Math.floor(skill("o", "coo") + (academyActive >= 5 ? skill("v", "coo") / 2 : 0)
+      + (skill("f", "coo") + skill("m", "coo") + skill("t", "coo")) / 4),
+    cfo: Math.floor(skill("f", "cfo") + (academyActive >= 10 ? skill("x", "cfo") / 2 : 0)
+      + (skill("o", "cfo") + skill("m", "cfo") + skill("t", "cfo")) / 4),
+    cmo: Math.floor(skill("m", "cmo") + (academyActive >= 15 ? skill("y", "cmo") / 2 : 0)
+      + (skill("o", "cmo") + skill("f", "cmo") + skill("t", "cmo")) / 4),
+    cto: Math.floor(skill("t", "cto") + (academyActive >= 20 ? skill("z", "cto") / 2 : 0)
+      + (skill("o", "cto") + skill("f", "cto") + skill("m", "cto")) / 4),
+  };
+  const effective = Object.fromEntries(
+    Object.entries(raw).map(([name, value]) => [name, executiveSkillTaper(value)]),
+  );
+  return { effective, raw };
+}
+
+function calculateExecutiveBonus(executives, academyActive = 15) {
+  const { effective } = calculateExecutiveSkills(executives, academyActive);
+  const adminBonus = effective.coo;
+  const saleBonus = Math.floor(effective.cmo / 3);
   return { adminBonus, saleBonus };
 }
 
@@ -183,6 +199,7 @@ function createRegionService({ requestJson, now = () => new Date().toISOString()
 
 module.exports = {
   calculateExecutiveBonus,
+  calculateExecutiveSkills,
   createAutoMaxCache,
   createRegionService,
   createRequestClient,
