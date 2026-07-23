@@ -7,16 +7,32 @@ const components = require.context('./components', true, /\.js$/);
 components.keys().forEach(components);
 
 // 初始化代码
-async function scriptMainInit() {
+const MAX_INIT_RETRIES = 3;
+
+async function waitForRoot(timeoutMs = 15_000) {
+  const startedAt = Date.now();
+  while (!document.querySelector("div#root")) {
+    if (Date.now() - startedAt >= timeoutMs) throw new Error("SimCompanies root element was not found.");
+    await tools.dely(100);
+  }
+}
+
+async function scriptMainInit(retryCount = 0) {
   // 标记插件已加载
   if (window.SCTLoadFlag || document.querySelector("div#script_hover_node")) return;
   window.SCTLoadFlag = true;
   try {
+    await waitForRoot();
     scriptEventStart();
-  } catch {
-    tools.dely(5000);
+  } catch (error) {
+    tools.errorLog("[SCT:INIT]", error);
+    if (retryCount >= MAX_INIT_RETRIES) {
+      window.SCTLoadFlag = false;
+      return;
+    }
+    await tools.dely(5000);
     window.SCTLoadFlag = false;
-    return scriptMainInit();
+    return scriptMainInit(retryCount + 1);
   }
   // 版本显示
   console.log(sctData.version ? `当前Sim Companies little Tools插件版本：${sctData.version.join(".")}` : "未获取到版本号。");
@@ -80,21 +96,26 @@ function scriptEventStart() {
   let rootObserveServer = new MutationObserver((mutation) => tools.mutationHandle(mutation));
   rootObserveServer.observe(document.querySelector("div#root"), { childList: true, subtree: true });
   setInterval(tools.intervalEventBus.bind(tools), 100);
-  const originalXHR = window.XMLHttpRequest;
-  window.XMLHttpRequest = function () {
-    let xhr = new originalXHR();
-    let originalOpen = xhr.open;
-    xhr.open = function (method, url, async) {
-      let originalOnLoad = xhr.onload;
-      xhr.onload = function () {
-        if (xhr.status !== 200) return;
-        try { tools.netEventBus(url, method, xhr.responseText) } catch (error) { tools.errorLog(error) }
-        if (originalOnLoad) originalOnLoad.apply(this, arguments);
-      };
-      originalOpen.apply(this, arguments);
+  const OriginalXHR = window.XMLHttpRequest;
+  window.XMLHttpRequest = function SCTXMLHttpRequest() {
+    const xhr = new OriginalXHR();
+    const originalOpen = xhr.open;
+    let requestMethod = "";
+    let requestUrl = "";
+    xhr.open = function (method, url, ...rest) {
+      requestMethod = method;
+      requestUrl = String(url);
+      return originalOpen.call(this, method, url, ...rest);
     };
+    xhr.addEventListener("loadend", () => {
+      if (xhr.status < 200 || xhr.status >= 400) return;
+      try { tools.netEventBus(requestUrl, requestMethod, xhr.responseText, xhr.status); }
+      catch (error) { tools.errorLog(error); }
+    });
     return xhr;
   };
+  Object.setPrototypeOf(window.XMLHttpRequest, OriginalXHR);
+  window.XMLHttpRequest.prototype = OriginalXHR.prototype;
 }
 
 scriptMainInit();

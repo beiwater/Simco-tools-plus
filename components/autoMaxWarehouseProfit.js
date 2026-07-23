@@ -46,7 +46,7 @@ class autoMaxWarehouseProfit extends BaseComponent {
     if (!this.enabled()) return this.clear();
     const context = this.context();
     if (!context) return;
-    const revision = ++this.componentData.revision;
+    const revision = this.componentData.revision;
     for (const stack of this.itemStacks()) this.enqueue(stack, context, revision);
   }
 
