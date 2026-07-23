@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const AUTO_MAX_ROUTE_PATTERNS = Object.freeze({
   marketPage: /^https:\/\/www\.simcompanies\.com(?:\/[a-z-]+)?\/market\/resource\/(\d+)\/?$/,
   contractPage: /^https:\/\/www\.simcompanies\.com(?:\/[a-z-]+)?\/headquarters\/warehouse\/incoming-contracts\/?$/,
