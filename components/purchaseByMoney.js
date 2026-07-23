@@ -9,6 +9,9 @@ class purchaseByMoney extends BaseComponent {
     this.describe = "交易行多出一排信息，输入采购目标（最低品质要求，最高金额限制）\n点击按钮会提示计算结果，点击确定会尝试进行采购\n采购金额误差可能有±1%";
     this.enable = false;
     this.tagList = ['实用', '交易所'];
+    this.requiresRiskAcknowledgement = true;
+    this.riskNotice = "会按设定金额自动选择订单并触发购买提交。这类自动化操作可能不在游戏开发者允许范围内，并可能造成账号处罚或意外交易损失。";
+    this.indexDBData = { riskAcknowledged: false };
   }
   commonFuncList = [{
     match: () => Boolean(location.href.match(/market\/resource\/(\d+)\//)),
