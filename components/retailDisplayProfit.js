@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const BaseComponent = require("../tools/baseComponent.js");
 const { componentList, runtimeData } = require("../tools/tools.js");
 const { getRealmIdFromDocument, runWorkerTask } = require("../tools/automax/index.js");
