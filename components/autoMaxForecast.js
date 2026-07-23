@@ -11,7 +11,7 @@ class autoMaxForecast extends BaseComponent {
     super();
     this.name = "AutoMax 易腐品预测";
     this.describe = "计算冰淇淋在库存、合同和市场订单中的未来剩余量。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "库存", "预测"];
   }
