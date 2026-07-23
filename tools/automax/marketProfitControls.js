@@ -55,6 +55,7 @@ function adjustedMarketCost(marketPrice, adjustment) {
 }
 
 function isDarkPage(document, view) {
+  if (!document?.body || !view?.getComputedStyle) return true;
   const color = view.getComputedStyle(document.body).backgroundColor;
   const channels = (color.match(/\d+/g) ?? []).map(Number);
   return channels.reduce((sum, channel) => sum + channel, 0) < 380;
@@ -66,6 +67,7 @@ function formatMoney(value) {
 
 function summarizeMarketOrders(results, settings) {
   const normalized = normalizeMarketProfitSettings(settings);
+  if (!Array.isArray(results)) return { kind: "empty", message: "无正利润订单" };
   const profitable = results
     .filter((result) => Number.isFinite(result?.hourlyProfit) && result.hourlyProfit > 0 && result.seconds > 0)
     .sort((left, right) => right.hourlyProfit - left.hourlyProfit);
@@ -93,10 +95,10 @@ function summarizeMarketOrders(results, settings) {
   };
 }
 
-function formatMarketSummary(summary, formatMoney) {
+function formatMarketSummary(summary, formatMoneyFn = formatMoney) {
   if (summary.kind === "empty") return summary.message;
   const shortage = summary.isFull ? "" : "（货源不足）";
-  return `${summary.title}：$${formatMoney(summary.hourlyProfit)}/h；总利润 $${formatMoney(summary.totalProfit)}；覆盖 ${summary.coveredHours.toFixed(1)}H${shortage}`;
+  return `${summary.title}：${formatMoneyFn(summary.hourlyProfit)}/h；总利润 ${formatMoneyFn(summary.totalProfit)}；覆盖 ${summary.coveredHours.toFixed(1)}H${shortage}`;
 }
 
 function button(document, text, className) {

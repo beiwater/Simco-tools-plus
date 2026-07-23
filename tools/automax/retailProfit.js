@@ -268,7 +268,7 @@ self.onmessage = function(event) {
       fail("未找到可售的价格区间。");
       return;
     }
-    if (iterations >= maxIterations) {
+    if (iterations >= maxIterations && !Number.isFinite(maxProfit)) {
       fail("价格扫描超过安全上限，请减少成本或手动设定价格。");
       return;
     }

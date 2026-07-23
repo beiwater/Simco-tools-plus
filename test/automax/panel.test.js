@@ -157,9 +157,7 @@ class FakeElement {
 
   querySelector(selector) {
     const match = (node) => {
-      if (/^[a-z]+$/i.test(selector)) {
-        return node.tagName === selector.toUpperCase();
-      }
+      if (/^[a-z]+$/i.test(selector)) return node.tagName === selector.toUpperCase();
       if (selector === "button") {
         return node.tagName === "BUTTON";
       }
@@ -247,13 +245,7 @@ function createDom() {
 test("boardroom rerenders restore focus to the replacement slot control", () => {
   let focused = false;
   let selector;
-  const root = {
-    querySelector(value) {
-      selector = value;
-      return { focus() { focused = true; } };
-    },
-  };
-
+  const root = { querySelector(value) { selector = value; return { focus() { focused = true; } }; } };
   assert.equal(focusBoardroomSlot(root, "f"), true);
   assert.equal(selector, '[data-slot-id="f"] > [role="button"]');
   assert.equal(focused, true);
@@ -285,7 +277,6 @@ test("autoMaxRuntimeSaturation exposes the active sort direction in its table he
   const originalDocument = global.document;
   const document = createDom();
   global.document = document;
-
   try {
     component.componentData.saturationRows = [];
     component.componentData.saturationSort = { key: "resourceName", direction: "asc" };
@@ -294,7 +285,6 @@ test("autoMaxRuntimeSaturation exposes the active sort direction in its table he
     const headers = findAllByTag(table, "th");
     const buttons = findAllByTag(table, "button");
     const emptyCell = findAllByTag(table, "td").find((cell) => cell.className === "automax-data-empty");
-
     assert.equal(headers[0].getAttribute("aria-sort"), "ascending");
     assert.equal(emptyCell.textContent, "当前领域没有可用的饱和度数据。");
     assert.equal(buttons[0].textContent, "物品 ↑");
@@ -403,3 +393,23 @@ test("autoMaxOutgoingMP correctly calculates product cost, transport cost and ne
     global.document = originalDocument;
   }
 });
+
+test("basisCPT uisetting generates explicit data-cpt-key and data-config-key attributes", async () => {
+  require("../../components/autoMaxRuntimeSaturation.js");
+  require("../../components/basisCPT.js");
+  const basisComponent = componentList.basisCPT;
+  const originalDocument = global.document;
+  const document = createDom();
+  global.document = document;
+
+  try {
+    const settingNode = basisComponent.uisetting();
+    const html = settingNode.innerHTML;
+    assert.ok(html.includes('data-config-key="net_gap_ms"'));
+    assert.ok(html.includes('data-config-key="fontColor"'));
+    assert.ok(html.includes('data-cpt-key="autoMaxRuntimeSaturation"'));
+  } finally {
+    global.document = originalDocument;
+  }
+});
+

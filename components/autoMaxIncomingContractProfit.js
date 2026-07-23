@@ -1,9 +1,21 @@
 const BaseComponent = require("../tools/baseComponent.js");
 const { componentList, tools } = require("../tools/tools.js");
 const { administrationMultiplier, modeledRetailData, retailSearchWorkerSource } = require("../tools/automax/retailMath.js");
-const { getPageActionEnabled } = require("../tools/automax/settings.js");
 const { getRealmIdFromDocument } = require("../tools/automax/lifecycle.js");
 const { runWorkerTask } = require("../tools/automax/worker.js");
+
+async function mapLimit(items, concurrency, fn) {
+  const results = new Array(items.length);
+  let index = 0;
+  async function worker() {
+    while (index < items.length) {
+      const i = index++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
+  return results;
+}
 
 const DISPLAY_MARKER = "data-automax-incoming-profit";
 const MARKET_CACHE_TTL = 60_000;
@@ -20,7 +32,7 @@ class autoMaxIncomingContractProfit extends BaseComponent {
 
   componentData = {
     marketCache: new Map(),
-    pending: new WeakSet(),
+    pending: new WeakMap(),
     generation: 0,
     settingsListener: undefined,
   }
@@ -99,19 +111,19 @@ class autoMaxIncomingContractProfit extends BaseComponent {
   }
 
   enqueue(card, context, generation) {
-    if (this.componentData.pending.has(card) || card.querySelector(`[${DISPLAY_MARKER}]`)) return;
+    if (this.componentData.pending.get(card) === generation || card.querySelector(`[${DISPLAY_MARKER}]`)) return;
     const contract = this.parseCard(card, context.constants);
     if (!contract) return;
-    this.componentData.pending.add(card);
+    this.componentData.pending.set(card, generation);
     const display = this.createDisplay();
     this.insertDisplay(card, display);
     this.calculate(contract, context).then((outcome) => {
-      this.componentData.pending.delete(card);
+      if (this.componentData.pending.get(card) === generation) this.componentData.pending.delete(card);
       if (!display.isConnected || generation !== this.componentData.generation) return;
       this.render(display, outcome);
       this.applyHighPriceGuard(card, contract, outcome.mp);
     }).catch((error) => {
-      this.componentData.pending.delete(card);
+      if (this.componentData.pending.get(card) === generation) this.componentData.pending.delete(card);
       if (!display.isConnected || generation !== this.componentData.generation) return;
       tools.errorLog("[AutoMax:INCOMING_CONTRACT]", error);
       this.render(display, { note: "计算失败" });
@@ -168,10 +180,10 @@ class autoMaxIncomingContractProfit extends BaseComponent {
     let marketChoice;
     if (componentList.autoMaxMarketProfit?.enable && Array.isArray(market.data)) {
       const candidates = this.marketCandidates(contract, market.data).slice(0, 40);
-      const results = await Promise.all(candidates.map(async (candidate) => ({
+      const results = await mapLimit(candidates, 4, async (candidate) => ({
         candidate,
         profit: await this.searchRetailProfit({ ...contract, quantity: candidate.quantity }, candidate.price, candidate.quality, context),
-      })));
+      }));
       const best = results.reduce((winner, candidate) => !winner || (candidate.profit?.hourlyProfit ?? -Infinity) > (winner.profit?.hourlyProfit ?? -Infinity) ? candidate : winner, undefined);
       marketProfit = best?.profit;
       marketChoice = best?.candidate;
