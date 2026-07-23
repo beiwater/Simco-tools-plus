@@ -1,0 +1,49 @@
+name: Build codex userscript artifact
+
+on:
+  push:
+    branches:
+      - codex/dev-bench-automaxpphpl
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event.head_commit.message == 'ci: build codex userscript artifact'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/dev-bench-automaxpphpl
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Build and record result
+        shell: bash
+        run: |
+          set +e
+          npm ci > .codex-build-log.txt 2>&1
+          ci_status=$?
+          npm test >> .codex-build-log.txt 2>&1
+          test_status=$?
+          npm run build >> .codex-build-log.txt 2>&1
+          build_status=$?
+          npm run verify:userscript >> .codex-build-log.txt 2>&1
+          verify_status=$?
+          {
+            echo "npm_ci=$ci_status"
+            echo "npm_test=$test_status"
+            echo "npm_build=$build_status"
+            echo "userscript_verify=$verify_status"
+          } > .codex-build-result.txt
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .codex-build-log.txt .codex-build-result.txt
+          if [ "$build_status" -eq 0 ]; then
+            git add dist/build.user.js dist/version.json
+          fi
+          git commit -m "build: package codex userscript artifact"
+          git push origin HEAD:codex/dev-bench-automaxpphpl
+          exit 0
