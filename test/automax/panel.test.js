@@ -349,3 +349,23 @@ test("autoMaxOutgoingMP correctly calculates product cost, transport cost and ne
     global.document = originalDocument;
   }
 });
+
+test("basisCPT uisetting generates explicit data-cpt-key and data-config-key attributes", async () => {
+  require("../../components/autoMaxRuntimeSaturation.js");
+  require("../../components/basisCPT.js");
+  const basisComponent = componentList.basisCPT;
+  const originalDocument = global.document;
+  const document = createDom();
+  global.document = document;
+
+  try {
+    const settingNode = basisComponent.uisetting();
+    const html = settingNode.innerHTML;
+    assert.ok(html.includes('data-config-key="net_gap_ms"'));
+    assert.ok(html.includes('data-config-key="fontColor"'));
+    assert.ok(html.includes('data-cpt-key="autoMaxRuntimeSaturation"'));
+  } finally {
+    global.document = originalDocument;
+  }
+});
+

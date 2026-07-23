@@ -112,7 +112,7 @@ class autoMaxFoundation extends BaseComponent {
   captureXhr(url, method, responseText) {
     const capture = this.componentData.responseCapture;
     if (!capture) return;
-    return capture.captureXhr({ url, method, responseText, status: 200 });
+    return capture.captureXhr({ url, method, responseText });
   }
 }
 

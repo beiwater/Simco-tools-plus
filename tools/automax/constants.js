@@ -22,7 +22,7 @@ function findBalancedObject(text, start) {
 
 function parseLiteral(value) {
   const trimmed = value.trim();
-  if (/^['"].*['"]$/.test(trimmed)) return trimmed.slice(1, -1);
+  if (/^(['"]).*\1$/.test(trimmed)) return trimmed.slice(1, -1);
   if (/^-?(?:\d+\.?\d*|\.\d+)$/.test(trimmed)) return Number(trimmed);
   if (trimmed === "true" || trimmed === "false") return trimmed === "true";
   if (trimmed === "null") return null;
@@ -94,7 +94,7 @@ function parseConstantsBundle(text, now = () => new Date().toISOString()) {
     RETAIL_MODELING_QUALITY_WEIGHT: extractCoreValue(text, "RETAIL_MODELING_QUALITY_WEIGHT"),
     SALES: extractCoreValue(text, "SALES"),
   };
-  if (!Number.isFinite(data.AVERAGE_SALARY) || !Number.isFinite(data.RETAIL_MODELING_QUALITY_WEIGHT) || !data.SALES) {
+  if (!Number.isFinite(data.AVERAGE_SALARY) || !Number.isFinite(data.RETAIL_MODELING_QUALITY_WEIGHT) || !data.SALES || typeof data.SALES !== "object") {
     return failure("CONSTANTS_PARSE_FAILED", "Required constants were not found in the bundle.");
   }
   delete data.SALES.B;
