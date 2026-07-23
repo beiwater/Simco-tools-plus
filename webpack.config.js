@@ -7,27 +7,13 @@ const TerserPlugin = require('terser-webpack-plugin');
 // const timeStamp = moment().format('MMDD-HHmmss');
 const fileName = `build.user.js`;
 const distPath = path.join(__dirname, 'dist');
-const nowVersion = [2];
+const nowVersion = [3, 0];
 
 // 生成版本号
 const genVersion = () => {
   let cptCount = fs.readdirSync(path.join(__dirname, "components")).length;
-  let oldFile = JSON.parse(fs.readFileSync(path.join(distPath, "version.json")));
-  let offset = -20;
   let timeVersion = moment().format(`YYMMDDHHmmss`);
-  // 原注释掉的代码，推测是旧逻辑，将组件数量加上偏移量赋值给版本号数组的第二个元素
-  // nowVersion[1] = cptCount + offset;
-
-  // 检查当前组件数量是否与版本文件中的组件数量相同
-  if (cptCount == oldFile.cptCount) {
-    // 若相同，则将当前组件数量加上偏移量赋值给版本号数组的第二个元素
-    nowVersion[1] = cptCount + offset;
-  } else {
-    // 若不同，则在旧版本号的第二个元素基础上加 1 赋值给版本号数组的第二个元素
-    nowVersion[1] = oldFile.version[1] + 1;
-  }
-
-  // 将当前时间戳转换为数字类型，赋值给版本号数组的第三个元素
+  // 发布版本固定使用：主版本.次版本.构建时间（YYMMDDHHmmss）。
   nowVersion[2] = Number(timeVersion);
 
   // 返回生成好的版本号数组
