@@ -16,7 +16,7 @@ class profileLocalTimeConvertTo24 extends BaseComponent {
     // 组件描述
     this.describe = "公司资料页面中的 当地时间 自动从12小时制转换为24小时制 *增加了對英文的支持";
     // 组件启用状态
-    this.enable = true;
+    this.enable = false;
     // 组件是否可禁用
     this.canDisable = true;
     // 组件标签列表
