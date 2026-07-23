@@ -18,8 +18,8 @@ class autoMaxAccessibility extends BaseComponent {
     super();
     this.name = "AutoMax 聊天与地图辅助";
     this.describe = "提供色弱文字标识、空闲建筑高亮、PA 答案和 Snipboard 预览。";
-    this.enable = true;
-    this.canDisable = false;
+    this.enable = false;
+    this.canDisable = true;
     this.hideSetting = true;
     this.tagList = ["AutoMax", "聊天", "地图", "辅助"];
   }
@@ -311,7 +311,7 @@ class autoMaxMapIdleHighlight extends BaseComponent {
     super();
     this.name = "地图空闲建筑高亮";
     this.describe = "在总公司地图页面，对闲置、无生产/销售安排的建筑进行色彩高亮提醒。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "辅助"];
   }
@@ -323,7 +323,7 @@ class autoMaxPAAnswer extends BaseComponent {
     super();
     this.name = "PA 任务答案";
     this.describe = "在助理（PA）答题任务中，直接高亮正确答案。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "辅助"];
   }
@@ -335,7 +335,7 @@ class autoMaxSnipboardPreview extends BaseComponent {
     super();
     this.name = "Snipboard 图片预览";
     this.describe = "在聊天消息中直接渲染 Snipboard 链接图片的悬浮或内联预览图。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "辅助"];
   }
