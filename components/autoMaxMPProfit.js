@@ -4,6 +4,7 @@ const { predictedAmount } = require("../tools/automax/forecast.js");
 const { administrationMultiplier, modeledRetailData, retailSearchWorkerSource } = require("../tools/automax/retailMath.js");
 const { getRealmIdFromDocument } = require("../tools/automax/lifecycle.js");
 const { runWorkerTask } = require("../tools/automax/worker.js");
+const { enableFloatingPanelDrag } = require("../tools/automax/floatingPanel.js");
 
 class autoMaxMPProfit extends BaseComponent {
   constructor() {
@@ -82,6 +83,7 @@ class autoMaxMPProfit extends BaseComponent {
     content.textContent = "请打开一个交易所资源页面后计算。";
     panel.append(header, controls, content);
     document.body.append(panel);
+    enableFloatingPanelDrag(panel, header);
     this.componentData.panel = panel;
     this.componentData.content = content;
   }
