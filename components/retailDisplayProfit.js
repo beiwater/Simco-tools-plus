@@ -14,7 +14,7 @@ class retailDisplayProfit extends BaseComponent {
     super();
     this.name = "零售最大时利润";
     this.describe = "在商店卡片中计算最大时利润或最大总利润，并支持假设单位成本。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "零售", "利润"];
   }
