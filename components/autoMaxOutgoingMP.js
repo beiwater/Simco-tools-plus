@@ -12,7 +12,7 @@ class autoMaxOutgoingMP extends BaseComponent {
     super();
     this.name = "出库合同 MP-?%";
     this.describe = "为出库合同和交易所上架提供 MP/VWAP 预设价格按钮。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "出库", "MP"];
   }
