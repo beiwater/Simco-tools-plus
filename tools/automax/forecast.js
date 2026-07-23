@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const DECAY_RESOURCE_IDS = Object.freeze(new Set([153, 154]));
 const DECAY_FACTOR = 0.95;
 const DECAY_INTERVAL_MS = 4 * 60 * 1000;
