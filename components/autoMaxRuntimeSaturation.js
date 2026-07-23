@@ -3,7 +3,6 @@ const { componentList, runtimeData, tools } = require("../tools/tools.js");
 const {
   DEFAULT_RUNTIME_PRESETS,
   createSaturationRows,
-  getPageActionEnabled,
   getRealmIdFromDocument,
   getWeatherMultiplier,
   normalizeRuntimePresets,

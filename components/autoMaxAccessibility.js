@@ -6,7 +6,6 @@ const {
   findQuestMatch,
   normalizeSnipboardUrl,
 } = require("../tools/automax/assist.js");
-const { getPageActionEnabled } = require("../tools/automax/settings.js");
 const { getRealmIdFromDocument } = require("../tools/automax/lifecycle.js");
 
 const QUEST_CACHE_KEY = "automax-pa-quest-cache";

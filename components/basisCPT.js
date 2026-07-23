@@ -786,7 +786,7 @@ class basisCPT extends BaseComponent {
     let newNode = document.createElement("div");
     newNode.id = "script_setting_basisCPT";
     newNode.className = "col-sm-12 setting-container";
-    let htmlText = `<div><div class="header">插件基础功能设置</div><div class="container"><div><div><button class="btn script_opt_submit">保存</button></div></div><div><table><thead><tr><td>组件名</td><td>开关</td></tr></thead><tbody>`;
+    let htmlText = `<div><div class="header">插件基础功能设置</div><div class="container"><div><div><button class="btn script_opt_submit">保存</button></div></div><div><table class="sct-cpt-switch-table"><thead><tr><td>组件名</td><td>开关</td></tr></thead><tbody>`;
     let tempCPTList = Object.values(componentList).filter(c => !c.hideSetting);
     for (let i = 0; i < tempCPTList.length; i++) {
       let component = tempCPTList[i];
@@ -794,13 +794,14 @@ class basisCPT extends BaseComponent {
       let describe = component.describe;
       let enable = component.enable;
       let canDisable = component.canDisable;
-      htmlText += `<tr><td><span title='${describe}'>${name}</span></td><td><input class='form-control' type="checkbox" ${
+      let cptKey = component.constructor.name;
+      htmlText += `<tr><td><span title='${describe}'>${name}</span></td><td><input class='form-control sct-cpt-checkbox' data-cpt-key="${cptKey}" type="checkbox" ${
         enable ? "checked" : ""
       } ${canDisable ? "" : "disabled"}></td></tr>`;
     }
-    htmlText += `</table></div><div><table><thead><tr><td>功能<td>设置<tbody><tr><td title=打开debug模式会有大量信息输出,可能会影响到性能,如非必要不要打开.>DEBUG模式<td><input class='form-control' type='checkbox' #####><tr><td title="只有插件主动发起的请求会被此项目限制\n官方文档说明低于5分钟就不安全了,用户请酌情设置. \n默认[10000ms]=10s">插件主动网络请求最小间隔<td><input type=number class=form-control value=#####><tr><td title="允许使用hex代码 and rgb标号. \n默认 #ffffff">插件通用文字配色<td><input class=form-control value=#####><tr><td title="允许使用hex代码和rgb标号. \n默认 100 ">网页缩放比例<td><input type=number class=form-control value=#####> <tr><td title='地图界面上方的间隔，注意与网页缩放比例搭配使用。'>地图上方间距<td><input type='number' class=form-control value=#####>  <tr><td title="首要通知模式,默认是 网页内通知">主要通知模式<td><select class=form-control><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="次要通知模式,默认是 无">次要通知模式<td><select class=form-control><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="默认不勾选,勾选后SCT悬浮窗使用横向布局">悬浮窗横向排列</td><td><input type="checkbox" class="form-control" ${
+    htmlText += `</table></div><div><table class="sct-feature-config-table"><thead><tr><td>功能<td>设置<tbody><tr><td title=打开debug模式会有大量信息输出,可能会影响到性能,如非必要不要打开.>DEBUG模式<td><input class='form-control' data-config-key="debug" type='checkbox' #####><tr><td title="只有插件主动发起的请求会被此项目限制\n官方文档说明低于5分钟就不安全了,用户请酌情设置. \n默认[10000ms]=10s">插件主动网络请求最小间隔<td><input type=number class=form-control data-config-key="net_gap_ms" value=#####><tr><td title="允许使用hex代码 and rgb标号. \n默认 #ffffff">插件通用文字配色<td><input class=form-control data-config-key="fontColor" value=#####><tr><td title="允许使用hex代码和rgb标号. \n默认 100 ">网页缩放比例<td><input type=number class=form-control data-config-key="zoomRate" value=#####> <tr><td title='地图界面上方的间隔，注意与网页缩放比例搭配使用。'>地图上方间距<td><input type='number' class=form-control data-config-key="mapMarginTop" value=#####>  <tr><td title="首要通知模式,默认是 网页内通知">主要通知模式<td><select class=form-control data-config-key="notificationMode0"><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="次要通知模式,默认是 无">次要通知模式<td><select class=form-control data-config-key="notificationMode1"><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="默认不勾选,勾选后SCT悬浮窗使用横向布局">悬浮窗横向排列</td><td><input type="checkbox" class="form-control" data-config-key="SCT_divHorizontal" ${
       this.indexDBData.SCT_divHorizontal ? "checked" : ""
-    } ></td></tr><tr><td title="默认不勾选,勾选后SCT悬浮窗会固定在右下角不受hover影响">悬浮窗固定位置</td><td><input type="checkbox" class="form-control" ${
+    } ></td></tr><tr><td title="默认不勾选,勾选后SCT悬浮窗会固定在右下角不受hover影响">悬浮窗固定位置</td><td><input type="checkbox" class="form-control" data-config-key="SCT_divFixedDisplay" ${
       this.indexDBData.SCT_divFixedDisplay ? "checked" : ""
     } ></td></tr><tr><td title="无确认,删除插件所有缓存.非必要不用点">清除插件缓存</td><td><button class="btn form-control" id="script_reset">清除</button></td></tr><tr><td>插件缓存读写</td><td><button class="btn form-control" id="script_confEdit_enter">进入读写操作</button></td></tr></table></div></div></div>`;
     // 修改input已有参数
@@ -811,58 +812,76 @@ class basisCPT extends BaseComponent {
     htmlText = htmlText.replace("#####", parseInt(this.indexDBData.mapMarginTop));
     newNode.innerHTML = htmlText;
     // 修改select的已有参数
-    let selectList = newNode.querySelectorAll("td>select");
-    selectList[0].value = feature_config.notificationMode[0];
-    selectList[1].value = feature_config.notificationMode[1];
+    let select0 = newNode.querySelector('[data-config-key="notificationMode0"]');
+    if (select0) select0.value = feature_config.notificationMode[0];
+    let select1 = newNode.querySelector('[data-config-key="notificationMode1"]');
+    if (select1) select1.value = feature_config.notificationMode[1];
     // 绑定按键
-    newNode.querySelector("button#script_reset").addEventListener("click", async () => {
+    newNode.querySelector("button#script_reset")?.addEventListener("click", async () => {
       if (!(await tools.confirm("确定清理?"))) return;
       tools.indexDB_deleteAllData();
       location.reload();
     });
-    newNode.querySelector("button#script_confEdit_enter").addEventListener("click", () => this.scriptConfEdit_build());
-    newNode.querySelector("button.script_opt_submit").addEventListener("click", () => this.uisettingSub());
+    newNode.querySelector("button#script_confEdit_enter")?.addEventListener("click", () => this.scriptConfEdit_build());
+    newNode.querySelector("button.script_opt_submit")?.addEventListener("click", () => this.uisettingSub());
     return newNode;
   }
   uisettingSub() {
-    let valueList = [];
-    let flagCount = 0;
+    let container = document.querySelector("div#script_setting_basisCPT");
+    if (!container) return;
+
+    // 更新组件开关
     let visibleCPTs = Object.values(componentList).filter(c => !c.hideSetting);
-    let cptCount = visibleCPTs.length;
-    document
-      .querySelectorAll("div#script_setting_basisCPT input, div#script_setting_basisCPT select")
-      .forEach((node) => {
-        if (node.tagName == "INPUT" && node.type == "checkbox") {
-          valueList.push(node.checked);
-        } else if (node.tagName == "INPUT" && node.type == "number") {
-          valueList.push(parseFloat(node.value));
-        } else if (node.tagName == "INPUT") {
-          valueList.push(node.value);
-        } else if (node.tagName == "SELECT") {
-          valueList.push(parseInt(node.value));
-        }
-      });
+    visibleCPTs.forEach((component) => {
+      let cptKey = component.constructor.name;
+      let checkbox = container.querySelector(`input.sct-cpt-checkbox[data-cpt-key="${cptKey}"]`);
+      if (checkbox) {
+        component.enable = checkbox.checked;
+      }
+    });
+
+    // 读取具体 config Key 对应的节点
+    const getConfigNode = (key) => container.querySelector(`[data-config-key="${key}"]`);
+
+    const debugNode = getConfigNode("debug");
+    const netGapNode = getConfigNode("net_gap_ms");
+    const fontColorNode = getConfigNode("fontColor");
+    const zoomRateNode = getConfigNode("zoomRate");
+    const mapMarginNode = getConfigNode("mapMarginTop");
+    const mode0Node = getConfigNode("notificationMode0");
+    const mode1Node = getConfigNode("notificationMode1");
+    const horizNode = getConfigNode("SCT_divHorizontal");
+    const fixedNode = getConfigNode("SCT_divFixedDisplay");
+
+    const netGapMs = netGapNode ? Math.floor(parseFloat(netGapNode.value)) : feature_config.net_gap_ms;
+    const fontColor = fontColorNode ? fontColorNode.value : feature_config.fontColor;
+    const zoomRate = zoomRateNode ? parseFloat(zoomRateNode.value) : parseFloat(feature_config.zoomRate);
+    const mapMarginTop = mapMarginNode ? parseFloat(mapMarginNode.value) : this.indexDBData.mapMarginTop;
+    const mode0 = mode0Node ? parseInt(mode0Node.value) : feature_config.notificationMode[0];
+    const mode1 = mode1Node ? parseInt(mode1Node.value) : feature_config.notificationMode[1];
+
     // 检测内容
-    if (Math.floor(valueList[cptCount + 1]) < 60000)
+    if (netGapMs < 60000)
       return tools.alert("插件主动网络请求最小间隔 不允许设置小于1分钟，也就是不小于60000.");
-    if (!tools.hexArgbCheck(valueList[cptCount + 2])) return tools.alert("只支持HEX格式颜色和RGB格式颜色.");
-    if (valueList[cptCount + 3] > 100 || valueList[cptCount + 3] <= 0)
+    if (!tools.hexArgbCheck(fontColor)) return tools.alert("只支持HEX格式颜色和RGB格式颜色.");
+    if (zoomRate > 100 || zoomRate <= 0)
       return tools.alert("网页缩放比例太离谱嗷.\n只允许 (0-100].");
-    if (valueList[cptCount + 4] < 0) return tools.alert("间距不允许是负数");
-    if (valueList[cptCount + 5] == -1 && valueList[cptCount + 6] != -1)
+    if (mapMarginTop < 0) return tools.alert("间距不允许是负数");
+    if (mode0 == -1 && mode1 != -1)
       return tools.alert("如果仅设置一个通知模式请使用主要通知模式.");
-    if (valueList[cptCount + 5] == valueList[cptCount + 6] && valueList[cptCount + 5] != -1)
+    if (mode0 == mode1 && mode0 != -1)
       return tools.alert("没必要都设置一样的.");
+
     // 挂载内容
-    visibleCPTs.forEach((component) => (component.enable = valueList[flagCount++]));
-    feature_config.debug = valueList[cptCount + 0];
-    feature_config.net_gap_ms = Math.floor(valueList[cptCount + 1]);
-    feature_config.fontColor = valueList[cptCount + 2];
-    feature_config.zoomRate = valueList[cptCount + 3] + "%";
-    feature_config.notificationMode = [valueList[cptCount + 5], valueList[cptCount + 6]];
-    this.indexDBData.SCT_divHorizontal = valueList[cptCount + 7];
-    this.indexDBData.SCT_divFixedDisplay = valueList[cptCount + 8];
-    this.indexDBData.mapMarginTop = valueList[cptCount + 4];
+    if (debugNode) feature_config.debug = debugNode.checked;
+    feature_config.net_gap_ms = netGapMs;
+    feature_config.fontColor = fontColor;
+    feature_config.zoomRate = zoomRate + "%";
+    feature_config.notificationMode = [mode0, mode1];
+    if (horizNode) this.indexDBData.SCT_divHorizontal = horizNode.checked;
+    if (fixedNode) this.indexDBData.SCT_divFixedDisplay = fixedNode.checked;
+    this.indexDBData.mapMarginTop = mapMarginTop;
+
     // 更新内容
     tools.indexDB_updateFeatureConf();
     tools.indexDB_updateIndexDBData();

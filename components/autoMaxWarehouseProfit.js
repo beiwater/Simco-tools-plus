@@ -1,7 +1,6 @@
 const BaseComponent = require("../tools/baseComponent.js");
 const { componentList } = require("../tools/tools.js");
 const { administrationMultiplier, modeledRetailData, retailSearchWorkerSource } = require("../tools/automax/retailMath.js");
-const { getPageActionEnabled } = require("../tools/automax/settings.js");
 const { getRealmIdFromDocument } = require("../tools/automax/lifecycle.js");
 const { runWorkerTask } = require("../tools/automax/worker.js");
 
@@ -46,7 +45,7 @@ class autoMaxWarehouseProfit extends BaseComponent {
     if (!this.enabled()) return this.clear();
     const context = this.context();
     if (!context) return;
-    const revision = this.componentData.revision;
+    const revision = ++this.componentData.revision;
     for (const stack of this.itemStacks()) this.enqueue(stack, context, revision);
   }
 
