@@ -5,6 +5,7 @@ function createRequestClient({ fetchImpl = globalThis.fetch, retries = 3 } = {})
     let lastError;
     for (let attempt = 0; attempt <= retryCount; attempt += 1) {
       try {
+        if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
         if (typeof fetchImpl !== "function") throw new Error("Fetch is unavailable.");
         const response = await fetchImpl(url, {
           method: "GET",

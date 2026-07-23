@@ -304,7 +304,7 @@ class retailDisplayProfit extends BaseComponent {
       if (state.requestId !== requestId || !state.display?.isConnected) return;
       const updated = this.findReactRetailComponent(priceInput);
       const actualWages = Number(updated?.state?.wagesTotal);
-      if (Number.isFinite(actualWages) && Math.abs(Number(result.calculatedWages) - actualWages) > 1) {
+      if (Number.isFinite(actualWages) && Math.abs(Number(result.calculatedWages) * (Number(result.size) || 1) - actualWages) > 1) {
         if (retryCount < MAX_CALCULATION_RETRIES) {
           void this.startCalculation(priceInput, mode, retryCount + 1, requestId);
           return;

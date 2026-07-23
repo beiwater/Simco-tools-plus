@@ -1,6 +1,5 @@
 const BaseComponent = require("../tools/baseComponent.js");
 const { componentList, tools } = require("../tools/tools.js");
-const { getPageActionEnabled } = require("../tools/automax/settings.js");
 const { getRealmIdFromDocument } = require("../tools/automax/lifecycle.js");
 
 const CONTROL_MARKER = "data-automax-outgoing-mp";
@@ -353,7 +352,7 @@ class autoMaxOutgoingMP extends BaseComponent {
     const productEntries = warehouse.filter(e => Number(e.kind) === context.resourceId && Number(e.quality) === quality);
     if (productEntries.length > 0) {
       const e = productEntries[0];
-      const costSum = Object.values(e.cost || {}).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0);
+      const costSum = Object.values(e.cost || {}).reduce((s, v) => s + (Number(v) || 0), 0);
       const amount = Number(e.amount || e.quantity || 0);
       productUnitCost = amount > 0 ? costSum / amount : 0;
     }
@@ -362,7 +361,7 @@ class autoMaxOutgoingMP extends BaseComponent {
     const transportEntries = warehouse.filter(e => Number(e.kind) === 13);
     if (transportEntries.length > 0) {
       const e = transportEntries[0];
-      const costSum = Object.values(e.cost || {}).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0);
+      const costSum = Object.values(e.cost || {}).reduce((s, v) => s + (Number(v) || 0), 0);
       const amount = Number(e.amount || e.quantity || 0);
       transportUnitCost = amount > 0 ? costSum / amount : 0;
     }

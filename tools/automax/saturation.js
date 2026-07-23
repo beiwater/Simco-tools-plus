@@ -38,6 +38,7 @@ function compareValue(left, right) {
 }
 
 function sortSaturationRows(rows, key = "resourceName", direction = "asc") {
+  if (!Array.isArray(rows)) return [];
   const sign = direction === "desc" ? -1 : 1;
   return [...rows].sort((left, right) => {
     const primary = compareValue(left?.[key], right?.[key]);

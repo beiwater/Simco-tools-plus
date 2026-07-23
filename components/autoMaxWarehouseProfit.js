@@ -1,7 +1,6 @@
 const BaseComponent = require("../tools/baseComponent.js");
 const { componentList } = require("../tools/tools.js");
 const { administrationMultiplier, modeledRetailData, retailSearchWorkerSource } = require("../tools/automax/retailMath.js");
-const { getPageActionEnabled } = require("../tools/automax/settings.js");
 const { getRealmIdFromDocument } = require("../tools/automax/lifecycle.js");
 const { runWorkerTask } = require("../tools/automax/worker.js");
 
