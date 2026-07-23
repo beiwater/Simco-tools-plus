@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 function finiteNumber(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
