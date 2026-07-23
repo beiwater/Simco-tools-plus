@@ -20,8 +20,8 @@ class autoMaxFoundation extends BaseComponent {
     super();
     this.name = "AutoMax 数据基础服务";
     this.describe = "为 AutoMax 功能提供安全的数据捕获、页面路由与缓存刷新。";
-    this.enable = true;
-    this.canDisable = false;
+    this.enable = false;
+    this.canDisable = true;
     this.tagList = ["AutoMax", "基础"];
   }
 
