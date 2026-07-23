@@ -155,6 +155,27 @@ test("startup waits for #root before registering observers and listeners", async
   assert.equal(harness.state.windowListeners.filter(({ type }) => type === "beforeunload").length, 1);
 });
 
+test("XHR responses captured before #root are replayed after components start", async () => {
+  const harness = createIndexHarness({ rootAvailable: false });
+  await Promise.resolve();
+
+  const xhr = new harness.window.XMLHttpRequest();
+  xhr.open("GET", "https://www.simcompanies.com/api/v2/companies/me/buildings/");
+  xhr.send();
+  assert.equal(harness.state.netEvents.length, 0, "early response must wait for component initialization");
+
+  harness.state.root = {};
+  harness.state.delayQueue.shift().resolve();
+  await harness.startup;
+
+  assert.deepEqual(harness.state.netEvents, [[
+    "https://www.simcompanies.com/api/v2/companies/me/buildings/",
+    "GET",
+    "[]",
+    200,
+  ]]);
+});
+
 test("XHR capture survives application onload assignment after open", async () => {
   const harness = createIndexHarness({ xhrStatus: 204 });
   await harness.startup;
