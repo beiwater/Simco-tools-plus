@@ -10,6 +10,7 @@ const {
   parseRuntimePreset,
   sortSaturationRows,
 } = require("../tools/automax/index.js");
+const { enableFloatingPanelDrag } = require("../tools/automax/floatingPanel.js");
 
 const CARD_SELECTOR = ".col-xs-6.css-0.ewayztq2, .col-xs-6.resources.text-center";
 const CARD_MARKER = "data-automax-runtime-mounted";
@@ -238,6 +239,7 @@ class autoMaxRuntimeSaturation extends BaseComponent {
     history.className = "automax-panel-link";
     history.textContent = "查询历史饱和度";
     panel.append(header, meta, history, this.createSaturationTable());
+    enableFloatingPanelDrag(panel, header);
     return panel;
   }
 
