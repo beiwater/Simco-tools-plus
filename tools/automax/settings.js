@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const LEGACY_IMPORT_VERSION = 1;
 const LEGACY_PAGE_ACTIONS_KEY = "SC_PageActions_Settings";
 const LEGACY_PANEL_POSITION_KEY = "SC_PanelPosition";
