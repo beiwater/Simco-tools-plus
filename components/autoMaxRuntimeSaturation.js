@@ -21,7 +21,7 @@ class autoMaxRuntimeSaturation extends BaseComponent {
     super();
     this.name = "自定义运行时长";
     this.describe = "在生产/零售卡片中填入自定义时长，并可点击展开查看领域饱和度。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "快捷", "零售"];
   }
