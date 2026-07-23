@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const DEFAULT_RUNTIME_PRESETS = Object.freeze(["10pm"]);
 
 function normalizeRuntimeText(value) {
