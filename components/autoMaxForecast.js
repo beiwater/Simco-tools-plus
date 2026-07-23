@@ -2,6 +2,7 @@ const BaseComponent = require("../tools/baseComponent.js");
 const { componentList, tools } = require("../tools/tools.js");
 const { flattenIncomingContracts, normalizeForecastEntry } = require("../tools/automax/forecast.js");
 const { getRealmIdFromDocument } = require("../tools/automax/lifecycle.js");
+const { enableFloatingPanelDrag } = require("../tools/automax/floatingPanel.js");
 
 const KIND_NAMES = Object.freeze({ 153: "巧克力冰淇淋", 154: "苹果冰淇淋" });
 
@@ -76,6 +77,7 @@ class autoMaxForecast extends BaseComponent {
     content.className = "automax-forecast-content";
     panel.append(header, content);
     document.body.append(panel);
+    enableFloatingPanelDrag(panel, header);
     this.componentData.panel = panel;
     this.componentData.content = content;
   }
