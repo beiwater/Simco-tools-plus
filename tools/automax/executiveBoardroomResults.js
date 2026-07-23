@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const { calculateExecutiveSkills } = require("./data.js");
 const { boardroomExecutives } = require("./executiveState.js");
 const { componentList } = require("../tools.js");
