@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const BASE_WAGES = Object.freeze({
   0: 759, 1: 448.5, 2: 379.5, 3: 0, 4: 0, 5: 0, 6: 241.5, 7: 586.5, 8: 724.5, 9: 759,
   A: 345, a: 552, b: 414, B: 586.5, C: 172.5, c: 414, D: 621, d: 172.5, E: 414, e: 414,
