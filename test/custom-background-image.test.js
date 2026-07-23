@@ -4,6 +4,7 @@ const test = require("node:test");
 const {
   collectDroppedFiles,
   imageFileToCssValue,
+  normalizeBlur,
   selectFirstImageFile,
 } = require("../components/customBackgroundImage.js");
 const { componentList, tools } = require("../tools/tools.js");
@@ -21,6 +22,13 @@ test("selects the first supported image from a file or folder selection", () => 
 
   // Then
   assert.equal(selected.name, "background.webp");
+});
+
+test("clamps background Gaussian blur to the supported range", () => {
+  assert.equal(normalizeBlur(-2), 0);
+  assert.equal(normalizeBlur(6.7), 7);
+  assert.equal(normalizeBlur(99), 32);
+  assert.equal(normalizeBlur("invalid"), 0);
 });
 
 test("converts an image file into a browser-persistable CSS value", async () => {
