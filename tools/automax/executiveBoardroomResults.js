@@ -89,18 +89,15 @@ function renderBoardroomResults(component, overlay, boardroomState) {
   const table = overlay.querySelector("#sc-calc-table-container");
   if (table) {
     table.innerHTML = `
-      <table style="width:100%; border-collapse:collapse; font-size:12px; margin-bottom:15px;">
-        <thead><tr style="border-bottom:1px solid var(--sct-control-hover, rgb(114, 114, 114)); color:var(--sct-control-hover, rgb(114, 114, 114)); font-size:11px;">
-          <th align="left" style="padding:6px 2px;">项目</th><th align="right" style="padding:6px 2px;">基础</th><th align="right" style="padding:6px 2px;">高管加成</th><th align="right" style="padding:6px 2px;">最终</th>
-        </tr></thead>
+      <table class="sc-calc-table">
+        <thead><tr><th>项目</th><th class="sc-calc-number">基础</th><th class="sc-calc-number">高管加成</th><th class="sc-calc-number">最终</th></tr></thead>
         <tbody>${metrics.rows.map((row) => `
-          <tr class="sc-calc-row" data-type="${row.type}" style="cursor:pointer; border-bottom:1px solid var(--sct-control-hover, rgb(114, 114, 114));">
-            <td style="padding:6px 2px; font-weight:bold;">${row.label}</td>
-            <td align="right" style="padding:6px 2px;">${row.base}</td>
-            <td align="right" style="padding:6px 2px; color:var(${row.negative ? "--sct-error, red" : "--sct-enabled, green"});">${row.change}</td>
-            <td align="right" style="padding:6px 2px; font-weight:bold; color:var(--sct-enabled, green);">${row.final}</td>
-          </tr>`).join("")}
-        </tbody>
+          <tr class="sc-calc-row" data-type="${row.type}" tabindex="0">
+            <td class="sc-calc-label">${row.label}</td>
+            <td class="sc-calc-number">${row.base}</td>
+            <td class="sc-calc-number ${row.negative ? "sc-calc-negative" : "sc-calc-positive"}">${row.change}</td>
+            <td class="sc-calc-number sc-calc-positive">${row.final}</td>
+          </tr>`).join("")}</tbody>
       </table>`;
     const rows = table.querySelectorAll(".sc-calc-row");
     const detail = overlay.querySelector("#sc-detail-box");
@@ -108,11 +105,17 @@ function renderBoardroomResults(component, overlay, boardroomState) {
       const updateDetail = () => {
         if (!metrics.details[row.dataset.type]) return;
         detail.innerHTML = metrics.details[row.dataset.type];
-        rows.forEach((candidate) => { candidate.style.background = "transparent"; });
-        row.style.background = "rgba(255, 235, 100, 0.15)";
+        rows.forEach((candidate) => candidate.classList.remove("is-active"));
+        row.classList.add("is-active");
       };
       row.onmouseenter = updateDetail;
+      row.onfocus = updateDetail;
       row.onclick = updateDetail;
+      row.onkeydown = (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        updateDetail();
+      };
     });
   }
   return metrics.bonuses;

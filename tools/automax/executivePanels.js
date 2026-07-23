@@ -35,7 +35,6 @@ function injectBoardroomButtons(component) {
     custom.type = "button";
     custom.className = "automax-exec-button";
     custom.textContent = "自定义高管数据";
-    custom.style.cssText = "margin-left: 10px; background-color: #673ab7; font-size: 12px; font-weight: bold; border: none; color: white;";
     custom.addEventListener("click", (event) => {
       event.preventDefault();
       component.openBoardroomSimulator();
@@ -46,9 +45,8 @@ function injectBoardroomButtons(component) {
     const calculator = document.createElement("button");
     calculator.id = "sc-coo-earning-btn";
     calculator.type = "button";
-    calculator.className = "automax-exec-button";
+    calculator.className = "automax-exec-button automax-exec-button--primary";
     calculator.textContent = "COO收益";
-    calculator.style.cssText = "margin-left: 10px; background-color: #4CAF50; font-size: 12px; font-weight: bold; border: none; color: white;";
     calculator.addEventListener("click", (event) => {
       event.preventDefault();
       component.openCooCalculator();
@@ -117,10 +115,13 @@ async function openExecutiveModal(component, id) {
   }
   const overlay = document.createElement("div");
   overlay.className = "automax-exec-modal";
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("role", "dialog");
   const panel = document.createElement("section");
   const header = document.createElement("header");
   const title = document.createElement("h2");
   title.textContent = `${data.name ?? "高管"} 的详细资料`;
+  overlay.setAttribute("aria-label", title.textContent);
   const close = document.createElement("button");
   close.type = "button";
   close.textContent = "关闭";
@@ -148,6 +149,9 @@ function openCooCalculator(component) {
   const { total, region } = totalAdminFee(component);
   const overlay = document.createElement("div");
   overlay.className = "automax-exec-modal";
+  overlay.setAttribute("aria-label", "COO 收益计算");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("role", "dialog");
   const panel = document.createElement("section");
   const title = document.createElement("h2");
   title.textContent = "COO 收益计算";
@@ -197,7 +201,7 @@ function buildSettings(component) {
   const title = document.createElement("h2");
   title.textContent = "自定义高管加成";
   const note = document.createElement("p");
-  note.textContent = "开启 AutoMax 面板中的“高管自定义加成”后，利润计算会使用这里的管理/销售加成。";
+  note.textContent = "开启 SCT 组件列表中的“高管自定义加成”后，利润计算会使用这里的管理/销售加成。";
   const admin = numberField("管理（COO）加成", values.adminBonus);
   const sales = numberField("销售（CMO）加成", values.saleBonus);
   const save = document.createElement("button");

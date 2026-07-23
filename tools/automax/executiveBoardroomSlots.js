@@ -5,20 +5,25 @@ const SLOT_GROUPS = Object.freeze([
 ]);
 
 const SKILL_FIELDS = Object.freeze([
-  { key: "coo", label: "COO", color: "#2196F3" },
-  { key: "cfo", label: "CFO", color: "#ff9800" },
-  { key: "cmo", label: "CMO", color: "#e91e63" },
-  { key: "cto", label: "CTO", color: "#9c27b0" },
+  { key: "coo", label: "COO" }, { key: "cfo", label: "CFO" },
+  { key: "cmo", label: "CMO" }, { key: "cto", label: "CTO" },
 ]);
 
-function renderBoardroom(component, overlay, boardroomState) {
-  const leftContainer = overlay.querySelector("#sc-slots-container");
-  if (!leftContainer) return;
-  leftContainer.replaceChildren();
+function focusBoardroomSlot(container, slotId) {
+  const control = container?.querySelector?.(`[data-slot-id="${slotId}"] > [role="button"]`);
+  if (!control || typeof control.focus !== "function") return false;
+  control.focus();
+  return true;
+}
+
+function renderBoardroom(component, overlay, boardroomState, focusSlotId) {
+  const container = overlay.querySelector("#sc-slots-container");
+  if (!container) return;
+  container.replaceChildren();
   let draggedSlotId = null;
   let selectedSlotId = null;
-  const rerender = () => {
-    component.renderBoardroom(overlay, boardroomState);
+  const rerender = (slotId) => {
+    component.renderBoardroom(overlay, boardroomState, slotId);
     component.calculateBoardroomResults(overlay, boardroomState);
   };
 
@@ -28,19 +33,16 @@ function renderBoardroom(component, overlay, boardroomState) {
     const title = document.createElement("div");
     title.className = "sc-slots-title";
     title.textContent = group.title;
-    groupElement.appendChild(title);
     const grid = document.createElement("div");
     grid.className = "sc-slots-grid";
+    groupElement.append(title, grid);
 
     for (const slot of group.slots) {
       const slotElement = document.createElement("div");
       slotElement.dataset.slotId = slot.id;
-      slotElement.ondragover = (event) => { event.preventDefault(); };
-      slotElement.ondragenter = (event) => {
-        event.preventDefault();
-        slotElement.classList.add("dragover");
-      };
-      slotElement.ondragleave = () => { slotElement.classList.remove("dragover"); };
+      slotElement.ondragover = (event) => event.preventDefault();
+      slotElement.ondragenter = (event) => { event.preventDefault(); slotElement.classList.add("dragover"); };
+      slotElement.ondragleave = () => slotElement.classList.remove("dragover");
       slotElement.ondrop = (event) => {
         event.preventDefault();
         slotElement.classList.remove("dragover");
@@ -48,16 +50,7 @@ function renderBoardroom(component, overlay, boardroomState) {
         const previous = boardroomState[draggedSlotId];
         boardroomState[draggedSlotId] = boardroomState[slot.id];
         boardroomState[slot.id] = previous;
-        rerender();
-      };
-      slotElement.onclick = (event) => {
-        if (selectedSlotId === null || boardroomState[slot.id]) return;
-        event.stopPropagation();
-        const previous = boardroomState[selectedSlotId];
-        boardroomState[selectedSlotId] = boardroomState[slot.id];
-        boardroomState[slot.id] = previous;
-        selectedSlotId = null;
-        rerender();
+        rerender(slot.id);
       };
 
       const executive = boardroomState[slot.id];
@@ -65,73 +58,82 @@ function renderBoardroom(component, overlay, boardroomState) {
         const empty = document.createElement("div");
         empty.className = "sc-exec-card-empty";
         empty.textContent = `空 ${slot.label} 席`;
-        empty.onclick = (event) => {
-          if (selectedSlotId !== null) return;
-          event.stopPropagation();
-          boardroomState[slot.id] = {
-            name: "自定义高管",
-            skills: { coo: 0, cfo: 0, cmo: 0, cto: 0 },
-          };
-          rerender();
+        empty.setAttribute("role", "button");
+        empty.setAttribute("aria-label", `向 ${slot.label} 席位添加或移动高管`);
+        empty.tabIndex = 0;
+        const activate = () => {
+          if (selectedSlotId === null) {
+            boardroomState[slot.id] = { name: "自定义高管", skills: { coo: 0, cfo: 0, cmo: 0, cto: 0 } };
+          } else {
+            boardroomState[slot.id] = boardroomState[selectedSlotId];
+            boardroomState[selectedSlotId] = null;
+            selectedSlotId = null;
+          }
+          rerender(slot.id);
         };
-        slotElement.appendChild(empty);
-        grid.appendChild(slotElement);
+        empty.onclick = (event) => { event.stopPropagation(); activate(); };
+        empty.onkeydown = (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          activate();
+        };
+        slotElement.append(empty);
+        grid.append(slotElement);
         continue;
       }
 
       const card = document.createElement("div");
       card.className = "sc-exec-card";
       card.setAttribute("draggable", "true");
-      card.ondragstart = () => {
-        draggedSlotId = slot.id;
-        card.classList.add("dragged");
-      };
-      card.ondragend = () => {
-        draggedSlotId = null;
-        card.classList.remove("dragged");
-      };
-      card.onclick = (event) => {
-        if (event.target.tagName === "INPUT") return;
-        event.stopPropagation();
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-label", `选择 ${slot.label} 席位的 ${executive.name}`);
+      card.setAttribute("aria-pressed", "false");
+      card.tabIndex = 0;
+      card.ondragstart = () => { draggedSlotId = slot.id; card.classList.add("dragged"); };
+      card.ondragend = () => { draggedSlotId = null; card.classList.remove("dragged"); };
+      const activateCard = () => {
         if (selectedSlotId === null) {
           selectedSlotId = slot.id;
           card.classList.add("selected");
-          return;
-        }
-        if (selectedSlotId === slot.id) {
+          card.setAttribute("aria-pressed", "true");
+        } else if (selectedSlotId === slot.id) {
           selectedSlotId = null;
           card.classList.remove("selected");
-          return;
+          card.setAttribute("aria-pressed", "false");
+        } else {
+          const previous = boardroomState[selectedSlotId];
+          boardroomState[selectedSlotId] = boardroomState[slot.id];
+          boardroomState[slot.id] = previous;
+          selectedSlotId = null;
+          rerender(slot.id);
         }
-        const previous = boardroomState[selectedSlotId];
-        boardroomState[selectedSlotId] = boardroomState[slot.id];
-        boardroomState[slot.id] = previous;
-        selectedSlotId = null;
-        rerender();
       };
-
-      const close = document.createElement("span");
-      close.innerHTML = "&times;";
-      close.style.cssText = "position:absolute; top:2px; right:6px; cursor:pointer; font-size:14px; font-weight:bold; color:var(--sct-control-hover, rgb(114, 114, 114));";
-      close.onclick = (event) => {
+      card.onclick = (event) => {
+        if (event.target.tagName === "INPUT" || event.target.tagName === "BUTTON") return;
         event.stopPropagation();
-        boardroomState[slot.id] = null;
-        rerender();
+        activateCard();
       };
-      card.appendChild(close);
+      card.onkeydown = (event) => {
+        if (event.target !== card || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        activateCard();
+      };
 
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "sc-card-remove";
+      remove.textContent = "移除";
+      remove.setAttribute("aria-label", `移除 ${slot.label} 席位的 ${executive.name}`);
+      remove.onclick = (event) => { event.stopPropagation(); boardroomState[slot.id] = null; rerender(slot.id); };
       const role = document.createElement("div");
-      role.style.cssText = "font-size: 9px; color: var(--sct-control-hover, rgb(114, 114, 114)); text-align: center; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;";
+      role.className = "sc-card-role";
       role.textContent = slot.label;
-      card.appendChild(role);
-
       const name = document.createElement("input");
       name.type = "text";
-      name.style.cssText = "font-weight:bold; font-size:12px; margin-bottom:8px; text-align:center; width:100%; border:none; background:transparent; color:var(--fontColor);";
+      name.className = "sc-card-name-input";
+      name.setAttribute("aria-label", `${slot.label} 高管名称`);
       name.value = executive.name;
       name.onchange = () => { executive.name = name.value; };
-      card.appendChild(name);
-
       const skills = document.createElement("div");
       skills.className = "sc-card-skills";
       for (const field of SKILL_FIELDS) {
@@ -139,7 +141,6 @@ function renderBoardroom(component, overlay, boardroomState) {
         row.className = "sc-card-skill-row";
         const label = document.createElement("span");
         label.className = "sc-card-skill-label";
-        label.style.color = field.color;
         label.textContent = field.label;
         const input = document.createElement("input");
         input.type = "number";
@@ -147,6 +148,7 @@ function renderBoardroom(component, overlay, boardroomState) {
         input.min = "0";
         input.step = "1";
         input.value = executive.skills[field.key];
+        input.setAttribute("aria-label", `${executive.name} ${field.label} 点数`);
         input.onfocus = () => card.setAttribute("draggable", "false");
         input.onblur = () => card.setAttribute("draggable", "true");
         input.onchange = () => {
@@ -156,15 +158,15 @@ function renderBoardroom(component, overlay, boardroomState) {
           component.calculateBoardroomResults(overlay, boardroomState);
         };
         row.append(label, input);
-        skills.appendChild(row);
+        skills.append(row);
       }
-      card.appendChild(skills);
-      slotElement.appendChild(card);
-      grid.appendChild(slotElement);
+      card.append(remove, role, name, skills);
+      slotElement.append(card);
+      grid.append(slotElement);
     }
-    groupElement.appendChild(grid);
-    leftContainer.appendChild(groupElement);
+    container.append(groupElement);
   }
+  if (focusSlotId !== undefined) focusBoardroomSlot(container, focusSlotId);
 }
 
-module.exports = { renderBoardroom };
+module.exports = { focusBoardroomSlot, renderBoardroom };

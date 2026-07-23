@@ -13,7 +13,7 @@ const {
   fetchMeExecutives,
   openBoardroomSimulator,
 } = require("../tools/automax/executiveBoardroom.js");
-const { renderBoardroom } = require("../tools/automax/executiveBoardroomSlots.js");
+const { focusBoardroomSlot, renderBoardroom } = require("../tools/automax/executiveBoardroomSlots.js");
 const { renderBoardroomResults } = require("../tools/automax/executiveBoardroomResults.js");
 
 class autoMaxExecutive extends BaseComponent {
@@ -193,8 +193,8 @@ class autoMaxExecutive extends BaseComponent {
     return openBoardroomSimulator(this);
   }
 
-  renderBoardroom(overlay, boardroomState) {
-    return renderBoardroom(this, overlay, boardroomState);
+  renderBoardroom(overlay, boardroomState, focusSlotId) {
+    return renderBoardroom(this, overlay, boardroomState, focusSlotId);
   }
 
   calculateBoardroomResults(overlay, boardroomState) {
@@ -242,3 +242,5 @@ class autoMaxExecutiveCustomToggle extends BaseComponent {
 }
 
 new autoMaxExecutiveCustomToggle();
+
+module.exports = { focusBoardroomSlot };

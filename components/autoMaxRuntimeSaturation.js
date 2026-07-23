@@ -3,6 +3,7 @@ const { componentList, runtimeData, tools } = require("../tools/tools.js");
 const {
   DEFAULT_RUNTIME_PRESETS,
   createSaturationRows,
+  getPageActionEnabled,
   getRealmIdFromDocument,
   getWeatherMultiplier,
   normalizeRuntimePresets,
@@ -216,6 +217,7 @@ class autoMaxRuntimeSaturation extends BaseComponent {
   buildSaturationPanel(region) {
     const panel = document.createElement("section");
     panel.id = "automax_saturation_panel";
+    panel.className = "automax-panel-surface";
     panel.setAttribute("aria-label", "领域饱和度");
     const header = document.createElement("header");
     const title = document.createElement("h2");
@@ -233,6 +235,7 @@ class autoMaxRuntimeSaturation extends BaseComponent {
     history.href = "https://marketsaturation.22-7.top/";
     history.rel = "noopener noreferrer";
     history.target = "_blank";
+    history.className = "automax-panel-link";
     history.textContent = "查询历史饱和度";
     panel.append(header, meta, history, this.createSaturationTable());
     return panel;
@@ -240,21 +243,36 @@ class autoMaxRuntimeSaturation extends BaseComponent {
 
   createSaturationTable() {
     const table = document.createElement("table");
+    table.className = "automax-data-table";
     const header = document.createElement("thead");
     const row = document.createElement("tr");
+    const headers = new Map();
     for (const [key, label] of [["resourceName", "物品"], ["quality", "质量"], ["saturation", "饱和度"]]) {
       const cell = document.createElement("th");
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = label;
-      button.addEventListener("click", () => this.setSaturationSort(key));
+      headers.set(key, { button, cell, label });
+      button.addEventListener("click", () => {
+        this.setSaturationSort(key);
+        this.updateSaturationSortHeaders(headers);
+      });
       cell.appendChild(button);
       row.appendChild(cell);
     }
     header.appendChild(row);
     table.append(header, document.createElement("tbody"));
+    this.updateSaturationSortHeaders(headers);
     this.renderSaturationRows(table.querySelector("tbody"));
     return table;
+  }
+
+  updateSaturationSortHeaders(headers) {
+    for (const [key, header] of headers) {
+      const active = this.componentData.saturationSort.key === key;
+      const ascending = this.componentData.saturationSort.direction === "asc";
+      header.cell.setAttribute("aria-sort", active ? (ascending ? "ascending" : "descending") : "none");
+      header.button.textContent = active ? `${header.label} ${ascending ? "↑" : "↓"}` : header.label;
+    }
   }
 
   setSaturationSort(key) {
@@ -271,6 +289,7 @@ class autoMaxRuntimeSaturation extends BaseComponent {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
       cell.colSpan = 3;
+      cell.className = "automax-data-empty";
       cell.textContent = "当前领域没有可用的饱和度数据。";
       row.appendChild(cell);
       body.appendChild(row);
@@ -290,12 +309,10 @@ class autoMaxRuntimeSaturation extends BaseComponent {
   inlineSettingUI = () => {
     const container = document.createElement("div");
     container.className = "automax-saturation-container";
-    container.style.padding = "10px";
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "btn form-control";
+    btn.className = "btn form-control automax-inline-action";
     btn.textContent = "查看领域饱和度";
-    btn.style.cssText = "background-color: #00bcd4; font-weight: bold; border: none; color: white;";
     btn.addEventListener("click", () => this.toggleSaturationTable(container));
     container.append(btn);
     return container;

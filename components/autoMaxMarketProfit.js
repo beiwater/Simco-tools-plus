@@ -262,13 +262,26 @@ class autoMaxMarketProfit extends BaseComponent {
     const output = this.componentData.controls?.output;
     if (!output) return;
     if (this.componentData.pendingCount > 0) {
+      output.dataset.empty = "false";
       output.textContent = "正在计算订单…";
       return;
     }
     const results = [...document.querySelectorAll("tr[aria-label]")].map((row) => row.__automaxMarketResult).filter(Boolean);
     const summary = summarizeMarketOrders(results, this.indexDBData.settings);
     output.dataset.empty = String(summary.kind === "empty");
-    output.textContent = formatMarketSummary(summary, formatMoney);
+    const message = formatMarketSummary(summary, formatMoney);
+    if (summary.kind === "empty") {
+      output.textContent = message;
+      return;
+    }
+    const [title, detail] = message.split("：");
+    output.replaceChildren();
+    for (const clause of [`${title}：`, ...detail.split("；")]) {
+      const span = document.createElement("span");
+      span.className = "automax-market-summary-clause";
+      span.textContent = clause;
+      output.append(span);
+    }
   }
 }
 

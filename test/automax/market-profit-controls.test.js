@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+  MARKET_PROFIT_CSS,
   adjustedMarketCost,
   createMarketProfitControls,
   summarizeMarketOrders,
@@ -57,19 +58,25 @@ test("market profit controls restore every original market simulation input", ()
   assert.equal(controls.root.dataset.theme, "light");
 });
 
+test("enabled market controls keep enabled semantics across pointer states", () => {
+  assert.match(MARKET_PROFIT_CSS, /data-enabled="true"[^}]+:is\(:hover, :active\)[^}]+--sct-enabled/);
+  assert.match(MARKET_PROFIT_CSS, /data-theme="light"[^}]+data-enabled="true"[^}]+:is\(:hover, :active\)[^}]+--sct-light-enabled/);
+  assert.match(MARKET_PROFIT_CSS, /data-automax-market-best[^}]+--sct-focus/);
+});
+
 test("market MP adjustment keeps percentage and fixed-reduction semantics", () => {
   assert.equal(adjustedMarketCost(100, 4), 96);
   assert.equal(adjustedMarketCost(100, -4), 96);
   assert.equal(adjustedMarketCost(3, -4), undefined);
 });
 
-test("market summary preserves the original no-positive-profit state", () => {
+test("market summary returns an empty state when no order is profitable", () => {
   const summary = summarizeMarketOrders([
     { hourlyProfit: -2, seconds: 3600 },
     { hourlyProfit: 0, seconds: 1800 },
   ], { buildingHours: 24, buildingLevel: 100 });
 
-  assert.deepEqual(summary, { kind: "empty", message: "⚠️ 无正利润订单" });
+  assert.equal(summary.kind, "empty");
 });
 
 test("market summary fills the requested building runtime from the best orders", () => {

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AutoMax UI QA fixture</title>
+  <style>
+    body { background: #eef1ef; color: #1d2921; font-family: system-ui, sans-serif; margin: 0; min-height: 100vh; }
+    main { display: grid; gap: 24px; margin: 0 auto; max-width: 1120px; padding: 32px 20px 120px; }
+    h1, p { margin: 0; }
+    .fixture-game-card { background: white; border: 1px solid #d8ded9; border-radius: 12px; padding: 20px; }
+    .fixture-game-card > p { color: #5f6e64; margin-top: 8px; }
+    .fixture-market { max-width: 760px; }
+  </style>
+  <script>
+    window.fetch = async (input) => {
+      const url = String(input?.url || input);
+      const json = (value) => new Response(JSON.stringify(value), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+      if (url.includes("companies/me") || url.includes("auth-data")) {
+        return json({ authCompany: { realmId: 0, company: "fixture", companyId: 1 }, temporals: {}, levelInfo: {} });
+      }
+      if (url.includes("resources")) return json([]);
+      return json(null);
+    };
+  </script>
+</head>
+<body>
+  <div id="root">
+    <main>
+      <a href="/company/0/" hidden>Realm fixture</a>
+      <section class="fixture-game-card">
+        <h1>SimCompanies AutoMax</h1>
+        <p>UI regression fixture using the production userscript bundle.</p>
+      </section>
+      <section class="fixture-game-card fixture-market" data-fixture-market hidden>
+        <div class="automax-market-summary" data-theme="dark" aria-label="交易所利润模拟设置">
+          <div class="automax-market-controls">
+            <button class="automax-market-subtle" data-enabled="true" type="button">自定义：开</button>
+            <button class="automax-market-subtle automax-market-custom-data" type="button">自定义数据</button>
+            <span class="automax-market-group"><span>MP-</span><input aria-label="MP 调整" type="number" value="4"><span>%</span><button type="button">4%</button><button type="button">清空</button></span>
+            <span>周期:</span>
+            <select aria-label="经济周期"><option>当前</option><option>平缓</option></select>
+            <input aria-label="建筑等级" type="number" value="100">
+            <span>级建筑运行</span>
+            <input aria-label="运行时长" type="number" value="24">
+            <span>H</span>
+          </div>
+          <div class="automax-market-summary-output" role="status">
+            <span class="automax-market-summary-clause">100级建筑运行24H正时利：</span>
+            <span class="automax-market-summary-clause">$18,642.37/h</span>
+            <span class="automax-market-summary-clause">总利润 $447,416.88</span>
+            <span class="automax-market-summary-clause">覆盖 24.0H</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/dist/build.user.js"></script>
+  <script>
+    const view = new URLSearchParams(location.search).get("view") || "sidebar";
+    let attempts = 0;
+    const openFixtureView = () => {
+      const componentSwitch = document.querySelector("#script_cpt_switch");
+      if (!componentSwitch && attempts++ < 100) return window.setTimeout(openFixtureView, 25);
+      if (view === "market") {
+        document.querySelector("[data-fixture-market]").hidden = false;
+        return;
+      }
+      if (view === "boardroom") {
+        document.querySelector("tr#autoMaxExecutive button.CPTOptionLeft")?.click();
+        return;
+      }
+      if (view === "forecast") {
+        document.querySelector("tr#autoMaxForecast button.CPTOptionLeft")?.click();
+        return;
+      }
+      componentSwitch.click();
+      const autoMaxTag = [...document.querySelectorAll("#scriptCPT_tagSerach button")].find((node) => node.textContent === "AutoMax");
+      autoMaxTag?.click();
+      document.querySelector("tr#autoMaxRuntimeSaturation button.CPTOptionRight")?.click();
+      if (view === "saturation") {
+        window.requestAnimationFrame(() => document.querySelector(".automax-inline-action")?.click());
+      }
+    };
+    openFixtureView();
+  </script>
+</body>
+</html>

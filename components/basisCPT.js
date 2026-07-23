@@ -639,7 +639,7 @@ class basisCPT extends BaseComponent {
         let tag = sortComponentsList[i].tagList[j];
         if (tagList.includes(tag)) continue;
         tagList.push(tag);
-        htmlText += `<span>${tag}</span>`;
+        htmlText += `<button type="button" data-sct-tag>${tag}</button>`;
       }
     }
     htmlText += `</div>`;
@@ -730,17 +730,18 @@ class basisCPT extends BaseComponent {
     this.sideBarSub_updateButtonList();
   }
   sideBarSub_tagSearch(event) {
-    if (event.target.tagName != "SPAN") return;
-    let tag = event.target.innerText;
+    const target = event.target.closest("button[data-sct-tag]");
+    if (!target) return;
+    let tag = target.innerText;
     let index = this.componentData.avtiveTagList.findIndex((activeTag) => activeTag == tag);
     if (index != -1) {
       // 删除显示
       this.componentData.avtiveTagList.splice(index, 1);
-      event.target.classList.remove("script_tagSearch_active");
+      target.classList.remove("script_tagSearch_active");
     } else {
       // 增加显示
       this.componentData.avtiveTagList.push(tag);
-      event.target.classList.add("script_tagSearch_active");
+      target.classList.add("script_tagSearch_active");
     }
     this.sideBarSub_updateButtonList();
   }
