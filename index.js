@@ -97,8 +97,9 @@ function scriptEventStart() {
   rootObserveServer.observe(document.querySelector("div#root"), { childList: true, subtree: true });
   setInterval(tools.intervalEventBus.bind(tools), 100);
   const OriginalXHR = window.XMLHttpRequest;
-  window.XMLHttpRequest = function SCTXMLHttpRequest() {
-    const xhr = new OriginalXHR();
+  window.XMLHttpRequest = function SCTXMLHttpRequest(...args) {
+    if (!new.target) throw new TypeError("XMLHttpRequest must be constructed with new.");
+    const xhr = Reflect.construct(OriginalXHR, args, new.target);
     const originalOpen = xhr.open;
     let requestMethod = "";
     let requestUrl = "";
@@ -107,7 +108,7 @@ function scriptEventStart() {
       requestUrl = String(url);
       return originalOpen.call(this, method, url, ...rest);
     };
-    xhr.addEventListener("loadend", () => {
+    xhr.addEventListener("load", () => {
       if (xhr.status < 200 || xhr.status >= 400) return;
       try { tools.netEventBus(requestUrl, requestMethod, xhr.responseText, xhr.status); }
       catch (error) { tools.errorLog(error); }

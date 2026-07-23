@@ -49,8 +49,12 @@ function createIndexHarness({ immediateDelays = false, now = Date.now, rootAvail
     }
 
     send() {
-      this.status = xhrStatus;
-      this.responseText = "[]";
+      const response = this.responses?.shift() ?? { responseText: "[]", status: xhrStatus };
+      this.status = response.status;
+      this.responseText = response.responseText;
+      for (const listener of this.listeners.get("load") ?? []) {
+        listener.call(this, { type: "load", target: this });
+      }
       this.onload?.({ type: "load", target: this });
       for (const listener of this.listeners.get("loadend") ?? []) {
         listener.call(this, { type: "loadend", target: this });
@@ -164,6 +168,46 @@ test("XHR capture survives application onload assignment after open", async () =
     "[]",
     204,
   ]);
+});
+
+test("XHR capture keeps request metadata when application reuses the instance from onload", async () => {
+  const harness = createIndexHarness();
+  await harness.startup;
+  const xhr = new harness.window.XMLHttpRequest();
+  xhr.responses = [
+    { responseText: "first", status: 200 },
+    { responseText: "second", status: 201 },
+  ];
+  let applicationLoadCalls = 0;
+  xhr.onload = () => {
+    applicationLoadCalls += 1;
+    if (applicationLoadCalls !== 1) return;
+    xhr.open("POST", "https://www.simcompanies.com/api/v2/companies/me/buildings/");
+    xhr.send();
+  };
+
+  xhr.open("GET", "https://www.simcompanies.com/api/v3/resources/");
+  xhr.send();
+
+  assert.equal(applicationLoadCalls, 2);
+  assert.deepEqual(harness.state.netEvents, [
+    ["https://www.simcompanies.com/api/v3/resources/", "GET", "first", 200],
+    ["https://www.simcompanies.com/api/v2/companies/me/buildings/", "POST", "second", 201],
+  ]);
+});
+
+test("wrapped XMLHttpRequest preserves subclass construction", async () => {
+  const harness = createIndexHarness();
+  await harness.startup;
+  class CustomXHR extends harness.window.XMLHttpRequest {
+    customMethod() { return "custom"; }
+  }
+
+  const xhr = new CustomXHR();
+
+  assert.equal(xhr instanceof CustomXHR, true);
+  assert.equal(xhr instanceof harness.window.XMLHttpRequest, true);
+  assert.equal(xhr.customMethod(), "custom");
 });
 
 test("startup stops after the bounded number of missing-root retries", async () => {
