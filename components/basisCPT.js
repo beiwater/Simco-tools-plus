@@ -17,6 +17,18 @@ function normalizedTags(component) {
   return TAG_ORDER.filter((tag) => tags.has(tag));
 }
 
+const RISK_ACKNOWLEDGEMENT = "我已知晓风险自担";
+
+function requestRiskAcknowledgement(component) {
+  const featureName = component.name || "该功能";
+  const notice = component.riskNotice || "该功能会自动触发游戏页面操作。";
+  const typed = window.prompt(
+    `高风险自动化功能：${featureName}\n\n${notice}\n\n本插件与游戏开发者无关联，也不代表获得游戏开发者的许可；游戏规则、许可范围和账号处置均以游戏开发者为准。继续使用即表示你自行承担全部风险和后果。\n\n如仍要启用，请手动完整输入：${RISK_ACKNOWLEDGEMENT}`,
+    ""
+  );
+  return typed === RISK_ACKNOWLEDGEMENT;
+}
+
 const SETTINGS_WINDOW_THEME = `
   #script_cpt_setting_container {
     background: linear-gradient(145deg, var(--sct-surface-elevated, rgba(26, 32, 29, 0.96)), var(--sct-surface, rgba(15, 19, 17, 0.96)) 58%) !important;
@@ -881,6 +893,20 @@ class basisCPT extends BaseComponent {
     htmlText = htmlText.replace("#####", parseFloat(feature_config.zoomRate));
     htmlText = htmlText.replace("#####", parseInt(this.indexDBData.mapMarginTop));
     newNode.innerHTML = htmlText;
+    newNode.querySelectorAll("input.sct-cpt-checkbox").forEach((checkbox) => {
+      checkbox.addEventListener("change", () => {
+        const component = componentList[checkbox.dataset.cptKey];
+        if (!checkbox.checked || !component?.requiresRiskAcknowledgement || component.indexDBData?.riskAcknowledged) return;
+        checkbox.checked = false;
+        if (!requestRiskAcknowledgement(component)) {
+          tools.alert(`未完成手动确认，“${component.name}”保持关闭。`);
+          return;
+        }
+        component.indexDBData.riskAcknowledged = true;
+        checkbox.checked = true;
+        tools.alert(`已完成风险确认。“${component.name}”将在点击“保存”并刷新后启用。`);
+      });
+    });
     // 修改select的已有参数
     let select0 = newNode.querySelector('[data-config-key="notificationMode0"]');
     if (select0) select0.value = feature_config.notificationMode[0];
@@ -906,6 +932,10 @@ class basisCPT extends BaseComponent {
       let cptKey = component.constructor.name;
       let checkbox = container.querySelector(`input.sct-cpt-checkbox[data-cpt-key="${cptKey}"]`);
       if (checkbox) {
+        if (checkbox.checked && component.requiresRiskAcknowledgement && !component.indexDBData?.riskAcknowledged) {
+          checkbox.checked = false;
+          return tools.alert(`“${component.name}”需要先手动输入“${RISK_ACKNOWLEDGEMENT}”确认风险。`);
+        }
         component.enable = checkbox.checked;
       }
     });
