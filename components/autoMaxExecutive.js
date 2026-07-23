@@ -21,7 +21,7 @@ class autoMaxExecutive extends BaseComponent {
     super();
     this.name = "AutoMax 高管助手";
     this.describe = "保存高管培训/前任履历，提供自定义加成和 COO 管理费收益计算。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "高管", "计算"];
   }
@@ -209,7 +209,7 @@ class autoMaxExecutiveTrainLog extends BaseComponent {
     super();
     this.name = "显示高管培训记录";
     this.describe = "在高管详情页，展示高管的历史培训课程和属性加成记录。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "高管"];
   }
@@ -222,7 +222,7 @@ class autoMaxFormerExecEnhance extends BaseComponent {
     super();
     this.name = "前任高管更多信息";
     this.describe = "在离职前任高管列表添加「详细」按键查看其历史加成。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "高管"];
   }
