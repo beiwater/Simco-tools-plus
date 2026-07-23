@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const { failure, success } = require("./result.js");
 
 function createRequestClient({ fetchImpl = globalThis.fetch, retries = 3 } = {}) {
