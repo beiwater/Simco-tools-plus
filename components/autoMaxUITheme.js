@@ -186,6 +186,7 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel,
+  #automax_mp_profit_panel,
   #automax_saturation_panel,
   .automax-exec-modal > section {
     background: linear-gradient(145deg, var(--sct-surface-elevated), var(--sct-surface) 58%);
@@ -198,6 +199,7 @@ const AUTO_MAX_UI_THEME_CSS = `
 
   @supports (backdrop-filter: blur(12px)) {
     #automax_forecast_panel,
+    #automax_mp_profit_panel,
     #automax_saturation_panel,
     .automax-exec-modal > section {
       backdrop-filter: blur(12px) saturate(115%);
@@ -205,6 +207,7 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel > header,
+  #automax_mp_profit_panel > header,
   #automax_saturation_panel > header,
   .automax-exec-modal > section > header,
   .automax-panel-header {
@@ -230,6 +233,7 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel h2,
+  #automax_mp_profit_panel h2,
   #automax_saturation_panel h2,
   .automax-exec-modal h2 {
     font-size: 20px;
@@ -241,6 +245,8 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel button,
+  #automax_mp_profit_panel button,
+  #automax_mp_profit_panel input,
   #automax_saturation_panel button,
   .automax-exec-modal button,
   .automax-exec-modal input,
@@ -262,6 +268,7 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel button:hover:not(:disabled),
+  #automax_mp_profit_panel button:hover:not(:disabled),
   #automax_saturation_panel button:hover:not(:disabled),
   .automax-exec-modal button:hover:not(:disabled),
   .automax-inline-action:hover:not(:disabled),
@@ -271,6 +278,7 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel button:active:not(:disabled),
+  #automax_mp_profit_panel button:active:not(:disabled),
   #automax_saturation_panel button:active:not(:disabled),
   .automax-exec-modal button:active:not(:disabled),
   .automax-inline-action:active:not(:disabled),
@@ -279,6 +287,7 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel :is(button, input, select):focus-visible,
+  #automax_mp_profit_panel :is(button, input, select, a):focus-visible,
   #automax_saturation_panel :is(button, input, select, a):focus-visible,
   .automax-exec-modal :is(button, input, select):focus-visible,
   .automax-exec-settings :is(button, input):focus-visible,
@@ -289,6 +298,7 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel button:disabled,
+  #automax_mp_profit_panel button:disabled,
   #automax_saturation_panel button:disabled,
   .automax-exec-modal button:disabled,
   .automax-market-summary button:disabled {
@@ -311,6 +321,7 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel table,
+  #automax_mp_profit_panel table,
   #automax_saturation_panel table,
   .automax-exec-modal table {
     border-collapse: separate;
@@ -320,6 +331,7 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel th,
+  #automax_mp_profit_panel th,
   #automax_saturation_panel th,
   .automax-exec-modal th {
     background: var(--sct-surface-elevated);
@@ -332,6 +344,7 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel :is(th, td),
+  #automax_mp_profit_panel :is(th, td),
   #automax_saturation_panel :is(th, td),
   .automax-exec-modal :is(th, td) {
     border: 0;
@@ -340,6 +353,7 @@ const AUTO_MAX_UI_THEME_CSS = `
   }
 
   #automax_forecast_panel tbody tr:hover,
+  #automax_mp_profit_panel tbody tr:hover,
   #automax_saturation_panel tbody tr:hover,
   .automax-exec-modal tbody tr:hover {
     background: var(--sct-surface-hover);
@@ -399,12 +413,23 @@ const AUTO_MAX_UI_THEME_CSS = `
     white-space: nowrap;
   }
 
+  .sct-floating-drag-handle {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+
+  [data-sct-dragging="true"] .sct-floating-drag-handle {
+    cursor: grabbing;
+  }
+
   @media (max-width: 576px) {
     #script_cpt_node {
       width: 100%;
     }
 
     #automax_forecast_panel,
+    #automax_mp_profit_panel,
     #automax_saturation_panel {
       left: 8px;
       max-height: calc(100dvh - 16px);
@@ -434,6 +459,7 @@ const AUTO_MAX_UI_THEME_CSS = `
 
   @media (prefers-reduced-motion: reduce) {
     #automax_forecast_panel *,
+    #automax_mp_profit_panel *,
     #automax_saturation_panel *,
     .automax-exec-modal *,
     .automax-market-summary * {
