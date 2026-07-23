@@ -17,7 +17,7 @@ class autoMaxWarehouseProfit extends BaseComponent {
   }
 
   componentData = {
-    pending: new WeakSet(),
+    pending: new WeakMap(),
     revision: 0,
   }
 
@@ -108,7 +108,7 @@ class autoMaxWarehouseProfit extends BaseComponent {
   }
 
   enqueue(stack, context, revision) {
-    if (this.componentData.pending.has(stack) || stack.querySelector(`[${PROFIT_MARKER}]`)) return;
+    if (this.componentData.pending.get(stack) === revision || stack.querySelector(`[${PROFIT_MARKER}]`)) return;
     const item = this.itemFromStack(stack, context);
     if (!item) return;
     const target = this.quantityRow(stack) ?? stack;
@@ -116,9 +116,9 @@ class autoMaxWarehouseProfit extends BaseComponent {
     output.setAttribute(PROFIT_MARKER, "true");
     output.textContent = "时利润：计算中";
     target.append(output);
-    this.componentData.pending.add(stack);
+    this.componentData.pending.set(stack, revision);
     this.calculate(item, context).then((result) => {
-      this.componentData.pending.delete(stack);
+      if (this.componentData.pending.get(stack) === revision) this.componentData.pending.delete(stack);
       if (!output.isConnected || revision !== this.componentData.revision) return;
       if (!result) {
         output.textContent = "时利润：无法计算";
@@ -127,7 +127,7 @@ class autoMaxWarehouseProfit extends BaseComponent {
       output.textContent = `时利润：$${this.money(result.hourlyProfit)}（建议 $${this.money(result.price)}）`;
       output.toggleAttribute("data-negative", result.hourlyProfit < 0);
     }).catch((error) => {
-      this.componentData.pending.delete(stack);
+      if (this.componentData.pending.get(stack) === revision) this.componentData.pending.delete(stack);
       if (!output.isConnected || revision !== this.componentData.revision) return;
       output.textContent = "时利润：计算失败";
     });
