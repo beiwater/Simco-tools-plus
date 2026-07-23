@@ -63,7 +63,7 @@ class customBackgroundImage extends BaseComponent {
     super();
     this.name = "自定义背景图片";
     this.describe = "可拖入图片、选择图片或文件夹，并保存在当前浏览器中";
-    this.enable = true;
+    this.enable = false;
     this.tagList = ["个性化"];
   }
 
