@@ -97,31 +97,43 @@ function scriptEventStart() {
   rootObserveServer.observe(document.querySelector("div#root"), { childList: true, subtree: true });
   setInterval(tools.intervalEventBus.bind(tools), 100);
   const OriginalXHR = window.XMLHttpRequest;
-  window.XMLHttpRequest = function SCTXMLHttpRequest(...args) {
+  const originalAddEventListener = OriginalXHR.prototype.addEventListener;
+  const originalOpen = OriginalXHR.prototype.open;
+  const xhrCaptureState = new WeakMap();
+  function SCTXMLHttpRequest(...args) {
     if (!new.target) throw new TypeError("XMLHttpRequest must be constructed with new.");
     const xhr = Reflect.construct(OriginalXHR, args, new.target);
-    const originalOpen = xhr.open;
-    let capturedRevision = 0;
-    let requestMethod = "";
-    let requestRevision = 0;
-    let requestUrl = "";
-    xhr.open = function (method, url, ...rest) {
-      requestMethod = method;
-      requestRevision += 1;
-      requestUrl = String(url);
-      return originalOpen.call(this, method, url, ...rest);
-    };
-    xhr.addEventListener("readystatechange", () => {
-      if (xhr.readyState !== 4 || capturedRevision === requestRevision) return;
-      capturedRevision = requestRevision;
+    xhrCaptureState.set(xhr, { capturedRevision: 0, method: "", revision: 0, url: "" });
+    Reflect.apply(originalAddEventListener, xhr, ["readystatechange", () => {
+      const state = xhrCaptureState.get(xhr);
+      if (!state || xhr.readyState !== 4 || state.capturedRevision === state.revision) return;
+      state.capturedRevision = state.revision;
       if (xhr.status < 200 || xhr.status >= 400) return;
-      try { tools.netEventBus(requestUrl, requestMethod, xhr.responseText, xhr.status); }
+      try { tools.netEventBus(state.url, state.method, xhr.responseText, xhr.status); }
       catch (error) { tools.errorLog(error); }
-    });
+    }]);
     return xhr;
-  };
-  Object.setPrototypeOf(window.XMLHttpRequest, OriginalXHR);
-  window.XMLHttpRequest.prototype = OriginalXHR.prototype;
+  }
+  Object.setPrototypeOf(SCTXMLHttpRequest, OriginalXHR);
+  SCTXMLHttpRequest.prototype = Object.create(OriginalXHR.prototype, {
+    constructor: { configurable: true, value: SCTXMLHttpRequest, writable: true },
+    open: {
+      configurable: true,
+      value(method, url, ...rest) {
+        const normalizedUrl = String(url);
+        const result = Reflect.apply(originalOpen, this, [method, normalizedUrl, ...rest]);
+        const state = xhrCaptureState.get(this);
+        if (state) {
+          state.method = method;
+          state.revision += 1;
+          state.url = normalizedUrl;
+        }
+        return result;
+      },
+      writable: true,
+    },
+  });
+  window.XMLHttpRequest = SCTXMLHttpRequest;
 }
 
 scriptMainInit();

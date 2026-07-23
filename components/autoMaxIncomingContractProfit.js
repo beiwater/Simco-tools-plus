@@ -20,7 +20,7 @@ class autoMaxIncomingContractProfit extends BaseComponent {
 
   componentData = {
     marketCache: new Map(),
-    pending: new WeakSet(),
+    pending: new WeakMap(),
     generation: 0,
     settingsListener: undefined,
   }
@@ -99,19 +99,19 @@ class autoMaxIncomingContractProfit extends BaseComponent {
   }
 
   enqueue(card, context, generation) {
-    if (this.componentData.pending.has(card) || card.querySelector(`[${DISPLAY_MARKER}]`)) return;
+    if (this.componentData.pending.get(card) === generation || card.querySelector(`[${DISPLAY_MARKER}]`)) return;
     const contract = this.parseCard(card, context.constants);
     if (!contract) return;
-    this.componentData.pending.add(card);
+    this.componentData.pending.set(card, generation);
     const display = this.createDisplay();
     this.insertDisplay(card, display);
     this.calculate(contract, context).then((outcome) => {
-      this.componentData.pending.delete(card);
+      if (this.componentData.pending.get(card) === generation) this.componentData.pending.delete(card);
       if (!display.isConnected || generation !== this.componentData.generation) return;
       this.render(display, outcome);
       this.applyHighPriceGuard(card, contract, outcome.mp);
     }).catch((error) => {
-      this.componentData.pending.delete(card);
+      if (this.componentData.pending.get(card) === generation) this.componentData.pending.delete(card);
       if (!display.isConnected || generation !== this.componentData.generation) return;
       tools.errorLog("[AutoMax:INCOMING_CONTRACT]", error);
       this.render(display, { note: "计算失败" });

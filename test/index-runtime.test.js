@@ -44,6 +44,7 @@ function createIndexHarness({ immediateDelays = false, now = Date.now, rootAvail
     }
 
     open(method, url) {
+      if (method === "TRACE") throw new TypeError("Forbidden method");
       this.method = method;
       this.url = url;
     }
@@ -227,6 +228,27 @@ test("XHR capture keeps request metadata when application reuses the instance at
   ]);
 });
 
+test("XHR capture keeps active request metadata when a later open throws", async () => {
+  const harness = createIndexHarness();
+  await harness.startup;
+  const xhr = new harness.window.XMLHttpRequest();
+  xhr.responses = [{ responseText: "old", status: 200 }];
+
+  xhr.open("GET", "https://www.simcompanies.com/api/v3/resources/");
+  assert.throws(
+    () => xhr.open("TRACE", "https://www.simcompanies.com/api/v2/companies/me/buildings/"),
+    /Forbidden method/
+  );
+  xhr.send();
+
+  assert.deepEqual(harness.state.netEvents, [[
+    "https://www.simcompanies.com/api/v3/resources/",
+    "GET",
+    "old",
+    200,
+  ]]);
+});
+
 test("wrapped XMLHttpRequest preserves subclass construction", async () => {
   const harness = createIndexHarness();
   await harness.startup;
@@ -239,6 +261,31 @@ test("wrapped XMLHttpRequest preserves subclass construction", async () => {
   assert.equal(xhr instanceof CustomXHR, true);
   assert.equal(xhr instanceof harness.window.XMLHttpRequest, true);
   assert.equal(xhr.customMethod(), "custom");
+});
+
+test("wrapped XMLHttpRequest avoids subclass overrides before class fields initialize", async () => {
+  const harness = createIndexHarness();
+  await harness.startup;
+  class CustomXHR extends harness.window.XMLHttpRequest {
+    registrations = [];
+    openCalls = 0;
+
+    addEventListener(type, listener) {
+      this.registrations.push(type);
+      return super.addEventListener(type, listener);
+    }
+
+    open(...args) {
+      this.openCalls += 1;
+      return super.open(...args);
+    }
+  }
+
+  const xhr = new CustomXHR();
+  xhr.open("GET", "https://www.simcompanies.com/api/v3/resources/");
+
+  assert.deepEqual(xhr.registrations, []);
+  assert.equal(xhr.openCalls, 1);
 });
 
 test("startup stops after the bounded number of missing-root retries", async () => {
