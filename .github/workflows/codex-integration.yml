@@ -1,0 +1,37 @@
+name: Codex integration validation
+
+on:
+  push:
+    branches:
+      - codex/dev-bench-automaxpphpl
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    if: github.event.head_commit.message == 'ci: validate and rebuild codex integration'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/dev-bench-automaxpphpl
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run verify:userscript
+      - run: git diff --check
+      - name: Commit rebuilt distribution
+        run: |
+          if git diff --quiet -- dist/build.user.js dist/version.json; then
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add dist/build.user.js dist/version.json
+          git commit -m "build: refresh userscript after PR integration"
+          git push origin HEAD:codex/dev-bench-automaxpphpl
