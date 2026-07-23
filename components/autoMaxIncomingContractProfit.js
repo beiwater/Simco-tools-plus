@@ -79,7 +79,7 @@ class autoMaxIncomingContractProfit extends BaseComponent {
     if (!this.enabled()) return this.clear();
     const context = this.context();
     if (!context) return;
-    const generation = ++this.componentData.generation;
+    const generation = this.componentData.generation;
     for (const card of document.querySelectorAll('div[tabindex="0"]')) this.enqueue(card, context, generation);
   }
 
