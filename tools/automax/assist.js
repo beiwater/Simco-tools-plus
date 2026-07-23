@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const COLOR_EMOJI_LABELS = Object.freeze({
   "🟢": "绿",
   "🔴": "红",
