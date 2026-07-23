@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const INTERACTIVE_SELECTOR = "button, input, select, textarea, a, label, [contenteditable='true']";
 
 function clamp(value, minimum, maximum) {
