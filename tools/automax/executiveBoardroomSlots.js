@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const SLOT_GROUPS = Object.freeze([
   { title: "高管", slots: [{ id: "o", label: "COO" }, { id: "f", label: "CFO" }, { id: "m", label: "CMO" }, { id: "t", label: "CTO" }] },
   { title: "学徒", slots: [{ id: "v", label: "COO 学徒" }, { id: "x", label: "CFO 学徒" }, { id: "y", label: "CMO 学徒" }, { id: "z", label: "CTO 学徒" }] },
