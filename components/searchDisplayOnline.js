@@ -7,7 +7,7 @@ class searchDisplayOnline extends BaseComponent {
     super();
     this.name = "标签搜索仅显示在线公司";
     this.describe = "在标签搜索公司的界面上方增加一个按钮\n点击即可切换仅显示在线玩家";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ['实用', '过滤'];
   }

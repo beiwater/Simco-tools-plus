@@ -1,5 +1,96 @@
 const BaseComponent = require("../tools/baseComponent.js");
 const { tools, componentList, runtimeData, indexDBData, feature_config, langData } = require("../tools/tools.js");
+const { closeSecondaryWindow, ensureSecondaryWindow, openSecondaryWindow } = require("../tools/secondaryWindowHost.js");
+
+const TAG_ORDER = ["AutoMax", "交易", "仓库", "聊天", "工具", "外观"];
+const TAG_GROUPS = Object.freeze({
+  AutoMax: "AutoMax",
+  "交易所": "交易", "询价": "交易", "合同": "交易", MP: "交易", "利润": "交易",
+  "仓库": "仓库", "入库": "仓库", "出库": "仓库", "物资": "仓库", "物品": "仓库", ID: "仓库", "零售": "仓库", "建筑": "仓库",
+  "聊天": "聊天", "备注": "聊天", "信息": "聊天",
+  "样式": "外观", "个性化": "外观",
+});
+
+function normalizedTags(component) {
+  const tags = new Set();
+  for (const tag of component.tagList ?? []) tags.add(TAG_GROUPS[tag] ?? "工具");
+  return TAG_ORDER.filter((tag) => tags.has(tag));
+}
+
+const RISK_ACKNOWLEDGEMENT = "我已知晓风险自担";
+
+function requestRiskAcknowledgement(component) {
+  const featureName = component.name || "该功能";
+  const notice = component.riskNotice || "该功能会自动触发游戏页面操作。";
+  const typed = window.prompt(
+    `高风险自动化功能：${featureName}\n\n${notice}\n\n本插件与游戏开发者无关联，也不代表获得游戏开发者的许可；游戏规则、许可范围和账号处置均以游戏开发者为准。继续使用即表示你自行承担全部风险和后果。\n\n如仍要启用，请手动完整输入：${RISK_ACKNOWLEDGEMENT}`,
+    ""
+  );
+  return typed === RISK_ACKNOWLEDGEMENT;
+}
+
+const SETTINGS_WINDOW_THEME = `
+  #script_cpt_setting_container {
+    background: linear-gradient(145deg, var(--sct-surface-elevated, rgba(26, 32, 29, 0.96)), var(--sct-surface, rgba(15, 19, 17, 0.96)) 58%) !important;
+    border: 1px solid var(--sct-border-strong, rgba(255, 255, 255, 0.24));
+    border-radius: 12px;
+    box-shadow: var(--sct-panel-shadow, 0 24px 64px rgba(0, 0, 0, 0.55), 0 2px 12px rgba(0, 0, 0, 0.28));
+    box-sizing: border-box;
+    max-height: min(84dvh, 760px);
+    max-width: calc(100vw - 16px);
+    min-width: min(435px, calc(100vw - 16px));
+    overflow: hidden;
+    padding: 16px;
+    width: min(680px, calc(100vw - 16px));
+  }
+  #script_setting_head {
+    align-items: center;
+    background: var(--sct-surface-opaque, #0f1311);
+    border-bottom: 1px solid var(--sct-border, rgba(255, 255, 255, 0.14));
+    cursor: grab;
+    display: flex;
+    font-size: 20px;
+    font-weight: 700;
+    justify-content: space-between;
+    line-height: 1.25;
+    margin: -16px -16px 16px;
+    max-height: none;
+    min-height: 56px;
+    padding: 10px 16px;
+    touch-action: none;
+    user-select: none;
+  }
+  #script_cpt_setting_container[data-sct-dragging="true"] #script_setting_head { cursor: grabbing; }
+  #script_setting_head > span { font-size: inherit !important; left: auto !important; position: static !important; }
+  #script_setting_head > button {
+    background: var(--sct-control, rgba(255, 255, 255, 0.08)) !important;
+    border: 1px solid var(--sct-border, rgba(255, 255, 255, 0.14));
+    border-radius: 8px;
+    color: var(--fontColor);
+    cursor: pointer;
+    height: 36px !important;
+    line-height: normal !important;
+    min-width: 60px;
+    position: static !important;
+  }
+  #script_setting_head > button:hover { background: var(--sct-control-hover, rgba(255, 255, 255, 0.15)) !important; }
+  #script_setting_body { box-sizing: border-box; max-height: calc(min(84dvh, 760px) - 88px); overflow: auto; padding: 0; scrollbar-color: var(--sct-control-hover, rgba(255, 255, 255, 0.15)) transparent; }
+  #script_setting_body .setting-container .header { background: transparent; color: var(--fontColor); font-size: 18px; text-align: left; }
+  #script_setting_body .setting-container :is(button, input, select, textarea) { border: 1px solid var(--sct-border, rgba(255, 255, 255, 0.14)); border-radius: 8px; }
+  @media (max-width: 576px) {
+    #script_cpt_setting_container { max-height: calc(100dvh - 16px); min-width: 0; padding: 12px; width: calc(100vw - 16px); }
+    #script_setting_head { margin: -12px -12px 12px; padding: 10px 12px; }
+    #script_setting_body { max-height: calc(100dvh - 84px); }
+  }
+`;
+
+function mountSettingsWindowTheme() {
+  if (document.getElementById("script_cpt_setting_theme")) return;
+  const style = document.createElement("style");
+  style.id = "script_cpt_setting_theme";
+  style.textContent = SETTINGS_WINDOW_THEME;
+  document.head.append(style);
+}
 
 // 基础组件
 class basisCPT extends BaseComponent {
@@ -375,6 +466,7 @@ class basisCPT extends BaseComponent {
     SCT_divHorizontal: false, // SCT 悬浮窗横向排列
     SCT_divFixedDisplay: false, // SCT 悬浮窗固定显示
     mapMarginTop: 0, // 地图上边界
+    firstLaunchAcknowledged: false, // 首次使用说明已确认
   };
   componentData = {
     settingNodeList: {}, // 设置界面
@@ -393,9 +485,9 @@ class basisCPT extends BaseComponent {
   startupFuncList = [
     this.startUpMountCSS,
     this.startupUserInfo,
-    this.startupWarehouseInfo,
     this.startupSideBarMain,
     this.startupSettingContainer,
+    this.startupFirstLaunchNotice,
     this.startupExecutives,
     // this.startupForDonation,
     this.startupForLang,
@@ -630,29 +722,22 @@ class basisCPT extends BaseComponent {
     let resultNode = document.createElement("div");
     // 拼接侧边栏头部
     let htmlText = `<div id="scriptCPT_innerHead"><h1 style="margin-left:10px;">组件</h1><div style="padding:0 10px;"><input type="text" id="script_cptSearch_input" class="form-control" placeholder="搜索组件名..."></div></div>`;
-    let sortComponentsList = Object.values(componentList).sort((cptA, cptB) => cptB.tapCount - cptA.tapCount);
+    let sortComponentsList = Object.values(componentList)
+      .filter((component) => !component.hideSetting && (component.enable || !component.canDisable))
+      .sort((cptA, cptB) => cptB.tapCount - cptA.tapCount);
     // 拼接侧边栏tag搜索
     htmlText += `<div id="scriptCPT_tagSerach">`;
-    let tagList = [];
-    for (let i = 0; i < sortComponentsList.length; i++) {
-      if (sortComponentsList[i].tagList.length == 0) continue;
-      for (let j = 0; j < sortComponentsList[i].tagList.length; j++) {
-        let tag = sortComponentsList[i].tagList[j];
-        if (tagList.includes(tag)) continue;
-        tagList.push(tag);
-        htmlText += `<span>${tag}</span>`;
-      }
-    }
+    const tagList = TAG_ORDER.filter((tag) => sortComponentsList.some((component) => normalizedTags(component).includes(tag)));
+    for (const tag of tagList) htmlText += `<button type="button" data-sct-tag>${tag}</button>`;
     htmlText += `</div>`;
     // 拼接侧边栏主体
     htmlText += `<div id="scriptCPT_mainBody"><table><thead><tr><td>前台功能</td><td>设置</td></tr></thead><tbody>`;
     for (let i = 0; i < sortComponentsList.length; i++) {
       let component = sortComponentsList[i];
-      if (component.enable == false && component.canDisable) continue;
       let name = component.constructor.name;
       let frontName = component.name;
-      let frontExist = Boolean(component.frontUI) ? "funcExist" : "";
-      let settingExist = Boolean(component.settingUI) ? "funcExist" : "";
+      let frontExist = (Boolean(component.frontUI) || Boolean(component.inlineSettingUI)) ? "funcExist" : "";
+      let settingExist = Boolean(component.inlineSettingUI || component.settingUI || component.settingAction) ? "funcExist" : "";
       htmlText += `<tr class="script_cpt_node" id='${name}'><td><button class="btn CPTOptionLeft ${frontExist}">${frontName}</button></td><td><button class="btn CPTOptionRight ${settingExist}">设置</button></td></tr>`;
     }
     htmlText += `</tbody></table></div>`;
@@ -662,12 +747,18 @@ class basisCPT extends BaseComponent {
     for (let i = 0; i < trList.length; i++) {
       let element = trList[i];
       let component = componentList[element.id];
-      let frontUI = !Boolean(component.frontUI)
-        ? () => this.sideBarSub_noFront()
-        : () => this.sideBarSub_showFront(component);
-      let settingUI = !Boolean(component.settingUI)
-        ? () => this.sideBarSub_noSetting()
-        : () => this.sideBarSub_showSetting(component);
+      let frontUI = component.inlineSettingUI
+        ? () => this.sideBarSub_toggleInlineSetting(element, component)
+        : !Boolean(component.frontUI)
+          ? () => this.sideBarSub_noFront()
+          : () => this.sideBarSub_showFront(component);
+      let settingUI = component.inlineSettingUI
+        ? () => this.sideBarSub_toggleInlineSetting(element, component)
+        : component.settingAction
+          ? () => component.settingAction.call(component)
+        : !Boolean(component.settingUI)
+          ? () => this.sideBarSub_noSetting()
+          : () => this.sideBarSub_showSetting(component);
       element.querySelector("button.CPTOptionLeft").addEventListener("click", frontUI);
       element.querySelector("button.CPTOptionRight").addEventListener("click", settingUI);
     }
@@ -691,9 +782,32 @@ class basisCPT extends BaseComponent {
     // 添加默认class
     if (!cptSettingNode.className.includes("col-sm-12 setting-container"))
       cptSettingNode.className += " col-sm-12 setting-container";
-    this.componentData.cptSettingBodyNode.appendChild(cptSettingNode);
-    Object.assign(document.querySelector("div#script_cpt_setting_container").style, { display: "block" });
+    const window = openSecondaryWindow({
+      id: "component-settings",
+      title: `${component.name}设置`,
+      content: cptSettingNode,
+      onClose: () => { this.componentData.cptSettingShow = false; },
+    });
+    this.componentData.cptSettingContainerNode = window.root;
+    this.componentData.cptSettingBodyNode = window.body;
     this.componentData.cptSettingShow = true;
+  }
+  async sideBarSub_toggleInlineSetting(componentRow, component) {
+    component.tapCount++;
+    const existingRow = componentRow.nextElementSibling;
+    if (existingRow?.dataset.sctInlineSettings === component.constructor.name) {
+      existingRow.remove();
+      return;
+    }
+    const content = await component.inlineSettingUI.call(component);
+    if (!content?.nodeType) return;
+    const inlineRow = document.createElement("tr");
+    inlineRow.dataset.sctInlineSettings = component.constructor.name;
+    const cell = document.createElement("td");
+    cell.colSpan = 2;
+    cell.append(content);
+    inlineRow.append(cell);
+    componentRow.after(inlineRow);
   }
   sideBarSub_noFront() {
     tools.alert("该组件没有前台窗口设计");
@@ -708,23 +822,28 @@ class basisCPT extends BaseComponent {
     this.sideBarSub_updateButtonList();
   }
   sideBarSub_tagSearch(event) {
-    if (event.target.tagName != "SPAN") return;
-    let tag = event.target.innerText;
+    const target = event.target.closest("button[data-sct-tag]");
+    if (!target) return;
+    let tag = target.innerText;
     let index = this.componentData.avtiveTagList.findIndex((activeTag) => activeTag == tag);
     if (index != -1) {
       // 删除显示
       this.componentData.avtiveTagList.splice(index, 1);
-      event.target.classList.remove("script_tagSearch_active");
+      target.classList.remove("script_tagSearch_active");
     } else {
       // 增加显示
       this.componentData.avtiveTagList.push(tag);
-      event.target.classList.add("script_tagSearch_active");
+      target.classList.add("script_tagSearch_active");
     }
     this.sideBarSub_updateButtonList();
   }
   sideBarSub_updateButtonList() {
     let nodeList = Object.values(document.querySelectorAll("div#scriptCPT_mainBody tbody>tr"));
     for (let i = 0; i < nodeList.length; i++) {
+      if (nodeList[i].dataset.sctInlineSettings) {
+        Object.assign(nodeList[i].style, { display: nodeList[i].previousElementSibling?.style.display === "none" ? "none" : "" });
+        continue;
+      }
       let tagMatch = false;
       let textMatch = false;
       let name = nodeList[i].id;
@@ -732,26 +851,66 @@ class basisCPT extends BaseComponent {
       // 任一包含匹配模式
       // if (componentList[name].tagList.some(item => this.componentData.avtiveTagList.includes(item))) tagMatch = true;
       // 完全包含匹配命令
-      if (this.componentData.avtiveTagList.every((item) => componentList[name].tagList.includes(item))) tagMatch = true;
+      if (this.componentData.avtiveTagList.every((item) => normalizedTags(componentList[name]).includes(item))) tagMatch = true;
       if (nodeList[i].innerText.match(this.componentData.cptSearchText)) textMatch = true;
       Object.assign(nodeList[i].style, { display: tagMatch && textMatch ? "" : "none" });
     }
   }
   // 组件设置界面构建
   async startupSettingContainer() {
-    let settingContainerNode = document.createElement("div");
-    settingContainerNode.innerHTML = `<div id=script_setting_head><div class="col-sm-10 col-xs-9"><span>组件设置界面</span></div><div class="col-sm-2 col-xs-2"><button class=btn>关闭</button></div></div><div id=script_setting_body></div>`;
-    settingContainerNode.id = "script_cpt_setting_container";
-    document.body.appendChild(settingContainerNode);
+    mountSettingsWindowTheme();
+    let settingContainerNode = ensureSecondaryWindow();
     this.componentData.cptSettingContainerNode = settingContainerNode;
     this.componentData.cptSettingBodyNode = settingContainerNode.querySelector("div#script_setting_body");
+  }
+  // 第一次启动时先致谢、再介绍功能，最后显示免责声明与风险提示。
+  startupFirstLaunchNotice() {
+    if (this.indexDBData.firstLaunchAcknowledged) return;
+    const content = document.createElement("section");
+    content.className = "sct-first-launch-notice";
 
-    // 关闭按钮绑定事件
-    settingContainerNode.querySelector("div#script_setting_head button").addEventListener("click", () => {
-      this.componentData.cptSettingBodyNode.querySelectorAll("div").forEach((node) => node.remove());
-      Object.assign(document.querySelector("div#script_cpt_setting_container").style, { display: "none" });
-      this.componentData.cptSettingShow = false;
+    const thanksTitle = document.createElement("h3"); thanksTitle.textContent = "致谢";
+    const thanks = document.createElement("p");
+    thanks.textContent = "感谢 SimComp-Tools 原作者道洛 LTS_Kim、所有贡献者，以及 AutoMax / 兔屋相关技术的原作者和贡献者。本插件引用、参考了他们公开项目中的部分代码与实现思路。";
+    const sources = document.createElement("p");
+    const simCompaniesScripts = document.createElement("a");
+    simCompaniesScripts.href = "https://github.com/gangbaRuby/SimCompanies-Scripts";
+    simCompaniesScripts.target = "_blank";
+    simCompaniesScripts.rel = "noreferrer";
+    simCompaniesScripts.textContent = "SimCompanies-Scripts";
+    const simCompTools = document.createElement("a");
+    simCompTools.href = "https://github.com/ShenHaiSu/SimComp-Tools";
+    simCompTools.target = "_blank";
+    simCompTools.rel = "noreferrer";
+    simCompTools.textContent = "SimComp-Tools";
+    sources.append("上游项目：", simCompaniesScripts, " ｜ ", simCompTools);
+
+    const introductionTitle = document.createElement("h3"); introductionTitle.textContent = "简介";
+    const introduction = document.createElement("p");
+    introduction.textContent = "欢迎使用 SimCompanies Tools。以下是可在设置中按需启用的功能；默认只有基础功能开启。";
+    const featureTitle = document.createElement("h3"); featureTitle.textContent = "功能概览";
+    const list = document.createElement("ul");
+    Object.values(componentList).filter((component) => !component.hideSetting).forEach((component) => {
+      const item = document.createElement("li");
+      item.textContent = `${component.name}：${component.describe || "暂无功能说明"}`;
+      list.append(item);
     });
+
+    const disclaimerTitle = document.createElement("h3"); disclaimerTitle.textContent = "免责声明与风险提示";
+    const disclaimer = document.createElement("p");
+    disclaimer.textContent = "本插件仅提供辅助信息与界面工具，不保证数据准确、收益或任何操作结果。本插件与游戏开发者无关联，也不代表获得游戏开发者许可；游戏规则、许可范围和账号处置均以游戏开发者规定为准。请自行确认市场、合同、生产及自动化操作的风险，相关后果由使用者自行承担。";
+    const acknowledgement = document.createElement("label");
+    const checkbox = document.createElement("input"); checkbox.type = "checkbox";
+    acknowledgement.append(checkbox, document.createTextNode(" 我已知晓并同意自行承担使用责任"));
+    const button = document.createElement("button"); button.type = "button"; button.className = "btn"; button.textContent = "我已知晓"; button.disabled = true;
+    checkbox.addEventListener("change", () => { button.disabled = !checkbox.checked; });
+    button.addEventListener("click", async () => {
+      this.indexDBData.firstLaunchAcknowledged = true;
+      await tools.indexDB_updateIndexDBData();
+      closeSecondaryWindow();
+    });
+    content.append(thanksTitle, thanks, sources, introductionTitle, introduction, featureTitle, list, disclaimerTitle, disclaimer, acknowledgement, button);
+    openSecondaryWindow({ id: "first-launch-notice", title: "首次使用说明", content });
   }
   // 基础组件设置界面
   uisetting() {
@@ -760,21 +919,22 @@ class basisCPT extends BaseComponent {
     let newNode = document.createElement("div");
     newNode.id = "script_setting_basisCPT";
     newNode.className = "col-sm-12 setting-container";
-    let htmlText = `<div><div class="header">插件基础功能设置</div><div class="container"><div><div><button class="btn script_opt_submit">保存</button></div></div><div><table><thead><tr><td>组件名</td><td>开关</td></tr></thead><tbody>`;
-    let tempCPTList = Object.values(componentList);
+    let htmlText = `<div><div class="header">插件基础功能设置</div><div class="container"><div><div><button class="btn script_opt_submit">保存</button></div></div><div><table class="sct-cpt-switch-table"><thead><tr><td>组件名</td><td>开关</td></tr></thead><tbody>`;
+    let tempCPTList = Object.values(componentList).filter(c => !c.hideSetting);
     for (let i = 0; i < tempCPTList.length; i++) {
       let component = tempCPTList[i];
       let name = component.name;
       let describe = component.describe;
       let enable = component.enable;
       let canDisable = component.canDisable;
-      htmlText += `<tr><td><span title='${describe}'>${name}</span></td><td><input class='form-control' type="checkbox" ${
+      let cptKey = component.constructor.name;
+      htmlText += `<tr><td><span title='${describe}'>${name}</span></td><td><input class='form-control sct-cpt-checkbox' data-cpt-key="${cptKey}" type="checkbox" ${
         enable ? "checked" : ""
       } ${canDisable ? "" : "disabled"}></td></tr>`;
     }
-    htmlText += `</table></div><div><table><thead><tr><td>功能<td>设置<tbody><tr><td title=打开debug模式会有大量信息输出,可能会影响到性能,如非必要不要打开.>DEBUG模式<td><input class='form-control' type='checkbox' #####><tr><td title="只有插件主动发起的请求会被此项目限制\n官方文档说明低于5分钟就不安全了,用户请酌情设置. \n默认[10000ms]=10s">插件主动网络请求最小间隔<td><input type=number class=form-control value=#####><tr><td title="允许使用hex代码和rgb标号. \n默认 #ffffff">插件通用文字配色<td><input class=form-control value=#####><tr><td title="允许使用hex代码和rgb标号. \n默认 100 ">网页缩放比例<td><input type=number class=form-control value=#####> <tr><td title='地图界面上方的间隔，注意与网页缩放比例搭配使用。'>地图上方间距<td><input type='number' class=form-control value=#####>  <tr><td title="首要通知模式,默认是 网页内通知">主要通知模式<td><select class=form-control><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="次要通知模式,默认是 无">次要通知模式<td><select class=form-control><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="默认不勾选,勾选后SCT悬浮窗使用横向布局">悬浮窗横向排列</td><td><input type="checkbox" class="form-control" ${
+    htmlText += `</table></div><div><table class="sct-feature-config-table"><thead><tr><td>功能<td>设置<tbody><tr><td title=打开debug模式会有大量信息输出,可能会影响到性能,如非必要不要打开.>DEBUG模式<td><input class='form-control' data-config-key="debug" type='checkbox' #####><tr><td title="只有插件主动发起的请求会被此项目限制\n官方文档说明低于5分钟就不安全了,用户请酌情设置. \n默认[10000ms]=10s">插件主动网络请求最小间隔<td><input type=number class=form-control data-config-key="net_gap_ms" value=#####><tr><td title="允许使用hex代码 and rgb标号. \n默认 #ffffff">插件通用文字配色<td><input class=form-control data-config-key="fontColor" value=#####><tr><td title="允许使用hex代码和rgb标号. \n默认 100 ">网页缩放比例<td><input type=number class=form-control data-config-key="zoomRate" value=#####> <tr><td title='地图界面上方的间隔，注意与网页缩放比例搭配使用。'>地图上方间距<td><input type='number' class=form-control data-config-key="mapMarginTop" value=#####>  <tr><td title="首要通知模式,默认是 网页内通知">主要通知模式<td><select class=form-control data-config-key="notificationMode0"><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="次要通知模式,默认是 无">次要通知模式<td><select class=form-control data-config-key="notificationMode1"><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="默认不勾选,勾选后SCT悬浮窗使用横向布局">悬浮窗横向排列</td><td><input type="checkbox" class="form-control" data-config-key="SCT_divHorizontal" ${
       this.indexDBData.SCT_divHorizontal ? "checked" : ""
-    } ></td></tr><tr><td title="默认不勾选,勾选后SCT悬浮窗会固定在右下角不受hover影响">悬浮窗固定位置</td><td><input type="checkbox" class="form-control" ${
+    } ></td></tr><tr><td title="默认不勾选,勾选后SCT悬浮窗会固定在右下角不受hover影响">悬浮窗固定位置</td><td><input type="checkbox" class="form-control" data-config-key="SCT_divFixedDisplay" ${
       this.indexDBData.SCT_divFixedDisplay ? "checked" : ""
     } ></td></tr><tr><td title="无确认,删除插件所有缓存.非必要不用点">清除插件缓存</td><td><button class="btn form-control" id="script_reset">清除</button></td></tr><tr><td>插件缓存读写</td><td><button class="btn form-control" id="script_confEdit_enter">进入读写操作</button></td></tr></table></div></div></div>`;
     // 修改input已有参数
@@ -784,58 +944,95 @@ class basisCPT extends BaseComponent {
     htmlText = htmlText.replace("#####", parseFloat(feature_config.zoomRate));
     htmlText = htmlText.replace("#####", parseInt(this.indexDBData.mapMarginTop));
     newNode.innerHTML = htmlText;
+    newNode.querySelectorAll("input.sct-cpt-checkbox").forEach((checkbox) => {
+      checkbox.addEventListener("change", () => {
+        const component = componentList[checkbox.dataset.cptKey];
+        if (!checkbox.checked || !component?.requiresRiskAcknowledgement || component.indexDBData?.riskAcknowledged) return;
+        checkbox.checked = false;
+        if (!requestRiskAcknowledgement(component)) {
+          tools.alert(`未完成手动确认，“${component.name}”保持关闭。`);
+          return;
+        }
+        component.indexDBData.riskAcknowledged = true;
+        checkbox.checked = true;
+        tools.alert(`已完成风险确认。“${component.name}”将在点击“保存”并刷新后启用。`);
+      });
+    });
     // 修改select的已有参数
-    let selectList = newNode.querySelectorAll("td>select");
-    selectList[0].value = feature_config.notificationMode[0];
-    selectList[1].value = feature_config.notificationMode[1];
+    let select0 = newNode.querySelector('[data-config-key="notificationMode0"]');
+    if (select0) select0.value = feature_config.notificationMode[0];
+    let select1 = newNode.querySelector('[data-config-key="notificationMode1"]');
+    if (select1) select1.value = feature_config.notificationMode[1];
     // 绑定按键
-    newNode.querySelector("button#script_reset").addEventListener("click", async () => {
+    newNode.querySelector("button#script_reset")?.addEventListener("click", async () => {
       if (!(await tools.confirm("确定清理?"))) return;
       tools.indexDB_deleteAllData();
       location.reload();
     });
-    newNode.querySelector("button#script_confEdit_enter").addEventListener("click", () => this.scriptConfEdit_build());
-    newNode.querySelector("button.script_opt_submit").addEventListener("click", () => this.uisettingSub());
+    newNode.querySelector("button#script_confEdit_enter")?.addEventListener("click", () => this.scriptConfEdit_build());
+    newNode.querySelector("button.script_opt_submit")?.addEventListener("click", () => this.uisettingSub());
     return newNode;
   }
   uisettingSub() {
-    let valueList = [];
-    let flagCount = 0;
-    let cptCount = Object.keys(componentList).length;
-    document
-      .querySelectorAll("div#script_setting_basisCPT input, div#script_setting_basisCPT select")
-      .forEach((node) => {
-        if (node.tagName == "INPUT" && node.type == "checkbox") {
-          valueList.push(node.checked);
-        } else if (node.tagName == "INPUT" && node.type == "number") {
-          valueList.push(parseFloat(node.value));
-        } else if (node.tagName == "INPUT") {
-          valueList.push(node.value);
-        } else if (node.tagName == "SELECT") {
-          valueList.push(parseInt(node.value));
+    let container = document.querySelector("div#script_setting_basisCPT");
+    if (!container) return;
+
+    // 更新组件开关
+    let visibleCPTs = Object.values(componentList).filter(c => !c.hideSetting);
+    visibleCPTs.forEach((component) => {
+      let cptKey = component.constructor.name;
+      let checkbox = container.querySelector(`input.sct-cpt-checkbox[data-cpt-key="${cptKey}"]`);
+      if (checkbox) {
+        if (checkbox.checked && component.requiresRiskAcknowledgement && !component.indexDBData?.riskAcknowledged) {
+          checkbox.checked = false;
+          return tools.alert(`“${component.name}”需要先手动输入“${RISK_ACKNOWLEDGEMENT}”确认风险。`);
         }
-      });
+        component.enable = checkbox.checked;
+      }
+    });
+
+    // 读取具体 config Key 对应的节点
+    const getConfigNode = (key) => container.querySelector(`[data-config-key="${key}"]`);
+
+    const debugNode = getConfigNode("debug");
+    const netGapNode = getConfigNode("net_gap_ms");
+    const fontColorNode = getConfigNode("fontColor");
+    const zoomRateNode = getConfigNode("zoomRate");
+    const mapMarginNode = getConfigNode("mapMarginTop");
+    const mode0Node = getConfigNode("notificationMode0");
+    const mode1Node = getConfigNode("notificationMode1");
+    const horizNode = getConfigNode("SCT_divHorizontal");
+    const fixedNode = getConfigNode("SCT_divFixedDisplay");
+
+    const netGapMs = netGapNode ? Math.floor(parseFloat(netGapNode.value)) : feature_config.net_gap_ms;
+    const fontColor = fontColorNode ? fontColorNode.value : feature_config.fontColor;
+    const zoomRate = zoomRateNode ? parseFloat(zoomRateNode.value) : parseFloat(feature_config.zoomRate);
+    const mapMarginTop = mapMarginNode ? parseFloat(mapMarginNode.value) : this.indexDBData.mapMarginTop;
+    const mode0 = mode0Node ? parseInt(mode0Node.value) : feature_config.notificationMode[0];
+    const mode1 = mode1Node ? parseInt(mode1Node.value) : feature_config.notificationMode[1];
+
     // 检测内容
-    if (Math.floor(valueList[cptCount + 1]) < 60000)
+    if (netGapMs < 60000)
       return tools.alert("插件主动网络请求最小间隔 不允许设置小于1分钟，也就是不小于60000.");
-    if (!tools.hexArgbCheck(valueList[cptCount + 2])) return tools.alert("只支持HEX格式颜色和RGB格式颜色.");
-    if (valueList[cptCount + 3] > 100 || valueList[cptCount + 3] <= 0)
+    if (!tools.hexArgbCheck(fontColor)) return tools.alert("只支持HEX格式颜色和RGB格式颜色.");
+    if (zoomRate > 100 || zoomRate <= 0)
       return tools.alert("网页缩放比例太离谱嗷.\n只允许 (0-100].");
-    if (valueList[cptCount + 4] < 0) return tools.alert("间距不允许是负数");
-    if (valueList[cptCount + 5] == -1 && valueList[cptCount + 6] != -1)
+    if (mapMarginTop < 0) return tools.alert("间距不允许是负数");
+    if (mode0 == -1 && mode1 != -1)
       return tools.alert("如果仅设置一个通知模式请使用主要通知模式.");
-    if (valueList[cptCount + 5] == valueList[cptCount + 6] && valueList[cptCount + 5] != -1)
+    if (mode0 == mode1 && mode0 != -1)
       return tools.alert("没必要都设置一样的.");
+
     // 挂载内容
-    Object.values(componentList).forEach((component) => (component.enable = valueList[flagCount++]));
-    feature_config.debug = valueList[cptCount + 0];
-    feature_config.net_gap_ms = Math.floor(valueList[cptCount + 1]);
-    feature_config.fontColor = valueList[cptCount + 2];
-    feature_config.zoomRate = valueList[cptCount + 3] + "%";
-    feature_config.notificationMode = [valueList[cptCount + 5], valueList[cptCount + 6]];
-    this.indexDBData.SCT_divHorizontal = valueList[cptCount + 7];
-    this.indexDBData.SCT_divFixedDisplay = valueList[cptCount + 8];
-    this.indexDBData.mapMarginTop = valueList[cptCount + 4];
+    if (debugNode) feature_config.debug = debugNode.checked;
+    feature_config.net_gap_ms = netGapMs;
+    feature_config.fontColor = fontColor;
+    feature_config.zoomRate = zoomRate + "%";
+    feature_config.notificationMode = [mode0, mode1];
+    if (horizNode) this.indexDBData.SCT_divHorizontal = horizNode.checked;
+    if (fixedNode) this.indexDBData.SCT_divFixedDisplay = fixedNode.checked;
+    this.indexDBData.mapMarginTop = mapMarginTop;
+
     // 更新内容
     tools.indexDB_updateFeatureConf();
     tools.indexDB_updateIndexDBData();
@@ -846,7 +1043,7 @@ class basisCPT extends BaseComponent {
   // 插件缓存读写界面构建
   async scriptConfEdit_build() {
     // 关闭设置界面
-    document.querySelector("div#script_cpt_setting_container>#script_setting_head button").click();
+    closeSecondaryWindow(this.componentData.cptSettingContainerNode);
     // 构建节点
     let newNode = document.createElement("div");
     let cssNode = document.createElement("style");

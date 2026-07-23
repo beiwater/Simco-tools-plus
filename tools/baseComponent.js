@@ -58,6 +58,8 @@ class BaseComponent {
   
   /** @type {Function|undefined} UI设置界面 */
   settingUI = undefined;
+
+  inlineSettingUI = undefined;
   
   /** @type {Function|undefined} 前台界面 */
   frontUI = undefined;

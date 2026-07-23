@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AutoMax Panel QA Fixture</title>
+  <script>
+    window.fetch = async (input) => {
+      const url = String(input?.url || input);
+      const json = (value) => new Response(JSON.stringify(value), { status: 200, headers: { "Content-Type": "application/json" } });
+      if (url.includes("companies/me") || url.includes("auth-data")) {
+        return json({ authCompany: { realmId: 0, company: "fixture", companyId: 1 }, temporals: {}, levelInfo: {} });
+      }
+      if (url.includes("resources")) return json([]);
+      return json(null);
+    };
+  </script>
+</head>
+<body>
+  <div id="root"><main><h1>SimCompanies fixture</h1><p>AutoMax control panel QA surface.</p></main></div>
+  <script src="/dist/build.user.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    if (params.has("open")) {
+      let attempts = 0;
+      const openForQa = () => {
+        const entry = document.querySelector("tr#autoMaxPanel button.CPTOptionLeft");
+        if (!entry && attempts++ < 50) return window.setTimeout(openForQa, 20);
+        entry?.click();
+        if (params.has("settings")) document.querySelector("#automax_panel_root .automax-panel-actions button:first-child")?.click();
+      };
+      openForQa();
+    }
+  </script>
+</body>
+</html>

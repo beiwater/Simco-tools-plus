@@ -9,6 +9,8 @@ class clickHarvest extends BaseComponent {
     this.describe = "组件包括了一键收菜的功能，在地图主页面点击收取按钮可以完成一键收菜"
     this.enable = false;
     this.tagList = ['快捷'];
+    this.requiresRiskAcknowledgement = true;
+    this.riskNotice = "会批量触发地图建筑的收取点击。这类自动化操作可能不在游戏开发者允许范围内，并可能造成账号处罚或其他损失。";
   }
 
   commonFuncList = [{
@@ -24,6 +26,7 @@ class clickHarvest extends BaseComponent {
   indexDBData = {
     buttonText: "一键收菜",
     nodePosition: 0, // 0 右上角 1 左上角 2 中间悬浮
+    riskAcknowledged: false,
   };
   componentData = {
     btnNode: undefined

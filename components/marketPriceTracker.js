@@ -7,7 +7,7 @@ class marketPriceTracker extends BaseComponent {
     super();
     this.name = "交易行价格监控提示";
     this.describe = "交易行低价会有提示，不错过交易行的精彩价格。";
-    this.enable = true;
+    this.enable = false;
     this.tagList = ['追踪','交易所'];
   };
   indexDBData = {

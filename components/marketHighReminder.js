@@ -7,7 +7,7 @@ class marketHighReminder extends BaseComponent {
     super();
     this.name = "交易行按钮旁高提醒";
     this.describe = "交易行旁按钮高提醒，提示当前是R1还是R2";
-    this.enable = true;
+    this.enable = false;
     this.tagList = ['样式',"交易所"];
   }
   commonFuncList = [{

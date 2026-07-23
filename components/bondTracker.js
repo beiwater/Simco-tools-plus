@@ -14,7 +14,7 @@ class bondTracker extends BaseComponent {
     super();
     this.name = "债券市场追踪器";
     this.describe = "用于定时查询当前债券市场是否有符合要求的债券可供购买";
-    this.enable = true;
+    this.enable = false;
     this.tagList = ["债券", "追踪"];
   }
 

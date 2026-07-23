@@ -7,7 +7,7 @@ class easyText extends BaseComponent {
     super();
     this.name = "随手笔记";
     this.describe = "前台随手笔记功能";
-    this.enable = true;
+    this.enable = false;
     this.tagList = ['实用'];
   }
   componentData = {
