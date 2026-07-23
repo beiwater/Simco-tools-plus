@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+  calculateExecutiveSkills,
   createAutoMaxCache,
   createRequestClient,
   mergeWarehouseResources,
@@ -83,6 +84,24 @@ test("merges warehouse resources without dropping existing region details", () =
     academyActive: 5,
     buildings: [{ id: 1 }],
     warehouseResources: [{ kind: 12, quantity: 42 }],
+  });
+});
+
+test("calculates all executive skill lanes with academy apprentice thresholds", () => {
+  const executives = [
+    { currentWorkHistory: { position: "o" }, skills: { coo: 20, cfo: 1, cmo: 5, cto: 1 } },
+    { currentWorkHistory: { position: "f" }, skills: { coo: 5, cfo: 18, cmo: 0, cto: 0 } },
+    { currentWorkHistory: { position: "m" }, skills: { coo: 8, cfo: 0, cmo: 21, cto: 0 } },
+    { currentWorkHistory: { position: "t" }, skills: { coo: 12, cfo: 0, cmo: 0, cto: 20 } },
+    { currentWorkHistory: { position: "v" }, skills: { coo: 10 } },
+    { currentWorkHistory: { position: "x" }, skills: { cfo: 8 } },
+    { currentWorkHistory: { position: "y" }, skills: { cmo: 6 } },
+    { currentWorkHistory: { position: "z" }, skills: { cto: 12 } },
+  ];
+
+  assert.deepEqual(calculateExecutiveSkills(executives, 20), {
+    effective: { cfo: 22, cmo: 25, coo: 31, cto: 26 },
+    raw: { cfo: 22, cmo: 25, coo: 31, cto: 26 },
   });
 });
 
