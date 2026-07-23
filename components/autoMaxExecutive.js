@@ -15,6 +15,13 @@ const BASE_WAGES = Object.freeze({
 const POSITION_NAMES = Object.freeze({ o: "COO", f: "CFO", m: "CMO", t: "CTO", v: "COO学徒", x: "CFO学徒", y: "CMO学徒", z: "CTO学徒", 1: "职员1", 2: "职员2", 3: "职员3", 4: "职员4", 5: "职员5" });
 const TRAINING_NAMES = Object.freeze({ o: "管理培训", f: "会计课程", m: "沟通工作室", t: "科学界研讨会", g: "各领域课程" });
 
+function focusBoardroomSlot(container, slotId) {
+  const control = container?.querySelector?.(`[data-slot-id="${slotId}"] > [role="button"]`);
+  if (!control || typeof control.focus !== "function") return false;
+  control.focus();
+  return true;
+}
+
 function executiveUrl(url) {
   return /\/api\/v2\/companies\/executives\/my-offers\/?|\/game-notifications\/|\/api\/v4\/executives\/\d+\/?|\/api\/v2\/companies\/\d+\/former-executives\/?/.test(String(url));
 }
@@ -60,7 +67,11 @@ class autoMaxExecutive extends BaseComponent {
       .automax-exec-panel { background: var(--sct-surface-muted, rgba(0, 0, 0, 0.7)); border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); color: var(--fontColor); display: grid; gap: 8px; margin-top: 12px; padding: 12px; }
       .automax-exec-panel p { margin: 0; overflow-wrap: anywhere; }
       .automax-exec-button, .automax-exec-modal button, .automax-exec-settings button { background: var(--sct-control, rgb(76, 76, 76)); border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); color: var(--fontColor); min-height: 30px; border-radius: 4px; padding: 4px 10px; cursor: pointer; }
-      .automax-exec-modal { align-items: center; background: rgba(0, 0, 0, 0.6); display: flex; inset: 0; justify-content: center; position: fixed; z-index: 10000; }
+      h3 > .automax-exec-button { margin-inline-start: 8px; }
+      .automax-exec-button--primary { background: var(--sct-enabled-soft); border-color: var(--sct-enabled-hover); }
+      .automax-action-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+      .automax-helper-text { font-size: 12px; line-height: 1.5; margin-bottom: 12px; text-wrap: pretty; }
+      .automax-exec-modal { align-items: center; background: rgba(0, 0, 0, 0.6); display: flex; inset: 0; justify-content: center; position: fixed; z-index: 1052; }
       .automax-exec-modal > section { background: var(--sct-surface, rgb(36, 36, 36)); border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); box-sizing: border-box; color: var(--fontColor); max-height: 90vh; max-width: min(95vw, 1000px); overflow: auto; padding: 16px; width: 100%; border-radius: 12px; display: flex; flex-direction: column; }
       .automax-exec-modal h2, .automax-exec-modal h3 { margin: 0; }
       .automax-exec-modal table { border-collapse: collapse; width: 100%; }
@@ -80,19 +91,39 @@ class autoMaxExecutive extends BaseComponent {
       .sc-slots-group { margin-bottom: 20px; }
       .sc-slots-title { font-size: 14px; font-weight: bold; margin-bottom: 10px; border-left: 3px solid var(--sct-focus, wheat); padding-left: 8px; }
       .sc-slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
-      .sc-exec-card { background: var(--sct-surface-muted, rgba(0, 0, 0, 0.4)); border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); border-radius: 8px; padding: 10px; cursor: move; user-select: none; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-      .sc-exec-card:hover { box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+      .sc-exec-card { background: var(--sct-surface-muted, rgba(0, 0, 0, 0.4)); border: 1px solid var(--sct-border); border-radius: 8px; padding: 28px 10px 10px; cursor: move; user-select: none; position: relative; box-shadow: inset 0 1px var(--sct-edge-highlight); transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease; }
+      .sc-exec-card:hover { background: var(--sct-surface-hover); border-color: var(--sct-border-strong); transform: translateY(-1px); }
+      .sc-exec-card:focus-visible, .sc-exec-card-empty:focus-visible { outline: 2px solid var(--sct-focus); outline-offset: 2px; }
       .sc-exec-card.dragged { opacity: 0.4; }
-      .sc-exec-card-empty { border: 2px dashed var(--sct-control-hover, rgb(114, 114, 114)); background: rgba(0,0,0,0.1); border-radius: 8px; height: 110px; display: flex; align-items: center; justify-content: center; color: var(--sct-control-hover, rgb(114, 114, 114)); font-size: 12px; text-align: center; padding: 10px; box-sizing: border-box; }
+      .sc-exec-card-empty { border: 2px dashed var(--sct-text-secondary, #aeb8b1); background: rgba(0,0,0,0.1); border-radius: 8px; height: 110px; display: flex; align-items: center; justify-content: center; color: var(--sct-text-secondary, #aeb8b1); font-size: 12px; text-align: center; padding: 10px; box-sizing: border-box; }
       .sc-exec-card-empty.dragover { border-color: var(--sct-focus, wheat); background: rgba(255,255,255,0.05); }
       .sc-card-name { font-weight: bold; font-size: 13px; margin-bottom: 8px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .sc-card-role { color: var(--sct-text-muted); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 4px; text-align: center; text-transform: uppercase; }
+      .sc-card-name-input { background: transparent; border: 0; color: var(--fontColor); font-size: 12px; font-weight: 700; margin-bottom: 8px; text-align: center; width: 100%; }
+      .sc-card-remove { border-color: var(--sct-error) !important; color: var(--sct-error) !important; min-height: 24px !important; padding: 2px 6px !important; position: absolute; right: 4px; top: 4px; }
+      .sc-card-remove:hover { background: color-mix(in srgb, var(--sct-error) 18%, transparent) !important; }
       .sc-card-skills { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-      .sc-card-skill-row { display: flex; align-items: center; gap: 3px; font-size: 11px; }
-      .sc-card-skill-label { font-weight: bold; width: 25px; font-size: 11px; }
-      .sc-card-skill-input { width: 100%; padding: 2px 4px; border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); border-radius: 3px; background: var(--sct-control, rgb(76, 76, 76)); color: var(--fontColor); font-size: 11px; box-sizing: border-box; text-align: center; }
+      .sc-card-skill-row { display: flex; align-items: center; gap: 3px; font-size: 12px; }
+      .sc-card-skill-label { font-size: 12px; font-weight: bold; width: 28px; }
+      .sc-card-skill-input { width: 100%; padding: 2px 4px; border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); border-radius: 3px; background: var(--sct-control, rgb(76, 76, 76)); color: var(--fontColor); font-size: 12px; box-sizing: border-box; text-align: center; }
       .sc-card-skill-input::-webkit-outer-spin-button, .sc-card-skill-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
       .sc-card-skill-input { -moz-appearance: textfield; }
       .sc-exec-card.selected { border-color: var(--sct-focus, wheat); box-shadow: 0 0 10px rgba(255,235,100,0.3); background: rgba(255,255,255,0.05); }
+      .sc-boardroom-summary-title { border-bottom: 1px solid var(--sct-border); font-size: 15px; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px; }
+      .sc-academy-level { background: var(--sct-surface-muted); border: 1px solid var(--sct-border); border-radius: 8px; display: grid; font-size: 12px; gap: 8px; margin: 0 0 12px; padding: 10px; }
+      .sc-academy-level legend { color: var(--sct-text-muted); font-size: 12px; font-weight: 600; padding: 0 4px; }
+      .sc-academy-level div { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+      .sc-academy-level label { align-items: center; cursor: pointer; display: inline-flex; gap: 4px; }
+      .sc-detail-box { background: var(--sct-surface-muted); border: 1px solid var(--sct-border); border-radius: 8px; box-sizing: border-box; color: var(--fontColor); font-size: 12px; line-height: 1.6; min-height: 120px; padding: 10px; }
+      .sc-calc-table { font-size: 12px; margin-bottom: 12px; }
+      .sc-calc-table :is(th, td) { padding: 8px 4px; }
+      .sc-calc-number { font-variant-numeric: tabular-nums; text-align: right; }
+      .sc-calc-label { font-weight: 600; white-space: nowrap; }
+      .sc-calc-positive { color: var(--fontColor); font-weight: 700; }
+      .sc-calc-negative { color: var(--sct-text-muted); }
+      .sc-calc-row { cursor: pointer; }
+      .sc-calc-row:focus-visible { outline: 2px solid var(--sct-focus); outline-offset: -2px; }
+      .sc-calc-row.is-active { background: var(--sct-surface-hover); }
     `,
   ]
 
@@ -205,7 +236,6 @@ class autoMaxExecutive extends BaseComponent {
       btnCustom.type = 'button';
       btnCustom.className = 'automax-exec-button';
       btnCustom.textContent = "自定义高管数据";
-      btnCustom.style.cssText = "margin-left: 10px; background-color: #673ab7; font-size: 12px; font-weight: bold; border: none; color: white;";
       btnCustom.addEventListener("click", (e) => {
         e.preventDefault();
         this.openBoardroomSimulator();
@@ -217,9 +247,8 @@ class autoMaxExecutive extends BaseComponent {
       const btnCOO = document.createElement('button');
       btnCOO.id = 'sc-coo-earning-btn';
       btnCOO.type = 'button';
-      btnCOO.className = 'automax-exec-button';
+      btnCOO.className = 'automax-exec-button automax-exec-button--primary';
       btnCOO.textContent = "COO收益";
-      btnCOO.style.cssText = "margin-left: 10px; background-color: #4CAF50; font-size: 12px; font-weight: bold; border: none; color: white;";
       btnCOO.addEventListener("click", (e) => {
         e.preventDefault();
         this.openCooCalculator();
@@ -260,10 +289,13 @@ class autoMaxExecutive extends BaseComponent {
     }
     const overlay = document.createElement("div");
     overlay.className = "automax-exec-modal";
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("role", "dialog");
     const panel = document.createElement("section");
     const header = document.createElement("header");
     const title = document.createElement("h2");
     title.textContent = `${data.name ?? "高管"} 的详细资料`;
+    overlay.setAttribute("aria-label", title.textContent);
     const close = document.createElement("button");
     close.type = "button";
     close.textContent = "关闭";
@@ -320,6 +352,9 @@ class autoMaxExecutive extends BaseComponent {
     const { total, region } = this.totalAdminFee();
     const overlay = document.createElement("div");
     overlay.className = "automax-exec-modal";
+    overlay.setAttribute("aria-label", "COO 收益计算");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("role", "dialog");
     const panel = document.createElement("section");
     const title = document.createElement("h2");
     title.textContent = "COO 收益计算";
@@ -357,7 +392,7 @@ class autoMaxExecutive extends BaseComponent {
     const title = document.createElement("h2");
     title.textContent = "自定义高管加成";
     const note = document.createElement("p");
-    note.textContent = "开启 AutoMax 面板中的“高管自定义加成”后，利润计算会使用这里的管理/销售加成。";
+    note.textContent = "开启 SCT 组件列表中的“高管自定义加成”后，利润计算会使用这里的管理/销售加成。";
     const admin = this.numberField("管理（COO）加成", values.adminBonus);
     const sales = this.numberField("销售（CMO）加成", values.saleBonus);
     const save = document.createElement("button");
@@ -447,21 +482,28 @@ class autoMaxExecutive extends BaseComponent {
     if (realm !== 0 && realm !== 1) return tools.alert("当前领域尚未识别。");
 
     const boardroomState = this.loadSavedBoardroom();
+    const returnFocus = document.activeElement;
 
     const overlay = document.createElement("div");
     overlay.className = "automax-exec-modal";
+    overlay.setAttribute("aria-label", "高管加成模拟");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("role", "dialog");
 
     const panel = document.createElement("section");
 
     const header = document.createElement("header");
-    header.style.cssText = "display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;";
+    header.className = "automax-panel-header";
     const title = document.createElement("h2");
     title.textContent = "高管加成模拟（自定义高管数据）";
     const close = document.createElement("button");
     close.type = "button";
     close.textContent = "关闭";
     close.className = "automax-exec-button";
-    const dismiss = () => overlay.remove();
+    const dismiss = () => {
+      overlay.remove();
+      if (returnFocus?.isConnected && typeof returnFocus.focus === "function") returnFocus.focus();
+    };
     close.addEventListener("click", dismiss);
     header.append(title, close);
 
@@ -472,7 +514,7 @@ class autoMaxExecutive extends BaseComponent {
     left.className = "sc-boardroom-left";
 
     const btnRow = document.createElement("div");
-    btnRow.style.cssText = "display:flex; gap:10px; margin-bottom:12px;";
+    btnRow.className = "automax-action-row";
 
     const saveBtn = document.createElement("button");
     saveBtn.type = "button";
@@ -486,7 +528,7 @@ class autoMaxExecutive extends BaseComponent {
       };
       tools.indexDB_updateIndexDBData();
       window.dispatchEvent(new CustomEvent("automax-settings-changed"));
-      tools.alert("数据保存成功！并在后续利润计算中生效。");
+      tools.alert("数据已保存，并将用于后续利润计算。");
     });
 
     const fetchBtn = document.createElement("button");
@@ -495,7 +537,7 @@ class autoMaxExecutive extends BaseComponent {
     fetchBtn.textContent = "同步当前最新高管";
     fetchBtn.addEventListener("click", async () => {
       const originalText = fetchBtn.textContent;
-      fetchBtn.textContent = "获取中...";
+      fetchBtn.textContent = "获取中…";
       fetchBtn.disabled = true;
       try {
         const execs = await this.fetchMeExecutives();
@@ -503,7 +545,7 @@ class autoMaxExecutive extends BaseComponent {
           this.mapExecutivesToState(execs, boardroomState);
           this.renderBoardroom(overlay, boardroomState);
           this.calculateBoardroomResults(overlay, boardroomState);
-          tools.alert("已成功同步当前最新高管数据！");
+          tools.alert("已同步当前最新高管数据。");
         } else {
           tools.alert("未获取到当前高管数据，请确认是否处于已登录状态。");
         }
@@ -524,8 +566,14 @@ class autoMaxExecutive extends BaseComponent {
     btnRow.append(saveBtn, fetchBtn, calcBtn);
 
     const helpNote = document.createElement("div");
-    helpNote.style.cssText = "font-size:11px; color:var(--sct-control-hover, rgb(114, 114, 114)); margin-bottom:15px;";
-    helpNote.textContent = "* 拖拽高管卡片，或点击两张卡片可以相互调换席位。点击空席位可添加自定义高管卡片。";
+    helpNote.className = "automax-helper-text";
+    const swapHint = document.createElement("span");
+    swapHint.className = "automax-nowrap";
+    swapHint.textContent = "两张卡片换位";
+    const addHint = document.createElement("span");
+    addHint.className = "automax-nowrap";
+    addHint.textContent = "选择空位";
+    helpNote.append("拖拽卡片，或用点击、Enter、空格键选择", swapHint, "。", addHint, "可添加自定义高管。");
 
     const slotsContainer = document.createElement("div");
     slotsContainer.id = "sc-slots-container";
@@ -536,27 +584,20 @@ class autoMaxExecutive extends BaseComponent {
     right.className = "sc-boardroom-right";
 
     right.innerHTML = `
-      <div style="font-size: 15px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); padding-bottom: 10px;">
-        高管加成模拟计算
-      </div>
-      
-      <div style="margin-bottom: 15px; font-size: 13px; background: var(--sct-surface-muted, rgba(0, 0, 0, 0.4)); padding: 10px; border-radius: 8px; border: 1px solid var(--sct-control-hover, rgb(114, 114, 114));">
-        <strong style="display: block; margin-bottom: 6px; font-size: 12px;">学院总等级:</strong>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 12px;">
-          <label style="cursor:pointer;"><input type="radio" name="sc-aca-r" value="0" style="vertical-align:middle;"> 0-4</label>
-          <label style="cursor:pointer;"><input type="radio" name="sc-aca-r" value="5" style="vertical-align:middle;"> 5-9</label>
-          <label style="cursor:pointer;"><input type="radio" name="sc-aca-r" value="10" style="vertical-align:middle;"> 10-14</label>
-          <label style="cursor:pointer;"><input type="radio" name="sc-aca-r" value="15" checked style="vertical-align:middle;"> 15-19</label>
-          <label style="cursor:pointer;"><input type="radio" name="sc-aca-r" value="20" style="vertical-align:middle;"> 20+</label>
+      <div class="sc-boardroom-summary-title">高管加成模拟计算</div>
+      <fieldset class="sc-academy-level">
+        <legend>学院总等级</legend>
+        <div>
+          <label><input type="radio" name="sc-aca-r" value="0"> 0-4</label>
+          <label><input type="radio" name="sc-aca-r" value="5"> 5-9</label>
+          <label><input type="radio" name="sc-aca-r" value="10"> 10-14</label>
+          <label><input type="radio" name="sc-aca-r" value="15" checked> 15-19</label>
+          <label><input type="radio" name="sc-aca-r" value="20"> 20+</label>
         </div>
-      </div>
-      
-      <!-- Calculation Table -->
+      </fieldset>
       <div id="sc-calc-table-container"></div>
-      
-      <!-- Calculation Details Box -->
-      <div id="sc-detail-box" style="padding: 10px; border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); border-radius: 8px; background: var(--sct-surface-muted, rgba(0, 0, 0, 0.2)); font-size: 11px; line-height: 1.5; min-height: 120px; box-sizing: border-box; color: var(--fontColor);">
-        💡 提示：点击或悬浮在上方任意行，可在此处查看详细计算公式。
+      <div id="sc-detail-box" class="sc-detail-box">
+        提示：点击或悬浮在上方任意行，可在此处查看详细计算公式。
       </div>
     `;
 
@@ -565,6 +606,25 @@ class autoMaxExecutive extends BaseComponent {
     overlay.append(panel);
 
     overlay.addEventListener("click", (event) => { if (event.target === overlay) dismiss(); });
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        dismiss();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = [...overlay.querySelectorAll('button:not(:disabled), input:not(:disabled), [tabindex]:not([tabindex="-1"])')];
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
 
     document.body.append(overlay);
 
@@ -574,9 +634,10 @@ class autoMaxExecutive extends BaseComponent {
 
     this.renderBoardroom(overlay, boardroomState);
     this.calculateBoardroomResults(overlay, boardroomState);
+    close.focus();
   }
 
-  renderBoardroom(overlay, boardroomState) {
+  renderBoardroom(overlay, boardroomState, focusSlotId) {
     const leftContainer = overlay.querySelector('#sc-slots-container');
     if (!leftContainer) return;
     leftContainer.replaceChildren();
@@ -647,23 +708,15 @@ class autoMaxExecutive extends BaseComponent {
           }
         };
 
-        slotEl.onclick = (e) => {
-          if (selectedSlotId !== null && !boardroomState[slot.id]) {
-            e.stopPropagation();
-            const temp = boardroomState[selectedSlotId];
-            boardroomState[selectedSlotId] = boardroomState[slot.id];
-            boardroomState[slot.id] = temp;
-            selectedSlotId = null;
-            this.renderBoardroom(overlay, boardroomState);
-            this.calculateBoardroomResults(overlay, boardroomState);
-          }
-        };
-
         const emp = boardroomState[slot.id];
         if (emp) {
           const cardEl = document.createElement('div');
           cardEl.className = 'sc-exec-card';
           cardEl.setAttribute('draggable', 'true');
+          cardEl.setAttribute('role', 'button');
+          cardEl.setAttribute('aria-label', `选择 ${slot.label} 席位的 ${emp.name}`);
+          cardEl.setAttribute('aria-pressed', 'false');
+          cardEl.tabIndex = 0;
 
           cardEl.ondragstart = () => {
             draggedSlotId = slot.id;
@@ -674,44 +727,57 @@ class autoMaxExecutive extends BaseComponent {
             cardEl.classList.remove('dragged');
           };
 
-          cardEl.onclick = (e) => {
-            if (e.target.tagName === 'INPUT') return;
-            e.stopPropagation();
+          const activateCard = () => {
             if (selectedSlotId === null) {
               selectedSlotId = slot.id;
               cardEl.classList.add('selected');
+              cardEl.setAttribute('aria-pressed', 'true');
             } else if (selectedSlotId === slot.id) {
               selectedSlotId = null;
               cardEl.classList.remove('selected');
+              cardEl.setAttribute('aria-pressed', 'false');
             } else {
               const temp = boardroomState[selectedSlotId];
               boardroomState[selectedSlotId] = boardroomState[slot.id];
               boardroomState[slot.id] = temp;
               selectedSlotId = null;
-              this.renderBoardroom(overlay, boardroomState);
+              this.renderBoardroom(overlay, boardroomState, slot.id);
               this.calculateBoardroomResults(overlay, boardroomState);
             }
           };
+          cardEl.onclick = (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+            e.stopPropagation();
+            activateCard();
+          };
+          cardEl.onkeydown = (e) => {
+            if (e.target !== cardEl || (e.key !== 'Enter' && e.key !== ' ')) return;
+            e.preventDefault();
+            activateCard();
+          };
 
-          const closeBtn = document.createElement('span');
-          closeBtn.innerHTML = '&times;';
-          closeBtn.style.cssText = 'position:absolute; top:2px; right:6px; cursor:pointer; font-size:14px; font-weight:bold; color:var(--sct-control-hover, rgb(114, 114, 114));';
+          const closeBtn = document.createElement('button');
+          closeBtn.type = 'button';
+          closeBtn.className = 'sc-card-remove';
+          closeBtn.textContent = '移除';
+          closeBtn.setAttribute('aria-label', `移除 ${slot.label} 席位的 ${emp.name}`);
           closeBtn.onclick = (e) => {
             e.stopPropagation();
             boardroomState[slot.id] = null;
-            this.renderBoardroom(overlay, boardroomState);
+            this.renderBoardroom(overlay, boardroomState, slot.id);
             this.calculateBoardroomResults(overlay, boardroomState);
           };
           cardEl.appendChild(closeBtn);
 
           const roleEl = document.createElement('div');
-          roleEl.style.cssText = 'font-size: 9px; color: var(--sct-control-hover, rgb(114, 114, 114)); text-align: center; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;';
+          roleEl.className = 'sc-card-role';
           roleEl.textContent = slot.label;
           cardEl.appendChild(roleEl);
 
           const nameEl = document.createElement('input');
           nameEl.type = 'text';
-          nameEl.style.cssText = 'font-weight:bold; font-size:12px; margin-bottom:8px; text-align:center; width:100%; border:none; background:transparent; color:var(--fontColor);';
+          nameEl.className = 'sc-card-name-input';
+          nameEl.setAttribute('aria-label', `${slot.label} 高管名称`);
           nameEl.value = emp.name;
           nameEl.onchange = () => { emp.name = nameEl.value; };
           cardEl.appendChild(nameEl);
@@ -720,10 +786,10 @@ class autoMaxExecutive extends BaseComponent {
           skillsGrid.className = 'sc-card-skills';
 
           const skillNames = [
-            { key: 'coo', label: 'COO', color: '#2196F3' },
-            { key: 'cfo', label: 'CFO', color: '#ff9800' },
-            { key: 'cmo', label: 'CMO', color: '#e91e63' },
-            { key: 'cto', label: 'CTO', color: '#9c27b0' }
+            { key: 'coo', label: 'COO' },
+            { key: 'cfo', label: 'CFO' },
+            { key: 'cmo', label: 'CMO' },
+            { key: 'cto', label: 'CTO' }
           ];
 
           skillNames.forEach(sk => {
@@ -732,7 +798,6 @@ class autoMaxExecutive extends BaseComponent {
 
             const label = document.createElement('span');
             label.className = 'sc-card-skill-label';
-            label.style.color = sk.color;
             label.textContent = sk.label;
 
             const input = document.createElement('input');
@@ -741,6 +806,7 @@ class autoMaxExecutive extends BaseComponent {
             input.min = '0';
             input.step = '1';
             input.value = emp.skills[sk.key];
+            input.setAttribute('aria-label', `${emp.name} ${sk.label} 点数`);
 
             input.onfocus = () => cardEl.setAttribute('draggable', 'false');
             input.onblur = () => cardEl.setAttribute('draggable', 'true');
@@ -764,16 +830,31 @@ class autoMaxExecutive extends BaseComponent {
           const emptyEl = document.createElement('div');
           emptyEl.className = 'sc-exec-card-empty';
           emptyEl.textContent = `空 ${slot.label} 席`;
-          emptyEl.onclick = (e) => {
+          emptyEl.setAttribute('role', 'button');
+          emptyEl.setAttribute('aria-label', `向 ${slot.label} 席位添加或移动高管`);
+          emptyEl.tabIndex = 0;
+          const activateEmptySlot = () => {
             if (selectedSlotId === null) {
-              e.stopPropagation();
               boardroomState[slot.id] = {
                 name: '自定义高管',
                 skills: { coo: 0, cfo: 0, cmo: 0, cto: 0 }
               };
-              this.renderBoardroom(overlay, boardroomState);
-              this.calculateBoardroomResults(overlay, boardroomState);
+            } else {
+              boardroomState[slot.id] = boardroomState[selectedSlotId];
+              boardroomState[selectedSlotId] = null;
+              selectedSlotId = null;
             }
+            this.renderBoardroom(overlay, boardroomState, slot.id);
+            this.calculateBoardroomResults(overlay, boardroomState);
+          };
+          emptyEl.onclick = (e) => {
+            e.stopPropagation();
+            activateEmptySlot();
+          };
+          emptyEl.onkeydown = (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            activateEmptySlot();
           };
           slotEl.appendChild(emptyEl);
         }
@@ -784,6 +865,7 @@ class autoMaxExecutive extends BaseComponent {
       groupEl.appendChild(gridEl);
       leftContainer.appendChild(groupEl);
     });
+    if (focusSlotId !== undefined) focusBoardroomSlot(leftContainer, focusSlotId);
   }
 
   calculateBoardroomResults(overlay, boardroomState) {
@@ -918,51 +1000,51 @@ class autoMaxExecutive extends BaseComponent {
     const tableContainer = overlay.querySelector('#sc-calc-table-container');
     if (tableContainer) {
       tableContainer.innerHTML = `
-        <table style="width:100%; border-collapse:collapse; font-size:12px; margin-bottom:15px;">
+        <table class="sc-calc-table">
           <thead>
-            <tr style="border-bottom:1px solid var(--sct-control-hover, rgb(114, 114, 114)); color:var(--sct-control-hover, rgb(114, 114, 114)); font-size:11px;">
-              <th align="left" style="padding:6px 2px;">项目</th>
-              <th align="right" style="padding:6px 2px;">基础</th>
-              <th align="right" style="padding:6px 2px;">高管加成</th>
-              <th align="right" style="padding:6px 2px;">最终</th>
+            <tr>
+              <th>项目</th>
+              <th class="sc-calc-number">基础</th>
+              <th class="sc-calc-number">高管加成</th>
+              <th class="sc-calc-number">最终</th>
             </tr>
           </thead>
           <tbody>
-            <tr class="sc-calc-row" data-type="admin" style="cursor:pointer; border-bottom:1px solid var(--sct-control-hover, rgb(114, 114, 114));">
-              <td style="padding:6px 2px; font-weight:bold;">管理费用</td>
-              <td align="right" style="padding:6px 2px;">${baseAdminText}</td>
-              <td align="right" style="padding:6px 2px; color:var(--sct-error, red);">${changeAdminText}</td>
-              <td align="right" style="padding:6px 2px; font-weight:bold; color:var(--sct-enabled, green);">${finalAdminText}</td>
+            <tr class="sc-calc-row" data-type="admin" tabindex="0">
+              <td class="sc-calc-label">管理费用</td>
+              <td class="sc-calc-number">${baseAdminText}</td>
+              <td class="sc-calc-number sc-calc-negative">${changeAdminText}</td>
+              <td class="sc-calc-number sc-calc-positive">${finalAdminText}</td>
             </tr>
-            <tr class="sc-calc-row" data-type="cfo" style="cursor:pointer; border-bottom:1px solid var(--sct-control-hover, rgb(114, 114, 114));">
-              <td style="padding:6px 2px; font-weight:bold;">会计费用起始于</td>
-              <td align="right" style="padding:6px 2px;">${baseCfoText}</td>
-              <td align="right" style="padding:6px 2px; color:var(--sct-enabled, green);">${changeCfoText}</td>
-              <td align="right" style="padding:6px 2px; font-weight:bold; color:var(--sct-enabled, green);">${finalCfoText}</td>
+            <tr class="sc-calc-row" data-type="cfo" tabindex="0">
+              <td class="sc-calc-label">会计费用起始于</td>
+              <td class="sc-calc-number">${baseCfoText}</td>
+              <td class="sc-calc-number sc-calc-positive">${changeCfoText}</td>
+              <td class="sc-calc-number sc-calc-positive">${finalCfoText}</td>
             </tr>
-            <tr class="sc-calc-row" data-type="salesSpeed" style="cursor:pointer; border-bottom:1px solid var(--sct-control-hover, rgb(114, 114, 114));">
-              <td style="padding:6px 2px; font-weight:bold;">销售速度</td>
-              <td align="right" style="padding:6px 2px;">${baseSalesText}</td>
-              <td align="right" style="padding:6px 2px; color:var(--sct-enabled, green);">${changeSalesText}</td>
-              <td align="right" style="padding:6px 2px; font-weight:bold; color:var(--sct-enabled, green);">${finalSalesText}</td>
+            <tr class="sc-calc-row" data-type="salesSpeed" tabindex="0">
+              <td class="sc-calc-label">销售速度</td>
+              <td class="sc-calc-number">${baseSalesText}</td>
+              <td class="sc-calc-number sc-calc-positive">${changeSalesText}</td>
+              <td class="sc-calc-number sc-calc-positive">${finalSalesText}</td>
             </tr>
-            <tr class="sc-calc-row" data-type="restaurant" style="cursor:pointer; border-bottom:1px solid var(--sct-control-hover, rgb(114, 114, 114));">
-              <td style="padding:6px 2px; font-weight:bold;">餐馆评级</td>
-              <td align="right" style="padding:6px 2px;">${baseRestaurantText}</td>
-              <td align="right" style="padding:6px 2px; color:var(--sct-enabled, green);">${changeRestaurantText}</td>
-              <td align="right" style="padding:6px 2px; font-weight:bold; color:var(--sct-enabled, green);">${finalRestaurantText}</td>
+            <tr class="sc-calc-row" data-type="restaurant" tabindex="0">
+              <td class="sc-calc-label">餐馆评级</td>
+              <td class="sc-calc-number">${baseRestaurantText}</td>
+              <td class="sc-calc-number sc-calc-positive">${changeRestaurantText}</td>
+              <td class="sc-calc-number sc-calc-positive">${finalRestaurantText}</td>
             </tr>
-            <tr class="sc-calc-row" data-type="patent" style="cursor:pointer; border-bottom:1px solid var(--sct-control-hover, rgb(114, 114, 114));">
-              <td style="padding:6px 2px; font-weight:bold;">专利转化概率</td>
-              <td align="right" style="padding:6px 2px;">${basePatentText}</td>
-              <td align="right" style="padding:6px 2px; color:var(--sct-enabled, green);">${changePatentText}</td>
-              <td align="right" style="padding:6px 2px; font-weight:bold; color:var(--sct-enabled, green);">${finalPatentText}</td>
+            <tr class="sc-calc-row" data-type="patent" tabindex="0">
+              <td class="sc-calc-label">专利转化概率</td>
+              <td class="sc-calc-number">${basePatentText}</td>
+              <td class="sc-calc-number sc-calc-positive">${changePatentText}</td>
+              <td class="sc-calc-number sc-calc-positive">${finalPatentText}</td>
             </tr>
-            <tr class="sc-calc-row" data-type="research" style="cursor:pointer; border-bottom:1px solid var(--sct-control-hover, rgb(114, 114, 114));">
-              <td style="padding:6px 2px; font-weight:bold;">研究类生产提升</td>
-              <td align="right" style="padding:6px 2px;">${baseResearchText}</td>
-              <td align="right" style="padding:6px 2px; color:var(--sct-enabled, green);">${changeResearchText}</td>
-              <td align="right" style="padding:6px 2px; font-weight:bold; color:var(--sct-enabled, green);">${finalResearchText}</td>
+            <tr class="sc-calc-row" data-type="research" tabindex="0">
+              <td class="sc-calc-label">研究类生产提升</td>
+              <td class="sc-calc-number">${baseResearchText}</td>
+              <td class="sc-calc-number sc-calc-positive">${changeResearchText}</td>
+              <td class="sc-calc-number sc-calc-positive">${finalResearchText}</td>
             </tr>
           </tbody>
         </table>
@@ -975,12 +1057,18 @@ class autoMaxExecutive extends BaseComponent {
         const updateDetail = () => {
           if (details[type]) {
             detailBox.innerHTML = details[type];
-            rows.forEach(r => r.style.background = 'transparent');
-            row.style.background = 'rgba(255, 235, 100, 0.15)';
+            rows.forEach(r => r.classList.remove('is-active'));
+            row.classList.add('is-active');
           }
         };
         row.onmouseenter = updateDetail;
+        row.onfocus = updateDetail;
         row.onclick = updateDetail;
+        row.onkeydown = (event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          updateDetail();
+        };
       });
     }
 
@@ -1025,3 +1113,5 @@ class autoMaxExecutiveCustomToggle extends BaseComponent {
   }
 }
 new autoMaxExecutiveCustomToggle();
+
+module.exports = { focusBoardroomSlot };

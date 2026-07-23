@@ -3,6 +3,7 @@ const test = require("node:test");
 
 const { createAutoMaxSettings } = require("../../tools/automax/settings.js");
 const { componentList, tools } = require("../../tools/tools.js");
+const { focusBoardroomSlot } = require("../../components/autoMaxExecutive.js");
 
 class FakeElement {
   constructor(tagName) {
@@ -156,6 +157,9 @@ class FakeElement {
 
   querySelector(selector) {
     const match = (node) => {
+      if (/^[a-z]+$/i.test(selector)) {
+        return node.tagName === selector.toUpperCase();
+      }
       if (selector === "button") {
         return node.tagName === "BUTTON";
       }
@@ -212,6 +216,12 @@ function findByTag(node, tagName) {
   return undefined;
 }
 
+function findAllByTag(node, tagName) {
+  const matches = node.tagName === tagName.toUpperCase() ? [node] : [];
+  for (const child of node.children) matches.push(...findAllByTag(child, tagName));
+  return matches;
+}
+
 function createDom() {
   const documentListeners = new Map();
   const body = new FakeElement("body");
@@ -234,6 +244,22 @@ function createDom() {
   };
 }
 
+test("boardroom rerenders restore focus to the replacement slot control", () => {
+  let focused = false;
+  let selector;
+  const root = {
+    querySelector(value) {
+      selector = value;
+      return { focus() { focused = true; } };
+    },
+  };
+
+  assert.equal(focusBoardroomSlot(root, "f"), true);
+  assert.equal(selector, '[data-slot-id="f"] > [role="button"]');
+  assert.equal(focused, true);
+  assert.equal(focusBoardroomSlot({ querySelector: () => null }, "f"), false);
+});
+
 test("autoMaxRuntimeSaturation settings inline UI behaves correctly", async () => {
   require("../../components/autoMaxRuntimeSaturation.js");
   const component = componentList.autoMaxRuntimeSaturation;
@@ -249,6 +275,34 @@ test("autoMaxRuntimeSaturation settings inline UI behaves correctly", async () =
     assert.ok(btn);
     assert.equal(btn.textContent, "查看领域饱和度");
   } finally {
+    global.document = originalDocument;
+  }
+});
+
+test("autoMaxRuntimeSaturation exposes the active sort direction in its table header", () => {
+  require("../../components/autoMaxRuntimeSaturation.js");
+  const component = componentList.autoMaxRuntimeSaturation;
+  const originalDocument = global.document;
+  const document = createDom();
+  global.document = document;
+
+  try {
+    component.componentData.saturationRows = [];
+    component.componentData.saturationSort = { key: "resourceName", direction: "asc" };
+    const table = component.createSaturationTable();
+    component.componentData.saturationPanel = table;
+    const headers = findAllByTag(table, "th");
+    const buttons = findAllByTag(table, "button");
+    const emptyCell = findAllByTag(table, "td").find((cell) => cell.className === "automax-data-empty");
+
+    assert.equal(headers[0].getAttribute("aria-sort"), "ascending");
+    assert.equal(emptyCell.textContent, "当前领域没有可用的饱和度数据。");
+    assert.equal(buttons[0].textContent, "物品 ↑");
+    buttons[0].listeners.get("click")();
+    assert.equal(headers[0].getAttribute("aria-sort"), "descending");
+    assert.equal(buttons[0].textContent, "物品 ↓");
+  } finally {
+    component.componentData.saturationPanel = undefined;
     global.document = originalDocument;
   }
 });
