@@ -53,6 +53,15 @@ async function scriptMainInit(retryCount = 0) {
   await tools.indexDB_updateLoadCount();
   await tools.indexDB_loadFeatureConf();
   await tools.indexDB_loadIndexDBData();
+  // Legacy settings may have enabled an automated action before typed risk acknowledgement existed.
+  // Keep those actions disabled until the user explicitly confirms in the component settings.
+  for (const key in componentList) {
+    const component = componentList[key];
+    if (component.requiresRiskAcknowledgement && component.enable && !component.indexDBData?.riskAcknowledged) {
+      component.enable = false;
+      feature_config.componentSwitchList[key] = false;
+    }
+  }
   await tools.indexDB_loadLangData();
   await tools.indexDB_loadTapCount();
   // 组建依赖检查
