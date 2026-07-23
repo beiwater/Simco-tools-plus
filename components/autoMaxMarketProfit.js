@@ -22,7 +22,7 @@ class autoMaxMarketProfit extends BaseComponent {
     super();
     this.name = "交易所计算时利润";
     this.describe = "在交易所资源订单中显示按零售模型计算的最大每级时利润。";
-    this.enable = true;
+    this.enable = false;
     this.canDisable = true;
     this.tagList = ["AutoMax", "交易所", "利润"];
   }
