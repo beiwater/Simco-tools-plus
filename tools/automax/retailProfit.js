@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const DEFAULT_RETAIL_PROFIT_CONSTANTS = Object.freeze({
   profitPerBuildingLevel: 370,
   retailAdjustment: Object.freeze({ B: 2.28 }),
