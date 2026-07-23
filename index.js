@@ -101,14 +101,19 @@ function scriptEventStart() {
     if (!new.target) throw new TypeError("XMLHttpRequest must be constructed with new.");
     const xhr = Reflect.construct(OriginalXHR, args, new.target);
     const originalOpen = xhr.open;
+    let capturedRevision = 0;
     let requestMethod = "";
+    let requestRevision = 0;
     let requestUrl = "";
     xhr.open = function (method, url, ...rest) {
       requestMethod = method;
+      requestRevision += 1;
       requestUrl = String(url);
       return originalOpen.call(this, method, url, ...rest);
     };
-    xhr.addEventListener("load", () => {
+    xhr.addEventListener("readystatechange", () => {
+      if (xhr.readyState !== 4 || capturedRevision === requestRevision) return;
+      capturedRevision = requestRevision;
       if (xhr.status < 200 || xhr.status >= 400) return;
       try { tools.netEventBus(requestUrl, requestMethod, xhr.responseText, xhr.status); }
       catch (error) { tools.errorLog(error); }

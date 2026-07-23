@@ -52,6 +52,11 @@ function createIndexHarness({ immediateDelays = false, now = Date.now, rootAvail
       const response = this.responses?.shift() ?? { responseText: "[]", status: xhrStatus };
       this.status = response.status;
       this.responseText = response.responseText;
+      this.readyState = 4;
+      for (const listener of this.listeners.get("readystatechange") ?? []) {
+        listener.call(this, { type: "readystatechange", target: this });
+      }
+      this.onreadystatechange?.({ type: "readystatechange", target: this });
       for (const listener of this.listeners.get("load") ?? []) {
         listener.call(this, { type: "load", target: this });
       }
@@ -190,6 +195,32 @@ test("XHR capture keeps request metadata when application reuses the instance fr
   xhr.send();
 
   assert.equal(applicationLoadCalls, 2);
+  assert.deepEqual(harness.state.netEvents, [
+    ["https://www.simcompanies.com/api/v3/resources/", "GET", "first", 200],
+    ["https://www.simcompanies.com/api/v2/companies/me/buildings/", "POST", "second", 201],
+  ]);
+});
+
+test("XHR capture keeps request metadata when application reuses the instance at readyState DONE", async () => {
+  const harness = createIndexHarness();
+  await harness.startup;
+  const xhr = new harness.window.XMLHttpRequest();
+  xhr.responses = [
+    { responseText: "first", status: 200 },
+    { responseText: "second", status: 201 },
+  ];
+  let readyCalls = 0;
+  xhr.onreadystatechange = () => {
+    readyCalls += 1;
+    if (readyCalls !== 1 || xhr.readyState !== 4) return;
+    xhr.open("POST", "https://www.simcompanies.com/api/v2/companies/me/buildings/");
+    xhr.send();
+  };
+
+  xhr.open("GET", "https://www.simcompanies.com/api/v3/resources/");
+  xhr.send();
+
+  assert.equal(readyCalls, 2);
   assert.deepEqual(harness.state.netEvents, [
     ["https://www.simcompanies.com/api/v3/resources/", "GET", "first", 200],
     ["https://www.simcompanies.com/api/v2/companies/me/buildings/", "POST", "second", 201],
