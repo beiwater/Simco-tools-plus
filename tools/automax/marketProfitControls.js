@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const DEFAULT_MARKET_PROFIT_SETTINGS = Object.freeze({
   buildingHours: 24,
   buildingLevel: 100,
