@@ -55,7 +55,7 @@ class tools {
     // 交易所 /realm/resid
     market: "https://www.simcompanies.com/api/v3/market/all",
     // 高管信息
-    executives: "https://www.simcompanies.com/api/v2/companies/me/executives/",
+    executives: "https://www.simcompanies.com/api/v3/companies/me/executives/",
   };
   static log() {
     if (!feature_config.debug) return;
@@ -291,9 +291,14 @@ class tools {
     }
   }
   static async getNetData(target, method = "GET", body = undefined, header = []) {
-    let netResp = await this.netRequest(target, method, body, header);
-    if (!netResp) return false;
-    return await netResp.json();
+    try {
+      let netResp = await this.netRequest(target, method, body, header);
+      if (!netResp || !netResp.ok) return false;
+      return await netResp.json();
+    } catch (error) {
+      this.errorLog("网络响应不是有效 JSON：", target, error);
+      return false;
+    }
   }
   static async getNetText(target, method = "GET", body = undefined) {
     let netResp = await this.netRequest(target, method, body, header);

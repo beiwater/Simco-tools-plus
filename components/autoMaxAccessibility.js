@@ -18,7 +18,7 @@ class autoMaxAccessibility extends BaseComponent {
   constructor() {
     super();
     this.name = "AutoMax 聊天与地图辅助";
-    this.describe = "提供色弱文字标识、空闲建筑高亮、PA 答案、Snipboard 预览和聊天输入框扩大。";
+    this.describe = "提供色弱文字标识、空闲建筑高亮、PA 答案和 Snipboard 预览。";
     this.enable = true;
     this.canDisable = false;
     this.hideSetting = true;
@@ -45,16 +45,13 @@ class autoMaxAccessibility extends BaseComponent {
       .automax-chat-color-text { display: none; font-size: inherit; font-style: normal; vertical-align: middle; }
       .automax-chat-color-assist .automax-chat-color-text { display: inline; }
       .automax-chat-color-assist .automax-chat-color-wrapper img.emoji { display: none; }
-      [data-automax-idle-highlight] { background: var(--sct-focus, wheat) !important; color: var(--sct-control, rgb(76, 76, 76)) !important; border-radius: 4px; font-weight: 700; padding: 1px 4px; }
+      [data-automax-idle-highlight] { background: #ffeb3b !important; color: #212121 !important; border-radius: 4px; font-weight: 700; padding: 1px 4px; }
       .automax-pa-answer { background: var(--sct-surface-muted, rgba(0, 0, 0, 0.7)); border: 1px solid var(--sct-enabled, #14541d); border-radius: 4px; display: grid; gap: 4px; margin-top: 8px; padding: 8px; }
       .automax-pa-answer p { margin: 0; overflow-wrap: anywhere; }
       .automax-pa-answer button { align-self: start; background: var(--sct-control, rgb(76, 76, 76)); border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); color: var(--fontColor); min-height: 28px; }
       .automax-snipboard-preview { cursor: zoom-in; display: block; height: auto; margin-top: 4px; max-height: 320px; max-width: 100%; }
       .automax-snipboard-lightbox { align-items: center; background: var(--sct-surface, rgba(0, 0, 0, 0.9)); display: flex; inset: 0; justify-content: center; position: fixed; z-index: 10000; }
       .automax-snipboard-lightbox img { cursor: default; max-height: 90vh; max-width: 90vw; }
-      .automax-chat-expanded { height: min(130px, 35vh) !important; }
-      .automax-chat-expanded-wrap > div, .automax-chat-expanded-group, .automax-chat-expanded-buttons { height: min(130px, 35vh) !important; }
-      @media (max-width: 767px) { .automax-chat-expanded, .automax-chat-expanded-wrap > div, .automax-chat-expanded-group, .automax-chat-expanded-buttons { height: min(90px, 30vh) !important; } }
       @media (prefers-reduced-motion: reduce) { .automax-snipboard-lightbox { transition: none; } }
     `,
   ]
@@ -62,14 +59,6 @@ class autoMaxAccessibility extends BaseComponent {
   startup() {
     if (this.componentData.initialized) return;
     this.componentData.initialized = true;
-    document.addEventListener("focusin", (event) => this.expandChatInput(event.target));
-    document.addEventListener("focusout", (event) => {
-      if (!this.isActionEnabled("chatInputExpander")) return;
-      const target = event.target;
-      window.setTimeout(() => {
-        if (document.activeElement !== target && !target.closest(".input-group")?.contains(document.activeElement)) this.collapseChatInput(target);
-      }, 120);
-    });
     window.addEventListener("automax-settings-changed", () => this.refresh());
     this.refresh();
   }
@@ -79,7 +68,6 @@ class autoMaxAccessibility extends BaseComponent {
     if (key === "landscapeHighlight") return Boolean(componentList.autoMaxMapIdleHighlight?.enable);
     if (key === "paQuestAnswers") return Boolean(componentList.autoMaxPAAnswer?.enable);
     if (key === "snipboardPreview") return Boolean(componentList.autoMaxSnipboardPreview?.enable);
-    if (key === "chatInputExpander") return Boolean(componentList.autoMaxChatAutoExpand?.enable);
     return false;
   }
 
@@ -88,7 +76,7 @@ class autoMaxAccessibility extends BaseComponent {
     this.refreshIdleHighlights();
     this.refreshSnipboardPreviews();
     this.refreshQuestAnswers();
-    if (!this.isActionEnabled("chatInputExpander")) this.collapseAllChatInputs();
+    this.collapseAllChatInputs();
   }
 
   isAllowedChatRoom() {
@@ -145,8 +133,7 @@ class autoMaxAccessibility extends BaseComponent {
   refreshIdleHighlights() {
     if (!/\/landscape\/?$/.test(location.pathname) || !this.isActionEnabled("landscapeHighlight")) return this.clearIdleHighlights();
     const buildings = this.currentRealm()?.buildings;
-    if (!Array.isArray(buildings)) return;
-    const byId = new Map(buildings.map((item) => [String(item.id), item]));
+    const byId = new Map((Array.isArray(buildings) ? buildings : []).map((item) => [String(item.id), item]));
     for (const link of document.querySelectorAll("a[href*='/b/']")) {
       const id = link.href.match(/\/b\/(\d+)/)?.[1];
       const kind = link.className.match(/test-building-([A-Za-z0-9])/i)?.[1] ?? byId.get(id)?.kind;
@@ -293,22 +280,7 @@ class autoMaxAccessibility extends BaseComponent {
     document.body.append(overlay);
   }
 
-  isChatInput(target) {
-    return target?.tagName === "TEXTAREA" && Boolean(target.closest(".input-group"))
-      && Boolean(target.closest(".e1llepen1") ?? target.parentElement?.closest("div")?.querySelector(".e1llepen2, div[style*='column-reverse']"));
-  }
-
-  expandChatInput(target) {
-    if (!this.isActionEnabled("chatInputExpander") || !this.isChatInput(target)) return;
-    const inputGroup = target.closest(".input-group");
-    target.classList.add("automax-chat-expanded");
-    target.parentElement?.classList.add("automax-chat-expanded-wrap");
-    inputGroup?.classList.add("automax-chat-expanded-group");
-    inputGroup?.querySelector(".input-group-btn")?.classList.add("automax-chat-expanded-buttons");
-  }
-
   collapseChatInput(target) {
-    if (!this.isChatInput(target)) return;
     const inputGroup = target.closest(".input-group");
     target.classList.remove("automax-chat-expanded");
     target.parentElement?.classList.remove("automax-chat-expanded-wrap");
@@ -374,10 +346,11 @@ new autoMaxSnipboardPreview();
 class autoMaxChatAutoExpand extends BaseComponent {
   constructor() {
     super();
-    this.name = "聊天输入框自动扩大";
-    this.describe = "在鼠标聚焦在聊天输入框时，自动拉高输入区域以方便输入多行内容。";
-    this.enable = true;
+    this.name = "聊天输入框自动扩大（已停用）";
+    this.describe = "游戏新版输入框结构已不兼容，继续扩大输入区会造成裁切，因此该功能已停用。";
+    this.enable = false;
     this.canDisable = true;
+    this.hideSetting = true;
     this.tagList = ["AutoMax", "辅助"];
   }
 }

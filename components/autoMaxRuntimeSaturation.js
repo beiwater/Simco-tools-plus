@@ -45,7 +45,7 @@ class autoMaxRuntimeSaturation extends BaseComponent {
   }]
 
   cssText = [`
-    [${CONTROLS_MARKER}] { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+    [${CONTROLS_MARKER}] { display: contents; }
     [${CONTROLS_MARKER}] button { min-height: 30px; text-transform: none !important; }
     [${CONTROLS_MARKER}] .automax-runtime-config { background: var(--sct-enabled, #14541d); color: var(--fontColor); }
     [${CONTROLS_MARKER}] .automax-runtime-error { flex-basis: 100%; color: var(--sct-error, red); font-size: 12px; overflow-wrap: anywhere; }
@@ -125,8 +125,8 @@ class autoMaxRuntimeSaturation extends BaseComponent {
       event.stopPropagation();
       this.editRuntimePresets();
     });
-    controls.appendChild(config);
     for (const preset of this.indexDBData.runtimePresets) controls.appendChild(this.createPresetButton(className, input, preset, controls));
+    controls.appendChild(config);
     container.prepend(controls);
     card.setAttribute(CARD_MARKER, "true");
   }

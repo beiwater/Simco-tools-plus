@@ -15,7 +15,6 @@ const PAGE_ACTIONS = Object.freeze([
   { key: "landscapeHighlight", label: "地图空闲建筑高亮", defaultEnabled: true },
   { key: "paQuestAnswers", label: "PA 任务答案", defaultEnabled: true },
   { key: "snipboardPreview", label: "Snipboard 图片预览", defaultEnabled: true },
-  { key: "chatInputExpander", label: "聊天输入框自动扩大", defaultEnabled: true },
   { key: "executiveCustomToggle", label: "高管自定义加成", defaultEnabled: false },
 ]);
 const PAGE_ACTION_ALIASES = Object.freeze({ marketProfit: "marketMaxProfitToggle" });
@@ -100,6 +99,7 @@ function importLegacySettings(settings, storage, viewport) {
 }
 
 function getPageActionEnabled(settings, key) {
+  if (key === "chatInputExpander") return false;
   const value = settings?.pageActions?.[key];
   return typeof value === "boolean" ? value : pageActionDefault(key);
 }

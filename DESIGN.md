@@ -17,6 +17,10 @@
 | Enabled hover | `--sct-enabled-hover` | `#339841` | Hover state for enabled controls |
 | Focus | `--sct-focus` | `wheat` | Visible keyboard focus outline/shadow |
 | Error | `--sct-error` | `red` | Destructive close/failed action only |
+| Light surface | `market light surface` | `rgba(255, 255, 255, 0.95)` | Original AutoMax market strip when the game body is light |
+| Light text | `market light text` | `#333` | Market controls and summaries on the light surface |
+| Light control | `market light control` | `#fff` / `#bbb` border | Compact inputs and selectors in the light game theme |
+| Warning | `market warning` | `#e67800` | No-positive-profit and insufficient-supply status |
 
 Rules: use semantic variables, never introduce ad-hoc colors; green expresses enabled state only; opaque/transparent dark surfaces keep the game visible behind overlays.
 
@@ -37,6 +41,13 @@ Base unit is 4px. Use 4/8/12/16/20px steps for controls, groups, and panel paddi
 - Accessibility: buttons use native `button`, labels bind checkboxes, keyboard focus remains visible, modal content scrolls independently.
 - Motion: existing 100–250ms transform/opacity-style transition only; reduced-motion disables nonessential transitions.
 
+### Custom background image importer
+
+- Structure: the existing settings card contains one keyboard-focusable drop zone, separate image and folder pickers, an import status line, and the legacy CSS/URL textarea.
+- States: empty, drag-over, reading, persisted, and unsupported-file error. A folder import uses its first supported image and names that file in the status line.
+- Persistence: local images are stored as Data URLs in the component's existing IndexedDB-backed settings, so no image is uploaded to a server.
+- Accessibility: the drop zone opens the image picker with Enter or Space, native file inputs retain browser semantics, and status changes use a polite live region.
+
 ### AutoMax control panel
 
 - Structure: existing SCT component entry opens a movable title/status panel with settings, runtime-duration presets, and a saturation-table shortcut. No second global launcher is created.
@@ -50,6 +61,12 @@ Base unit is 4px. Use 4/8/12/16/20px steps for controls, groups, and panel paddi
 - Structure: title/close row, weather-speed status, safe external history link, and sortable resource/quality/saturation table.
 - States: cached data, unavailable data, ascending/descending column sort, and closed.
 - Layout: fixed viewport overlay with one scroll owner; it follows the same 1048 overlay layer as the AutoMax panel and never adds a global launcher.
+
+### AutoMax market simulation strip
+
+- Structure: compact inline controls above market orders for custom executive data, MP adjustment, economy override, building level/runtime, aggregate status, and per-order profit.
+- States: light/dark game theme, custom data off/on, recalculating, no positive order, partial supply, full runtime, and best-row highlight.
+- Reference: the original AutoMax market strip supplied by the user on 2026-07-20; light mode uses a translucent white surface, dark text, neutral inputs, green leading rule, and amber warning text.
 
 ## 6. Motion & Interaction
 

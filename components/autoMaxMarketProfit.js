@@ -1,9 +1,19 @@
 const BaseComponent = require("../tools/baseComponent.js");
-const { componentList } = require("../tools/tools.js");
+const { componentList, tools } = require("../tools/tools.js");
 const { administrationMultiplier, modeledRetailData, retailSearchWorkerSource } = require("../tools/automax/retailMath.js");
-const { getPageActionEnabled } = require("../tools/automax/settings.js");
 const { getRealmIdFromDocument } = require("../tools/automax/lifecycle.js");
 const { runWorkerTask } = require("../tools/automax/worker.js");
+const {
+  DEFAULT_MARKET_PROFIT_SETTINGS,
+  MARKET_PROFIT_CSS,
+  adjustedMarketCost,
+  createMarketProfitControls,
+  formatMoney,
+  formatMarketSummary,
+  isDarkPage,
+  normalizeMarketProfitSettings,
+  summarizeMarketOrders,
+} = require("../tools/automax/marketProfitControls.js");
 
 const CELL_MARKER = "data-automax-market-profit";
 
@@ -18,22 +28,30 @@ class autoMaxMarketProfit extends BaseComponent {
   }
 
   componentData = {
+    controls: undefined,
     pending: new WeakSet(),
+    pendingCount: 0,
     refreshVersion: 0,
+    settingsListener: undefined,
   }
+
+  indexDBData = { settings: { ...DEFAULT_MARKET_PROFIT_SETTINGS } }
+
+  startupFuncList = [this.startup]
 
   commonFuncList = [{
     match: () => this.resourceId() !== undefined,
     func: this.refresh,
   }]
 
-  cssText = [
-    `
-      td[${CELL_MARKER}] { white-space: nowrap; }
-      td[${CELL_MARKER}] span { background: var(--sct-surface-muted, rgba(0, 0, 0, 0.7)); border-radius: 2px; color: var(--fontColor); display: inline-block; font-size: 12px; padding: 2px 4px; }
-      tr[data-automax-market-best] td[${CELL_MARKER}] span { background: var(--sct-enabled, #14541d); }
-    `,
-  ]
+  cssText = [MARKET_PROFIT_CSS]
+
+  startup() {
+    this.indexDBData.settings = normalizeMarketProfitSettings(this.indexDBData.settings);
+    if (this.componentData.settingsListener) return;
+    this.componentData.settingsListener = () => this.recalculate();
+    window.addEventListener("automax-settings-changed", this.componentData.settingsListener);
+  }
 
   resourceId() {
     const match = location.pathname.match(/\/market\/resource\/(\d+)\/?$/);
@@ -49,14 +67,21 @@ class autoMaxMarketProfit extends BaseComponent {
     const resourceId = this.resourceId();
     const context = this.contextFor(resourceId);
     if (!context) return;
-    const version = ++this.componentData.refreshVersion;
+    this.mountControls();
+    const version = this.componentData.refreshVersion;
     const rows = [...document.querySelectorAll("tr[aria-label]")];
     for (const row of rows) this.enqueueRow(row, context, version);
+    this.renderSummary();
   }
 
   clear() {
     for (const cell of document.querySelectorAll(`td[${CELL_MARKER}]`)) cell.remove();
-    for (const row of document.querySelectorAll("tr[data-automax-market-best]")) row.removeAttribute("data-automax-market-best");
+    for (const row of document.querySelectorAll("tr[aria-label]")) {
+      row.removeAttribute("data-automax-market-best");
+      delete row.__automaxMarketResult;
+    }
+    this.componentData.controls?.root.remove();
+    this.componentData.controls = undefined;
   }
 
   cache() {
@@ -74,7 +99,8 @@ class autoMaxMarketProfit extends BaseComponent {
     const constants = this.cache()?.constants;
     const region = this.region();
     const resource = constants?.constantsResources?.[resourceId];
-    const economyState = region?.economyState;
+    const override = this.indexDBData.settings.economyState;
+    const economyState = override === "" ? region?.economyState : Number(override);
     if (!constants?.data?.SALES || !resource?.dbLetter || economyState === undefined) return undefined;
     const buildingKind = Object.entries(constants.data.SALES).find(([, ids]) => Array.isArray(ids) && ids.map(Number).includes(resourceId))?.[0];
     if (!buildingKind) return undefined;
@@ -109,6 +135,7 @@ class autoMaxMarketProfit extends BaseComponent {
     const order = this.parseOrder(row);
     if (!order) return;
     this.componentData.pending.add(row);
+    this.componentData.pendingCount += 1;
     const cell = document.createElement("td");
     cell.setAttribute(CELL_MARKER, "true");
     cell.style.textAlign = "center";
@@ -118,21 +145,28 @@ class autoMaxMarketProfit extends BaseComponent {
     const target = row.children[row.children.length - 1];
     if (target) row.insertBefore(cell, target);
     else row.appendChild(cell);
-    this.calculateProfit(order, context).then((profit) => {
+    this.calculateProfit(order, context).then((result) => {
       this.componentData.pending.delete(row);
-      if (!cell.isConnected || version !== this.componentData.refreshVersion) return;
-      if (profit === undefined) {
+      if (version !== this.componentData.refreshVersion) return;
+      this.componentData.pendingCount = Math.max(0, this.componentData.pendingCount - 1);
+      if (!cell.isConnected) return;
+      if (!result) {
         inner.textContent = "计算失败";
+        this.renderSummary();
         return;
       }
-      row.__automaxMarketProfit = profit;
-      inner.textContent = `$${this.money(profit)}/h`;
+      row.__automaxMarketResult = result;
+      inner.textContent = `$${formatMoney(result.hourlyProfit)}/h`;
       this.markBestRow(row);
-    }).catch((err) => {
+      this.renderSummary();
+    }).catch((error) => {
       this.componentData.pending.delete(row);
-      if (!cell.isConnected || version !== this.componentData.refreshVersion) return;
+      if (version !== this.componentData.refreshVersion) return;
+      this.componentData.pendingCount = Math.max(0, this.componentData.pendingCount - 1);
+      if (!cell.isConnected) return;
       inner.textContent = "计算失败";
-      tools.errorLog("[AutoMax:MARKET_PROFIT]", err);
+      tools.errorLog("[AutoMax:MARKET_PROFIT]", error);
+      this.renderSummary();
     });
   }
 
@@ -142,13 +176,15 @@ class autoMaxMarketProfit extends BaseComponent {
     const modeledData = modeledRetailData(context.constants.retailInfo, context.economyState, context.resource.dbLetter, forceQuality ?? null);
     const saturation = this.saturationFor(context.region, context.resource, order.quality, context.resourceId);
     if (!modeledData || !Number.isFinite(saturation)) return undefined;
+    const unitCost = adjustedMarketCost(order.price, this.indexDBData.settings.mpAdjustment);
+    if (unitCost === undefined) return undefined;
     const salesModifier = Number(context.region.salesModifier ?? 0) + Number(context.region.recreationBonus ?? 0) + Number(context.custom?.saleBonus ?? context.region.saleBonus ?? 0);
     const input = {
       administration: administrationMultiplier(context.region.administration, context.custom?.adminBonus ?? context.region.adminBonus),
       acceleration: Number(context.region.acceleration ?? 1),
       buildingKind: context.buildingKind,
       calculationQuality,
-      cogs: order.price * order.quantity,
+      cogs: unitCost * order.quantity,
       constants: context.constants.data,
       modeledData,
       quantity: order.quantity,
@@ -159,7 +195,7 @@ class autoMaxMarketProfit extends BaseComponent {
       weatherMultiplier: Number.isFinite(context.weatherMultiplier) && context.weatherMultiplier > 0 ? context.weatherMultiplier : undefined,
     };
     const result = await runWorkerTask(retailSearchWorkerSource(), { input, mode: "hourly", maxIterations: 15_000 });
-    return result.ok && result.value ? result.value.hourlyProfit : undefined;
+    return result.ok ? result.value : undefined;
   }
 
   saturationFor(region, resource, quality, resourceId) {
@@ -171,33 +207,68 @@ class autoMaxMarketProfit extends BaseComponent {
   }
 
   markBestRow(row) {
-    const all = [...document.querySelectorAll("tr")].filter((candidate) => Number.isFinite(candidate.__automaxMarketProfit));
-    const best = all.reduce((result, candidate) => !result || candidate.__automaxMarketProfit > result.__automaxMarketProfit ? candidate : result, undefined);
+    const all = [...document.querySelectorAll("tr")].filter((candidate) => Number.isFinite(candidate.__automaxMarketResult?.hourlyProfit));
+    const best = all.reduce((result, candidate) => !result || candidate.__automaxMarketResult.hourlyProfit > result.__automaxMarketResult.hourlyProfit ? candidate : result, undefined);
     for (const candidate of all) candidate.toggleAttribute("data-automax-market-best", candidate === best);
     if (best === row && componentList.autoMaxMarketAutoHighlight?.enable) best.click();
   }
 
-  duration(seconds) {
-    const minutes = Math.max(0, Math.ceil(Number(seconds) / 60));
-    const hours = Math.floor(minutes / 60);
-    return hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`;
+  mountControls() {
+    if (this.componentData.controls?.root.isConnected) {
+      this.componentData.controls.setCustomEnabled(Boolean(componentList.autoMaxExecutiveCustomToggle?.enable));
+      return;
+    }
+    const form = document.querySelector("form");
+    const container = form?.parentElement?.parentElement?.parentElement;
+    if (!container) return;
+    const controls = createMarketProfitControls({
+      customEnabled: Boolean(componentList.autoMaxExecutiveCustomToggle?.enable),
+      document,
+      isDark: isDarkPage(document, window),
+      settings: this.indexDBData.settings,
+      onCustomData: () => componentList.autoMaxExecutive?.openBoardroomSimulator?.(),
+      onCustomToggle: () => {
+        const component = componentList.autoMaxExecutiveCustomToggle;
+        if (!component) return;
+        component.enable = !component.enable;
+        tools.indexDB_updateFeatureConf();
+        controls.setCustomEnabled(component.enable);
+        window.dispatchEvent(new CustomEvent("automax-settings-changed"));
+      },
+      onSettingsChange: (settings) => {
+        this.indexDBData.settings = settings;
+        tools.indexDB_updateIndexDBData();
+        this.recalculate();
+      },
+    });
+    container.append(controls.root);
+    this.componentData.controls = controls;
   }
 
-  money(value) {
-    return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+  recalculate() {
+    this.componentData.refreshVersion += 1;
+    this.componentData.pending = new WeakSet();
+    this.componentData.pendingCount = 0;
+    for (const cell of document.querySelectorAll(`td[${CELL_MARKER}]`)) cell.remove();
+    for (const row of document.querySelectorAll("tr[aria-label]")) {
+      delete row.__automaxMarketResult;
+      row.removeAttribute("data-automax-market-best");
+    }
+    this.refresh();
   }
-}
 
-class autoMaxMarketAutoHighlight extends BaseComponent {
-  constructor() {
-    super();
-    this.name = "交易所自动选中高亮行";
-    this.describe = "自动高亮并选中交易所最划算的一行。";
-    this.enable = false;
-    this.canDisable = true;
-    this.tagList = ["AutoMax", "交易所"];
+  renderSummary() {
+    const output = this.componentData.controls?.output;
+    if (!output) return;
+    if (this.componentData.pendingCount > 0) {
+      output.textContent = "正在计算订单…";
+      return;
+    }
+    const results = [...document.querySelectorAll("tr[aria-label]")].map((row) => row.__automaxMarketResult).filter(Boolean);
+    const summary = summarizeMarketOrders(results, this.indexDBData.settings);
+    output.dataset.empty = String(summary.kind === "empty");
+    output.textContent = formatMarketSummary(summary, formatMoney);
   }
 }
 
 new autoMaxMarketProfit();
-new autoMaxMarketAutoHighlight();

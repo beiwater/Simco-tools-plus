@@ -1,6 +1,7 @@
 const BaseComponent = require("../tools/baseComponent.js");
 const { componentList, runtimeData } = require("../tools/tools.js");
 const { getRealmIdFromDocument, runWorkerTask } = require("../tools/automax/index.js");
+const { isDarkPage } = require("../tools/automax/marketProfitControls.js");
 const { createRetailProfitInput, RETAIL_PROFIT_WORKER_SOURCE } = require("../tools/automax/retailProfit.js");
 
 const CACHE_TTL_MS = 60 * 60 * 1000;
@@ -35,7 +36,7 @@ class retailDisplayProfit extends BaseComponent {
   }]
 
   cssText = [`
-    [${CONTROLS_MARKER}] { display: grid; gap: 4px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 4px 0; }
+    [${CONTROLS_MARKER}] { display: grid; gap: 4px; grid-template-columns: 1fr; margin: 4px 0; }
     [${CONTROLS_MARKER}] button { background: var(--sct-control, rgb(76, 76, 76)); border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); color: var(--fontColor); cursor: pointer; font: inherit; min-height: 36px; padding: 4px 8px; }
     [${CONTROLS_MARKER}] button:hover:not(:disabled) { background: var(--sct-control-hover, rgb(114, 114, 114)); }
     [${CONTROLS_MARKER}] button:disabled { cursor: wait; opacity: 0.7; }
@@ -43,8 +44,16 @@ class retailDisplayProfit extends BaseComponent {
     .auto-profit-display { background: var(--sct-surface-muted, rgba(0, 0, 0, 0.7)); color: var(--fontColor); font-size: 12px; line-height: 1.5; margin: 4px 0; padding: 4px 8px; }
     .auto-profit-display[data-state="error"] { color: var(--sct-error, red); }
     .automax-retail-profit-cost { align-items: center; color: var(--fontColor); display: grid; font-size: 12px; gap: 4px; grid-template-columns: minmax(0, 1fr) minmax(96px, 42%); margin: 4px 0; }
+    .automax-retail-profit-cost span { display: none; }
     .automax-retail-profit-cost input { background: var(--sct-control, rgb(76, 76, 76)); border: 1px solid var(--sct-control-hover, rgb(114, 114, 114)); box-sizing: border-box; color: var(--fontColor); min-height: 30px; min-width: 0; padding: 4px 8px; width: 100%; }
-    @media (max-width: 375px) { [${CONTROLS_MARKER}] { grid-template-columns: 1fr; } .automax-retail-profit-cost { grid-template-columns: 1fr; } }
+    [${CONTROLS_MARKER}][data-theme="light"] button { background: #fff; border-color: #aaa; color: #333; }
+    .auto-profit-display[data-theme="light"] { background: rgba(255, 255, 255, 0.86); color: #333; }
+    .automax-retail-profit-cost[data-theme="light"] { color: #333; }
+    .automax-retail-profit-cost[data-theme="light"] input { background: #fff; border-color: #aaa; color: #333; }
+    [${CONTROLS_MARKER}] .btn-max-hourly-profit { background: #2196f3 !important; border-color: #2196f3 !important; color: #fff !important; }
+    [${CONTROLS_MARKER}] .btn-max-total-profit { background: #e91e63 !important; border-color: #e91e63 !important; color: #fff !important; }
+    .automax-retail-profit-cost { grid-template-columns: 1fr; }
+    @media (max-width: 375px) { .automax-retail-profit-cost { grid-template-columns: 1fr; } }
     @media (prefers-reduced-motion: reduce) { [${CONTROLS_MARKER}] button { transition: none; } }
   `]
 
@@ -167,8 +176,14 @@ class retailDisplayProfit extends BaseComponent {
     customCost.min = "0";
     customCost.step = "0.01";
     customCost.inputMode = "decimal";
+    customCost.placeholder = "假设单位成本";
     customCost.setAttribute("aria-label", "假设单位成本");
     costLabel.append(costText, customCost);
+
+    const theme = isDarkPage(document, window) ? "dark" : "light";
+    controls.dataset.theme = theme;
+    display.dataset.theme = theme;
+    costLabel.dataset.theme = theme;
 
     priceInput.insertAdjacentElement("afterend", controls);
     controls.insertAdjacentElement("afterend", display);

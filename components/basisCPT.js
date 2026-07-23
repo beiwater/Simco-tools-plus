@@ -393,7 +393,6 @@ class basisCPT extends BaseComponent {
   startupFuncList = [
     this.startUpMountCSS,
     this.startupUserInfo,
-    this.startupWarehouseInfo,
     this.startupSideBarMain,
     this.startupSettingContainer,
     this.startupExecutives,

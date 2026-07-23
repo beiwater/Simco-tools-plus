@@ -52,8 +52,18 @@ async function scriptMainInit() {
   for (const key in componentList) {
     if (!Object.hasOwnProperty.call(componentList, key) || (!componentList[key].enable && componentList[key].canDisable)) continue;
     let component = componentList[key];
-    for (const func of component.startupFuncList) await func.call(component, this);
-    if (component.cssText) tools.CSSMount(component.constructor.name, component.cssText[tools.clientHorV] || component.cssText[0]);
+    for (const func of component.startupFuncList) {
+      try {
+        await func.call(component, this);
+      } catch (error) {
+        tools.errorLog(`[${component.constructor.name}] 启动函数失败`, error);
+      }
+    }
+    try {
+      if (component.cssText) tools.CSSMount(component.constructor.name, component.cssText[tools.clientHorV] || component.cssText[0]);
+    } catch (error) {
+      tools.errorLog(`[${component.constructor.name}] CSS 挂载失败`, error);
+    }
   }
   // 更新标记
   tools.scriptLoadAcc = true;
