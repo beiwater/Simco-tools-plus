@@ -186,10 +186,10 @@ class autoMaxMarketProfit extends BaseComponent {
       acceleration: Number(context.region.acceleration ?? 1),
       buildingKind: context.buildingKind,
       calculationQuality,
-      cogs: unitCost * order.quantity,
+      cogs: unitCost,
       constants: context.constants.data,
       modeledData,
-      quantity: order.quantity,
+      quantity: 1,
       salesModifier,
       saturation,
       size: 1,
@@ -212,7 +212,38 @@ class autoMaxMarketProfit extends BaseComponent {
     const all = [...document.querySelectorAll("tr")].filter((candidate) => Number.isFinite(candidate.__automaxMarketResult?.hourlyProfit));
     const best = all.reduce((result, candidate) => !result || candidate.__automaxMarketResult.hourlyProfit > result.__automaxMarketResult.hourlyProfit ? candidate : result, undefined);
     for (const candidate of all) candidate.toggleAttribute("data-automax-market-best", candidate === best);
-    if (allComplete && best && componentList.autoMaxMarketAutoHighlight?.enable) best.click();
+    if (allComplete && best && (componentList.autoMaxMarketAutoHighlight?.enable || this.indexDBData.settings?.autoSelectBestMarketRow)) {
+      this.autoSelectBestRow(best);
+    }
+  }
+
+  autoSelectBestRow(bestRow) {
+    const order = this.parseOrder(bestRow);
+    if (!order) return;
+    const targetQuality = order.quality;
+    const qBtn = document.getElementById("quality-selection");
+    if (qBtn) {
+      const currentSpan = qBtn.querySelector("span");
+      const currentQuality = currentSpan ? parseInt(currentSpan.textContent?.trim() || "") : NaN;
+      if (!isNaN(currentQuality) && currentQuality !== targetQuality) {
+        qBtn.click();
+        setTimeout(() => {
+          const dropdownMenu = qBtn.parentElement?.querySelector(".dropdown-menu");
+          if (!dropdownMenu) return;
+          const items = dropdownMenu.querySelectorAll("li a");
+          for (const item of items) {
+            const txt = item.textContent?.trim();
+            if (txt && parseInt(txt) === targetQuality) {
+              item.click();
+              return;
+            }
+          }
+        }, 100);
+        return;
+      }
+    }
+    bestRow.focus();
+    bestRow.click();
   }
 
   mountControls() {
