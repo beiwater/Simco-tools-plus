@@ -8,6 +8,87 @@ components.keys().forEach(components);
 
 // 初始化代码
 const MAX_INIT_RETRIES = 3;
+const pageWindow = tools.getPageWindow?.() ?? window;
+const pendingNetworkEvents = [];
+let requestCaptureInstalled = false;
+
+function dispatchNetworkEvent(...args) {
+  if (!tools.scriptLoadAcc) {
+    pendingNetworkEvents.push(args);
+    return;
+  }
+  tools.netEventBus(...args);
+}
+
+function flushPendingNetworkEvents() {
+  while (pendingNetworkEvents.length > 0) tools.netEventBus(...pendingNetworkEvents.shift());
+}
+
+function installRequestCapture() {
+  if (requestCaptureInstalled) return;
+  requestCaptureInstalled = true;
+
+  const OriginalXHR = pageWindow.XMLHttpRequest;
+  if (typeof OriginalXHR === "function") {
+    const originalAddEventListener = OriginalXHR.prototype.addEventListener;
+    const originalOpen = OriginalXHR.prototype.open;
+    const xhrCaptureState = new WeakMap();
+    function SCTXMLHttpRequest(...args) {
+      if (!new.target) throw new TypeError("XMLHttpRequest must be constructed with new.");
+      const xhr = Reflect.construct(OriginalXHR, args, new.target);
+      xhrCaptureState.set(xhr, { capturedRevision: 0, method: "", revision: 0, url: "" });
+      Reflect.apply(originalAddEventListener, xhr, ["readystatechange", () => {
+        const state = xhrCaptureState.get(xhr);
+        if (!state || xhr.readyState !== 4 || state.capturedRevision === state.revision) return;
+        state.capturedRevision = state.revision;
+        if (xhr.status < 200 || xhr.status >= 400) return;
+        try { dispatchNetworkEvent(state.url, state.method, xhr.responseText, xhr.status); }
+        catch (error) { tools.errorLog(error); }
+      }]);
+      return xhr;
+    }
+    Object.setPrototypeOf(SCTXMLHttpRequest, OriginalXHR);
+    SCTXMLHttpRequest.prototype = Object.create(OriginalXHR.prototype, {
+      constructor: { configurable: true, value: SCTXMLHttpRequest, writable: true },
+      open: {
+        configurable: true,
+        value(method, url, ...rest) {
+          const normalizedUrl = String(url);
+          const result = Reflect.apply(originalOpen, this, [method, normalizedUrl, ...rest]);
+          const state = xhrCaptureState.get(this);
+          if (state) {
+            state.method = method;
+            state.revision += 1;
+            state.url = normalizedUrl;
+          }
+          return result;
+        },
+        writable: true,
+      },
+    });
+    pageWindow.XMLHttpRequest = SCTXMLHttpRequest;
+  }
+
+  const originalFetch = pageWindow.fetch;
+  if (typeof originalFetch === "function") {
+    pageWindow.fetch = function (...args) {
+      const response = Reflect.apply(originalFetch, this, args);
+      return Promise.resolve(response).then((result) => {
+        if (Number(result?.status) >= 200 && Number(result?.status) < 400) {
+          const request = args[0];
+          const url = typeof request === "string" || request instanceof URL
+            ? String(request)
+            : request?.url;
+          const method = String(args[1]?.method ?? request?.method ?? "GET").toUpperCase();
+          void result.clone().text()
+            .then((text) => dispatchNetworkEvent(String(url ?? ""), method, text, result.status))
+            .catch((error) => tools.errorLog("[SCT:FETCH_CAPTURE]", error));
+        }
+        return result;
+      });
+    };
+  }
+}
 
 async function waitForRoot(timeoutMs = 15_000) {
   const startedAt = Date.now();
@@ -19,19 +100,20 @@ async function waitForRoot(timeoutMs = 15_000) {
 
 async function scriptMainInit(retryCount = 0) {
   // 标记插件已加载
-  if (window.SCTLoadFlag || document.querySelector("div#script_hover_node")) return;
-  window.SCTLoadFlag = true;
+  if (pageWindow.SCTLoadFlag || document.querySelector("div#script_hover_node")) return;
+  pageWindow.SCTLoadFlag = true;
+  installRequestCapture();
   try {
     await waitForRoot();
     scriptEventStart();
   } catch (error) {
     tools.errorLog("[SCT:INIT]", error);
     if (retryCount >= MAX_INIT_RETRIES) {
-      window.SCTLoadFlag = false;
+      pageWindow.SCTLoadFlag = false;
       return;
     }
     await tools.dely(5000);
-    window.SCTLoadFlag = false;
+    pageWindow.SCTLoadFlag = false;
     return scriptMainInit(retryCount + 1);
   }
   // 版本显示
@@ -53,6 +135,15 @@ async function scriptMainInit(retryCount = 0) {
   await tools.indexDB_updateLoadCount();
   await tools.indexDB_loadFeatureConf();
   await tools.indexDB_loadIndexDBData();
+  // Infrastructure components must remain active even when an older saved
+  // configuration recorded their former default-disabled state.
+  for (const key in componentList) {
+    const component = componentList[key];
+    if (!component.canDisable) {
+      component.enable = true;
+      feature_config.componentSwitchList[key] = true;
+    }
+  }
   // Legacy settings may have enabled an automated action before typed risk acknowledgement existed.
   // Keep those actions disabled until the user explicitly confirms in the component settings.
   for (const key in componentList) {
@@ -92,12 +183,13 @@ async function scriptMainInit(retryCount = 0) {
   }
   // 更新标记
   tools.scriptLoadAcc = true;
+  flushPendingNetworkEvents();
 }
 
 
 // 事件监控
 function scriptEventStart() {
-  window.addEventListener("beforeunload", () => {
+  pageWindow.addEventListener("beforeunload", () => {
     if (!tools.noSaveClose) tools.indexDB_updateIndexDBData();
   });
   document.addEventListener("click", (event) => tools.eventBus(event));
@@ -105,44 +197,6 @@ function scriptEventStart() {
   let rootObserveServer = new MutationObserver((mutation) => tools.mutationHandle(mutation));
   rootObserveServer.observe(document.querySelector("div#root"), { childList: true, subtree: true });
   setInterval(tools.intervalEventBus.bind(tools), 100);
-  const OriginalXHR = window.XMLHttpRequest;
-  const originalAddEventListener = OriginalXHR.prototype.addEventListener;
-  const originalOpen = OriginalXHR.prototype.open;
-  const xhrCaptureState = new WeakMap();
-  function SCTXMLHttpRequest(...args) {
-    if (!new.target) throw new TypeError("XMLHttpRequest must be constructed with new.");
-    const xhr = Reflect.construct(OriginalXHR, args, new.target);
-    xhrCaptureState.set(xhr, { capturedRevision: 0, method: "", revision: 0, url: "" });
-    Reflect.apply(originalAddEventListener, xhr, ["readystatechange", () => {
-      const state = xhrCaptureState.get(xhr);
-      if (!state || xhr.readyState !== 4 || state.capturedRevision === state.revision) return;
-      state.capturedRevision = state.revision;
-      if (xhr.status < 200 || xhr.status >= 400) return;
-      try { tools.netEventBus(state.url, state.method, xhr.responseText, xhr.status); }
-      catch (error) { tools.errorLog(error); }
-    }]);
-    return xhr;
-  }
-  Object.setPrototypeOf(SCTXMLHttpRequest, OriginalXHR);
-  SCTXMLHttpRequest.prototype = Object.create(OriginalXHR.prototype, {
-    constructor: { configurable: true, value: SCTXMLHttpRequest, writable: true },
-    open: {
-      configurable: true,
-      value(method, url, ...rest) {
-        const normalizedUrl = String(url);
-        const result = Reflect.apply(originalOpen, this, [method, normalizedUrl, ...rest]);
-        const state = xhrCaptureState.get(this);
-        if (state) {
-          state.method = method;
-          state.revision += 1;
-          state.url = normalizedUrl;
-        }
-        return result;
-      },
-      writable: true,
-    },
-  });
-  window.XMLHttpRequest = SCTXMLHttpRequest;
 }
 
 scriptMainInit();
