@@ -1,88 +1,143 @@
-# SimComps Tools
+<p align="center">
+  <img src="doc/images/logo.png" alt="SimComps Tools Logo" width="220" />
+</p>
 
-面向 [Sim Companies](https://www.simcompanies.com/) 的浏览器 userscript 插件集合。它把常用的数据查看、仓库辅助、聊天工具、界面优化与可选的 AutoMax 功能放进统一的组件系统中。
+<h1 align="center">SimComps Tools (SCT / AutoMax)</h1>
 
-作者：**LIYUE**。本项目不是 Sim Companies 官方产品，与游戏开发者无关联。
+<p align="center">
+  面向 <a href="https://www.simcompanies.com/">Sim Companies</a> 的全功能模块化浏览器脚本助手
+</p>
 
-## 亮点
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT%20%7C%20AGPL--3.0-blue.svg" alt="License" />
+  <img src="https://img.shields.io/badge/Tampermonkey-Supported-green.svg" alt="Tampermonkey" />
+  <img src="https://img.shields.io/badge/Violentmonkey-Supported-brightgreen.svg" alt="Violentmonkey" />
+  <img src="https://img.shields.io/badge/Components-67%2B-orange.svg" alt="Components Count" />
+  <img src="https://img.shields.io/badge/Platform-Sim%20Companies-teal.svg" alt="Platform" />
+</p>
 
-- 默认只启用“插件基础功能”；其他组件均保持关闭，按需开启。
-- 统一的可移动二级窗口，组件设置和前台面板不会各自创建不一致的弹窗。
-- 简化标签筛选：AutoMax、交易、仓库、聊天、工具、外观。
-- 设置页和组件列表都会显示每项功能的一行说明。
-- 包含餐厅长期看板、库存阈值提醒、经营日报、背景高斯模糊、GA4 阻断及隐私元数据查看等工具。
-- 所有用户设置与长期记录保存在当前浏览器的 SCT IndexedDB 中。
+---
 
-## 安装
+## 📌 目录 (Table of Contents)
 
-1. 安装支持 userscript 的扩展，例如 Tampermonkey、Violentmonkey 或脚本管理器。
-2. 从 [Releases](../../releases) 下载最新版 ZIP，解压后安装其中的 `build.user.js`。
-3. 打开 Sim Companies；右下角会出现 **SCT**。
-4. 点击“组件”打开列表，在右侧“设置”中开启和配置需要的功能。
+- [📖 项目简介](#-项目简介)
+- [✨ 核心亮点](#-核心亮点)
+- [🖼️ 界面预览](#-界面预览)
+- [⚡ 快速安装](#-快速安装)
+- [🛠️ 功能概览](#-功能概览)
+- [⚠️ 高风险自动化安全机制](#️-高风险自动化安全机制)
+- [🔒 隐私防护设计](#-隐私防护设计)
+- [📄 许可协议与致谢](#-许可协议与致谢)
 
-首次启动会展示功能简介与使用免责声明，确认后才能继续使用。
+---
 
-## 界面预览
+## 📖 项目简介
 
-| 插件基础功能（全屏设置与组件管理） | 全局面板与功能控制 |
+**SimComps Tools (SCT)** 是一款专为 *Sim Companies* 经营策略游戏打造的高性能、模块化 Browser Userscript 插件集。它将常用的商业数据分析、仓库出入库统计、市场利润精算、高管与董事会决策辅助、聊天频道增强以及外观自定义等 67+ 项功能整合成统一的响应式组件系统。
+
+> 💡 **免责声明**：本项目由 **LIYUE** 开发维护。本项目非 *Sim Companies* 官方出品，与游戏官方开发者无关联。
+
+---
+
+## ✨ 核心亮点
+
+- **🧩 极简按需开启**：默认仅启用“插件基础功能”，其余所有组件初始保持关闭，按需自由开关，零额外资源占用。
+- **🖥️ 96vw×94vh 全屏高保真设置页**：全新设计的双栏全屏面板，集成了**实时关键词搜索**与**分类 Tag 标签联动筛选**。
+- **🎯 统一移动窗口宿主**：摒弃传统脚本各自创建乱糟糟弹窗的弊端，采用单实例 `secondaryWindowHost` 保证沉浸式体验。
+- **📊 商业决策与智能分析**：提供餐厅长期看板、零售最佳利润精算、出入库动态过滤、经营日报与高管培养日志。
+- **🛡️ 隐私防护与 GA4 阻断**：支持原生阻断 GA4 追踪请求，提供脱敏的 HTTP / SSE 请求元数据安全查看与导出。
+
+---
+
+## 🖼️ 界面预览
+
+<p align="center">
+  <b>全屏组件管理与分类 Tag 筛选</b>
+  <br/>
+  <img src="doc/images/screenshot1.png" alt="插件基础功能全屏设置" width="100%" />
+</p>
+
+<br/>
+
+<div align="center">
+
+| 全局面板与功能控制 | 关键词实时搜索与组件开关 |
 | :---: | :---: |
-| ![插件基础功能设置](doc/images/screenshot1.png) | ![组件管理与过滤](doc/images/screenshot2.png) |
+| <img src="doc/images/screenshot2.png" alt="组件管理与过滤" width="460" /> | <img src="doc/images/screenshot3.png" alt="组件分类与搜索" width="460" /> |
 
-| 组件开关与标签搜索 | 浮窗工具与页面增强 |
-| :---: | :---: |
-| ![组件分类与搜索](doc/images/screenshot3.png) | ![悬浮控制与实际页面效果](doc/images/screenshot4.png) |
+</div>
 
-## 功能概览
+<br/>
 
-详细使用方法请看 [FEATURE_GUIDE.md](FEATURE_GUIDE.md)。
+<p align="center">
+  <b>悬浮控制节点与游戏实操页面增强</b>
+  <br/>
+  <img src="doc/images/screenshot4.png" alt="悬浮控制与实际页面效果" width="100%" />
+</p>
 
-| 类别 | 示例功能 |
-| --- | --- |
-| 仓库与生产 | 出入库过滤、物品 ID、库存统计、自定义生产数量、生产链库存警报。 |
-| 交易与合同 | 市场参考价、合同询价、利润估算、交易行价格提示。 |
-| 餐厅与日报 | 餐厅实时看板、长期结算记录 CSV 导出、经营日报。 |
-| 聊天与资料 | 聊天过滤、快捷工具、备注搜索、公司资料增强。 |
-| 外观 | 自定义背景图片及可调高斯模糊、节日效果、地图视觉优化。 |
-| 隐私 | GA4 阻断、第三方请求/SSE 元数据查看与脱敏 JSON 导出。 |
-| AutoMax | 可选数据基础服务、利润计算、董事会和高管辅助。 |
+---
 
-## 高风险自动化功能
+## ⚡ 快速安装
 
-以下组件会代替用户连续触发游戏页面动作，因此默认关闭：
+1. **准备环境**：在浏览器（Chrome / Edge / Firefox / Safari）中安装 Userscript 脚本管理器扩展：
+   - [Tampermonkey (油猴)](https://www.tampermonkey.net/) *(推荐)*
+   - [Violentmonkey (暴力猴)](https://violentmonkey.github.io/)
+2. **获取脚本**：从 [Releases](../../releases) 下载最新 ZIP 发行包，解压后获取 `build.user.js`。
+3. **导入运行**：将 `build.user.js` 拖入脚本管理器中安装，随后打开 [Sim Companies](https://www.simcompanies.com/) 游戏页面。
+4. **开始使用**：页面右下角将自动浮现 **SCT** 悬浮控制按钮，点击【设置】即可开启你的定制化商业辅助体验！
 
-- 一键收菜
-- 更好的一键重建
-- 交易所金额限购
+---
 
-首次开启其中任何一项时，会弹出风险说明。用户必须亲手完整输入：
+## 🛠️ 功能概览
+
+> 📖 详细功能的逐项操作说明请阅读 [FEATURE_GUIDE.md](FEATURE_GUIDE.md)。
+
+| 模块分类 | 代表功能 | 说明 |
+| :--- | :--- | :--- |
+| **仓库与生产** | 出入库过滤、物品 ID、库存统计、自定义生产数量 | 支持快速检索仓储物品与精准生产计划设置 |
+| **交易与市场** | 交易所最佳利润自动高亮、市场参考价、合同询价 | 自动比较各品级/价格净收益，智能高亮下单 |
+| **餐厅与日报** | 餐厅实时看板、长期结算 CSV 导出、经营日报 | 详细统计餐饮客流量、收入曲线与历史日报 |
+| **聊天与资料** | 聊天过滤器、色弱辅助、快捷工具、备注搜索 | 过滤广告消息，高亮显示关键求购信息 |
+| **外观与特效** | 自定义背景壁纸、高斯模糊、节日特效、空闲高亮 | 打造专属个性化游戏界面与视觉提醒 |
+| **隐私与安全** | GA4 跟踪阻断、SSE / XHR 请求脱敏导出 | 保护玩家隐私，阻断不必要的第三方追踪 |
+| **AutoMax** | 董事会与高管决策辅助、利润计算与饱和度分析 | 商业决策深度计算与管理看板 |
+
+---
+
+## ⚠️ 高风险自动化安全机制
+
+为遵守游戏公平竞技倡导，以下代替玩家执行连续页面交互的功能**默认严格关闭**：
+
+- 🌾 **一键收菜** (staggered 500-900ms 随机延迟模拟)
+- 🏗️ **更好的一键重建**
+- 🛒 **交易所金额限购**
+
+首次手动开启上述任一敏感功能时，插件将弹出安全确认窗口。用户必须亲手输入文本：
 
 ```text
 我已知晓风险自担
 ```
 
-输入错误、取消或留空都会保持组件关闭。此确认不是“开发者许可”，也不代表游戏开发者允许该自动化行为；游戏规则、许可范围和账号处置均以 Sim Companies 游戏开发者的规定为准。使用者应自行判断合规性，并自行承担账号处罚、误操作、交易损失及其他后果。
+*注：此确认机制为用户自发确认，不代表游戏官方授权许可。请使用者严格遵循 Sim Companies 游戏规则与玩家条款。*
 
-## 隐私设计
+---
 
-“隐私扩展模式”只记录安全元数据，例如第三方域名与路径、SSE 地址、Cookie 名称、sessionStorage 键名及值长度。脱敏导出**不会**包含：
+## 🔒 隐私防护设计
 
-- Cookie 值或会话值
-- 登录令牌、授权头或请求正文
-- URL 查询参数中的可能敏感内容
+插件内置“隐私扩展模式”，仅收集和显示必要的调试元数据。**绝对不会**收集或导出：
 
-## 数据与免责声明
+- ❌ Cookie 明文值或 Session 会话令牌
+- ❌ 玩家登录凭证、Authorization 授权头
+- ❌ 包含敏感信息的 URL 查询参数
 
-- 本插件的价格、利润、仓库估值和日报均为辅助信息或估算，不构成准确承诺。
-- 清理浏览器站点数据、切换浏览器或手动清空 SCT 数据后，本地设置和历史记录可能丢失。
-- 使用会触发游戏操作的功能前，请先检查游戏规则、自己的配置和当前页面状态。
+---
 
-## 许可与致谢
+## 📄 许可协议与致谢
 
-框架及 LIYUE 编写的组件采用 **MIT**；与 AutoMax 有关的组件采用 **AGPL-3.0-or-later**。具体文件归属见 [LICENSE-MAP.md](LICENSE-MAP.md)。
+- 插件基础框架及 LIYUE 编写的核心组件采用 **[MIT License](LICENSE)** 协议开源。
+- 涉及 AutoMax 相关的组件采用 **[AGPL-3.0-or-later](LICENSE)** 协议。
+- 详细的文件协议归属与声明参见 [LICENSE-MAP.md](LICENSE-MAP.md) 及 [NOTICE.md](NOTICE.md)。
 
-项目引用或参考了以下项目的部分代码和实现思路：
-
+**项目致谢**：
 - [gangbaRuby/SimCompanies-Scripts](https://github.com/gangbaRuby/SimCompanies-Scripts)
 - [ShenHaiSu/SimComp-Tools](https://github.com/ShenHaiSu/SimComp-Tools)
-
-详见 [NOTICE.md](NOTICE.md)。
