@@ -2,35 +2,69 @@ const BaseComponent = require("../tools/baseComponent.js");
 const { tools, runtimeData, indexDBData } = require("../tools/tools.js");
 const { openSecondaryWindow } = require("../tools/secondaryWindowHost.js");
 
+const PRESET_STORAGE_KEY = "scRestaurantMenuPresets";
+const AUTO_HISTORY_KEY = "scRestaurantAutoMenuHistory";
+
+const FOOD_MAP = {
+  117: "牛奶",
+  119: "咖啡",
+  121: "面包",
+  122: "芝士",
+  123: "苹果派",
+  124: "橙汁",
+  125: "苹果汁",
+  126: "姜汁啤酒",
+  129: "汉堡包",
+  130: "千层面",
+  131: "肉丸",
+  132: "鸡尾酒",
+  134: "黄油",
+  142: "沙拉",
+  143: "咖喱角",
+  149: "南瓜汤",
+};
+
 function buildingIdFromUrl(url = location.href) {
   return String(url).match(/\/(?:b|buildings)\/(\d+)(?:\/restaurant)?\/?$/)?.[1] || "";
 }
 
 function formatMoney(value) {
-  if (value == null || !Number.isFinite(Number(value))) return "-";
+  if (value == null || !Number.isFinite(Number(value))) return "--";
   return `$${Math.round(Number(value)).toLocaleString()}`;
 }
 
 function formatPercent(value) {
-  if (value == null || !Number.isFinite(Number(value))) return "-";
+  if (value == null || value === "" || !Number.isFinite(Number(value))) return "--";
   return `${(Number(value) * 100).toFixed(1)}%`;
+}
+
+function foodName(kind) {
+  return FOOD_MAP[kind] || `资源 #${kind}`;
+}
+
+function runProfit(run) {
+  if (run.profit != null) return run.profit;
+  if (run.revenue == null) return null;
+  return Number(run.revenue || 0) - Number(run.cogs || 0) - Number(run.wages || 0);
+}
+
+function runProfitMargin(run) {
+  const p = runProfit(run);
+  if (p == null || !run.revenue) return null;
+  return p / run.revenue;
 }
 
 class restaurantDashboard extends BaseComponent {
   constructor() {
     super();
     this.name = "餐厅实时看板";
-    this.describe = "进入餐厅建筑管理页自动嵌入分析卡片；在地图页使用时汇总显示全厂所有餐厅的数据列表。";
+    this.describe = "全功能移植 Simco-Dash：进入餐厅自动嵌入卡片、包含菜单菜谱预设保存、JSON/CSV导出、 Run 详细指标统计、全厂餐厅汇总等。";
     this.enable = false;
     this.tagList = ["工具", "AutoMax"];
     this.commonFuncList = [
       {
         match: () => this.isBuildingPage(),
         func: this.mountInlinePanel,
-      },
-      {
-        match: () => this.isLandscapePage(),
-        func: this.mountLandscapePanel,
       },
     ];
   }
@@ -45,19 +79,26 @@ class restaurantDashboard extends BaseComponent {
 
   frontUI = this.open;
   cssText = [`
-    .sct-rt-card { background: rgba(30, 35, 32, 0.75); backdrop-filter: blur(4px); border: 1px solid var(--sct-border-strong, rgba(255, 255, 255, 0.2)); border-radius: 8px; color: var(--fontColor, #fff); margin-bottom: 12px; padding: 14px; }
-    .sct-rt-card header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 8px; }
-    .sct-rt-card header strong { font-size: 15px; }
-    .sct-rt-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
-    .sct-rt-actions button { background: var(--sct-control, rgba(255, 255, 255, 0.1)); border: 1px solid var(--sct-control-hover, rgba(255, 255, 255, 0.25)); color: var(--fontColor); cursor: pointer; font-size: 12px; padding: 4px 12px; border-radius: 4px; }
-    .sct-rt-actions button:hover { background: rgba(255, 255, 255, 0.2); }
-    .sct-rt-status { color: var(--sct-text-secondary, #ccc); font-size: 12px; margin-bottom: 8px; }
-    .sct-rt-table-wrap { overflow-x: auto; }
+    .sct-rt-card { background: rgba(30, 35, 32, 0.85); backdrop-filter: blur(6px); border: 1px solid var(--sct-border-strong, rgba(255, 255, 255, 0.25)); border-radius: 8px; color: var(--fontColor, #fff); margin-bottom: 12px; padding: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .sct-rt-card header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .sct-rt-card header strong { font-size: 16px; color: #4caf50; }
+    .sct-rt-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .sct-rt-actions button { background: var(--sct-control, rgba(255, 255, 255, 0.12)); border: 1px solid var(--sct-control-hover, rgba(255, 255, 255, 0.3)); color: var(--fontColor); cursor: pointer; font-size: 12px; padding: 5px 12px; border-radius: 4px; font-weight: bold; }
+    .sct-rt-actions button:hover { background: rgba(255, 255, 255, 0.25); }
+    .sct-rt-status { color: var(--sct-text-secondary, #ccc); font-size: 12px; margin-bottom: 10px; }
+    .sct-rt-menu-box { background: rgba(0, 0, 0, 0.25); border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; font-size: 13px; }
+    .sct-rt-presets-box { background: rgba(0, 0, 0, 0.2); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: 6px; padding: 8px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .sct-rt-presets-box input { background: rgba(0,0,0,0.4); border: 1px solid #666; color: #fff; padding: 4px 8px; font-size: 12px; border-radius: 4px; }
+    .sct-rt-presets-box select { background: rgba(0,0,0,0.4); border: 1px solid #666; color: #fff; padding: 4px 8px; font-size: 12px; border-radius: 4px; }
+    .sct-rt-summary-pills { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; font-size: 12px; }
+    .sct-rt-pill { background: rgba(255,255,255,0.08); padding: 4px 8px; border-radius: 4px; }
+    .sct-rt-table-wrap { overflow-x: auto; max-height: 400px; }
     .sct-rt-table-wrap table { border-collapse: collapse; width: 100%; }
     .sct-rt-table-wrap th, .sct-rt-table-wrap td { border-bottom: 1px solid var(--sct-border, rgba(255,255,255,0.15)); font-size: 12px; padding: 6px 8px; text-align: left; }
     .sct-rt-badge { border-radius: 3px; font-size: 11px; padding: 2px 6px; }
     .sct-rt-badge-success { background: #2e7d32; color: #fff; }
     .sct-rt-badge-warning { background: #ed6c02; color: #fff; }
+    .sct-rt-badge-danger { background: #c62828; color: #fff; }
   `];
 
   async fetchJson(path) {
@@ -84,7 +125,6 @@ class restaurantDashboard extends BaseComponent {
   }
 
   async getBuildings() {
-    // 优先尝试从原生 API 获取，若被 403 / 防火墙拦截，则使用插件自身已有的 indexDB 缓存
     try {
       return await this.fetchJson("/api/v2/companies/me/buildings/");
     } catch (e) {
@@ -95,34 +135,39 @@ class restaurantDashboard extends BaseComponent {
     }
   }
 
-  async loadAllRestaurantsData() {
-    const buildingsRaw = await this.getBuildings();
-    const buildings = Array.isArray(buildingsRaw) ? buildingsRaw : [];
-    const restaurants = buildings.filter((b) => b.restaurantProperties || b.kind === "r" || b.kind === "R");
-    
-    const list = [];
-    for (const r of restaurants) {
-      let runs = [];
-      try {
-        runs = await this.fetchJson(`/api/v2/companies/buildings/${r.id}/restaurant-runs/`);
-      } catch (e) {}
-      const props = r.restaurantProperties || {};
-      const latestRun = Array.isArray(runs) && runs[0] ? runs[0] : null;
-      const profit = latestRun ? (latestRun.profit ?? (latestRun.revenue != null ? latestRun.revenue - (latestRun.cogs || 0) - (latestRun.wages || 0) : null)) : null;
+  // 菜谱预设相关 API (Simco-Dash)
+  getPresets() {
+    try { return JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY) || "[]"); } catch { return []; }
+  }
 
-      list.push({
-        buildingId: r.id,
-        name: r.name || r.kind || "餐厅",
-        size: r.size ?? 1,
-        isLuxury: Boolean(props.isLuxury),
-        rating: props.rating ?? "-",
-        menuPrice: props.menuPrice ?? "-",
-        occupancy: props.occupancy != null ? formatPercent(props.occupancy) : "-",
-        openState: r.busy?.restaurant_open ? "营业中" : (r.busy ? "进行中" : "未营业"),
-        latestProfit: formatMoney(profit),
-      });
-    }
-    return list;
+  savePreset(name, restaurant) {
+    if (!restaurant?.menu) return;
+    const preset = {
+      id: String(Date.now()),
+      name: name || `${restaurant.name || "餐厅"} ${new Date().toLocaleTimeString()}`,
+      savedAt: new Date().toLocaleString(),
+      menuPrice: restaurant.menuPrice,
+      menu: JSON.parse(JSON.stringify(restaurant.menu)),
+    };
+    const list = [preset, ...this.getPresets()].slice(0, 50);
+    localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(list));
+    return preset;
+  }
+
+  deletePreset(id) {
+    const list = this.getPresets().filter((item) => item.id !== id);
+    localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(list));
+  }
+
+  // 下载 JSON 文件 (Simco-Dash)
+  downloadJson(data) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `simcompanies-restaurant-${data.buildingId || "dash"}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   async loadSingleRestaurantData(buildingId) {
@@ -133,15 +178,42 @@ class restaurantDashboard extends BaseComponent {
     const buildings = Array.isArray(buildingsRaw) ? buildingsRaw : [];
     const target = buildings.find((b) => String(b.id) === String(buildingId));
     const runs = Array.isArray(runsRaw) ? runsRaw : [];
-    return { target, runs };
+    return { buildingId, target, runs };
   }
 
-  mountInlinePanel() {
+  async loadAllRestaurantsData() {
+    const buildingsRaw = await this.getBuildings();
+    const buildings = Array.isArray(buildingsRaw) ? buildingsRaw : [];
+    const restaurants = buildings.filter((b) => b.restaurantProperties || b.kind === "r" || b.kind === "R");
+    
+    const list = [];
+    for (const r of restaurants) {
+      let runs = [];
+      try { runs = await this.fetchJson(`/api/v2/companies/buildings/${r.id}/restaurant-runs/`); } catch {}
+      const props = r.restaurantProperties || {};
+      const latestRun = Array.isArray(runs) && runs[0] ? runs[0] : null;
+      const profitVal = latestRun ? runProfit(latestRun) : null;
+
+      list.push({
+        buildingId: r.id,
+        name: r.name || r.kind || "餐厅",
+        size: r.size ?? 1,
+        isLuxury: Boolean(props.isLuxury),
+        rating: props.rating ?? "-",
+        menuPrice: props.menuPrice ?? "-",
+        occupancy: props.occupancy != null ? formatPercent(props.occupancy) : "-",
+        openState: r.busy?.restaurant_open ? "营业中" : (r.busy ? "进行中" : "未营业"),
+        latestProfit: formatMoney(profitVal),
+      });
+    }
+    return list;
+  }
+
+  mountInlinePanel = () => {
     if (!this.enable) return;
     const bId = buildingIdFromUrl();
     if (!bId) return;
 
-    // 检查页面是否存在餐厅详情容器
     const mountTarget = document.querySelector("#page > div > div > div > div.col-md-9.col-sm-8 > div > div > div > div:nth-child(2)");
     if (!mountTarget) return;
     if (document.getElementById("sct-restaurant-inline-card")) return;
@@ -154,25 +226,29 @@ class restaurantDashboard extends BaseComponent {
         <strong>🍽️ 餐厅数据分析看板 (Simco-Dash)</strong>
       </header>
       <div class="sct-rt-actions">
-        <button type="button" class="btn-refresh">刷新当前餐厅数据</button>
+        <button type="button" class="btn-refresh">🔄 刷新数据</button>
+        <button type="button" class="btn-download">📥 下载 JSON</button>
       </div>
-      <div class="sct-rt-status">建筑 #${bId} · 点击刷新获取最新数据</div>
+      <div class="sct-rt-status">建筑 #${bId} · 点击刷新加载最新 Run 数据</div>
       <div class="sct-rt-body"></div>
     `;
 
     mountTarget.before(card);
 
     const refreshBtn = card.querySelector(".btn-refresh");
+    const downloadBtn = card.querySelector(".btn-download");
     const statusDiv = card.querySelector(".sct-rt-status");
     const bodyDiv = card.querySelector(".sct-rt-body");
 
+    let currentData = null;
+
     const doRefresh = async () => {
       refreshBtn.disabled = true;
-      statusDiv.textContent = "正在加载餐厅数据与历史 Run...";
+      statusDiv.textContent = "正在加载餐厅数据与历史 Run 数据...";
       try {
-        const { target, runs } = await this.loadSingleRestaurantData(bId);
-        statusDiv.textContent = `更新时间: ${new Date().toLocaleTimeString()} · 成功获取 ${runs.length} 条结算历史`;
-        bodyDiv.innerHTML = this.renderSingleRunTable(runs);
+        currentData = await this.loadSingleRestaurantData(bId);
+        statusDiv.textContent = `更新时间: ${new Date().toLocaleTimeString()} · 获取到 ${currentData.runs.length} 条数据`;
+        this.renderSinglePanel(bodyDiv, currentData, () => doRefresh());
       } catch (err) {
         statusDiv.textContent = `加载失败: ${err.message}`;
       } finally {
@@ -180,50 +256,136 @@ class restaurantDashboard extends BaseComponent {
       }
     };
 
+    downloadBtn.addEventListener("click", () => {
+      if (currentData) this.downloadJson(currentData);
+      else tools.alert("请先刷新加载数据后即可下载。");
+    });
+
     refreshBtn.addEventListener("click", doRefresh);
     doRefresh();
-  }
+  };
 
-  mountLandscapePanel() {
-    // 地图页可根据需求自动或通过窗口提供全厂餐厅大盘
-  }
-
-  renderSingleRunTable(runs) {
-    if (!runs.length) return `<div style="padding:8px; color:#aaa;">暂无结算历史记录。</div>`;
-    let html = `<div class="sct-rt-table-wrap"><table>
-      <thead><tr><th>时间</th><th>状态</th><th>评分</th><th>菜单价</th><th>COGS</th><th>工资</th><th>收入</th><th>利润</th></tr></thead>
-      <tbody>`;
-    for (const run of runs.slice(0, 15)) {
-      const dt = run.datetime ? new Date(run.datetime).toLocaleString() : "-";
-      const statusBadge = run.resolved === false ? `<span class="sct-rt-badge sct-rt-badge-warning">进行中</span>` : `<span class="sct-rt-badge sct-rt-badge-success">已结算</span>`;
-      const cogs = run.cogs ?? run.cost ?? 0;
-      const wages = run.wages ?? run.wageCost ?? 0;
-      const revenue = run.revenue ?? run.income ?? 0;
-      const profitVal = run.profit ?? (revenue ? revenue - cogs - wages : 0);
-
-      html += `<tr>
-        <td>${dt}</td>
-        <td>${statusBadge}</td>
-        <td>${run.rating ?? "-"}</td>
-        <td>${formatMoney(run.menuPrice)}</td>
-        <td>${formatMoney(cogs)}</td>
-        <td>${formatMoney(wages)}</td>
-        <td>${formatMoney(revenue)}</td>
-        <td><strong style="color:${profitVal >= 0 ? '#4caf50' : '#f44336'}">${formatMoney(profitVal)}</strong></td>
-      </tr>`;
+  renderSinglePanel(bodyDiv, data, onReload) {
+    const { target, runs } = data;
+    const props = target?.restaurantProperties || {};
+    
+    // 渲染当前菜单
+    const menuObj = props.menu || props.restaurantMenu || {};
+    const menuItems = [];
+    for (const cat of ["saladBar", "mains", "drinks"]) {
+      if (Array.isArray(menuObj[cat])) {
+        for (const item of menuObj[cat]) {
+          const kind = typeof item === "object" ? item.kind || item.resourceId : item;
+          if (kind) menuItems.push(foodName(kind));
+        }
+      }
     }
-    html += `</tbody></table></div>`;
-    return html;
+
+    const menuText = menuItems.length ? menuItems.join("、") : "未读取到菜单菜品";
+
+    // 统计 summary
+    const validRuns = runs.filter(r => r.resolved !== false);
+    const profits = validRuns.map(r => runProfit(r)).filter(v => v != null);
+    const avgProfit = profits.length ? profits.reduce((a,b)=>a+b,0)/profits.length : null;
+    const occupancies = validRuns.map(r => r.occupancy).filter(v => typeof v === "number");
+    const avgOcc = occupancies.length ? occupancies.reduce((a,b)=>a+b,0)/occupancies.length : null;
+
+    const presets = this.getPresets();
+    const presetOptions = presets.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+
+    bodyDiv.innerHTML = `
+      <div class="sct-rt-menu-box">
+        <strong>📋 当前菜单：</strong> ${menuText} ${props.menuPrice ? `(单价: $${props.menuPrice})` : ""}
+      </div>
+      <div class="sct-rt-presets-box">
+        <span>🍱 菜谱预设管理：</span>
+        <input class="preset-name-input" placeholder="输入预设名称">
+        <button type="button" class="btn-save-preset">保存当前菜谱</button>
+        <select class="preset-select"><option value="">-- 选择已有预设 --</option>${presetOptions}</select>
+        <button type="button" class="btn-del-preset">删除预设</button>
+      </div>
+      <div class="sct-rt-summary-pills">
+        <div class="sct-rt-pill">历史 Runs: <strong>${runs.length}</strong></div>
+        <div class="sct-rt-pill">平均利润: <strong>${formatMoney(avgProfit)}</strong></div>
+        <div class="sct-rt-pill">平均上座率: <strong>${formatPercent(avgOcc)}</strong></div>
+      </div>
+      <div class="sct-rt-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>状态</th>
+              <th>评分</th>
+              <th>上座率</th>
+              <th>菜单价</th>
+              <th>COGS</th>
+              <th>工资</th>
+              <th>收入</th>
+              <th>利润</th>
+              <th>利润率</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              runs.length ? runs.map(r => {
+                const p = runProfit(r);
+                const margin = runProfitMargin(r);
+                const isLoss = p != null && p < 0;
+                const badge = r.resolved === false ? `<span class="sct-rt-badge sct-rt-badge-warning">进行中</span>` : (isLoss ? `<span class="sct-rt-badge sct-rt-badge-danger">亏损</span>` : `<span class="sct-rt-badge sct-rt-badge-success">盈利</span>`);
+                const dt = r.datetime ? new Date(r.datetime).toLocaleString() : "-";
+                return `
+                  <tr>
+                    <td>${dt}</td>
+                    <td>${badge}</td>
+                    <td>${r.rating ?? r.newRating ?? "-"}</td>
+                    <td>${formatPercent(r.occupancy)}</td>
+                    <td>${formatMoney(r.menuPrice)}</td>
+                    <td>${formatMoney(r.cogs)}</td>
+                    <td>${formatMoney(r.wages)}</td>
+                    <td>${formatMoney(r.revenue)}</td>
+                    <td><strong style="color:${isLoss ? '#f44336' : '#4caf50'}">${formatMoney(p)}</strong></td>
+                    <td>${formatPercent(margin)}</td>
+                  </tr>
+                `;
+              }).join("") : `<tr><td colspan="10" style="text-align:center;">暂无 Run 记录</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // 绑定预设交互
+    const saveBtn = bodyDiv.querySelector(".btn-save-preset");
+    const nameInput = bodyDiv.querySelector(".preset-name-input");
+    const select = bodyDiv.querySelector(".preset-select");
+    const delBtn = bodyDiv.querySelector(".btn-del-preset");
+
+    saveBtn.addEventListener("click", () => {
+      if (!target?.restaurantProperties) return tools.alert("未读取到餐厅菜单数据。");
+      const name = nameInput.value.trim();
+      this.savePreset(name, { name: target.name, menuPrice: props.menuPrice, menu: props.menu, size: target.size });
+      tools.alert("已成功保存菜谱预设！");
+      onReload();
+    });
+
+    delBtn.addEventListener("click", () => {
+      const val = select.value;
+      if (!val) return tools.alert("请先选择要删除的预设。");
+      this.deletePreset(val);
+      tools.alert("预设已删除。");
+      onReload();
+    });
   }
 
   open() {
     const content = document.createElement("section");
     content.className = "sct-rt-card";
-    content.style.minWidth = "650px";
+    content.style.minWidth = "700px";
     content.innerHTML = `
-      <header><strong>🍽️ 全厂餐厅汇总大盘</strong></header>
+      <header><strong>🍽️ 全厂餐厅汇总大盘 (Simco-Dash)</strong></header>
       <div class="sct-rt-actions">
-        <button type="button" class="btn-refresh-all">扫描全厂餐厅数据</button>
+        <button type="button" class="btn-refresh-all">🔄 扫描全厂餐厅数据</button>
+        <button type="button" class="btn-download-all">📥 导出全厂 JSON</button>
       </div>
       <div class="sct-rt-status">点击按钮扫描公司所有餐厅状态</div>
       <div class="sct-rt-body"></div>
@@ -232,20 +394,23 @@ class restaurantDashboard extends BaseComponent {
     openSecondaryWindow({ id: "sct-restaurant-all-dashboard", title: "全厂餐厅大盘", content });
 
     const btn = content.querySelector(".btn-refresh-all");
+    const downloadAllBtn = content.querySelector(".btn-download-all");
     const status = content.querySelector(".sct-rt-status");
     const body = content.querySelector(".sct-rt-body");
 
+    let allData = null;
+
     const doScan = async () => {
       btn.disabled = true;
-      status.textContent = "正在拉取公司建筑与各餐厅运行记录...";
+      status.textContent = "正在拉取公司所有餐厅数据与 Runs 记录...";
       try {
-        const list = await this.loadAllRestaurantsData();
-        status.textContent = `共扫描到 ${list.length} 家餐厅 (更新于 ${new Date().toLocaleTimeString()})`;
+        allData = await this.loadAllRestaurantsData();
+        status.textContent = `共扫描到 ${allData.length} 家餐厅 (更新于 ${new Date().toLocaleTimeString()})`;
         body.innerHTML = `
           <div class="sct-rt-table-wrap"><table>
             <thead><tr><th>ID</th><th>名称</th><th>规模</th><th>类型</th><th>评分</th><th>菜单价</th><th>上座率</th><th>状态</th><th>上一轮利润</th></tr></thead>
             <tbody>
-              ${list.length ? list.map(r => `
+              ${allData.length ? allData.map(r => `
                 <tr>
                   <td>${r.buildingId}</td>
                   <td><strong>${r.name}</strong></td>
@@ -257,7 +422,7 @@ class restaurantDashboard extends BaseComponent {
                   <td>${r.openState}</td>
                   <td>${r.latestProfit}</td>
                 </tr>
-              `).join("") : `<tr><td colspan="9">未发现餐厅建筑</td></tr>`}
+              `).join("") : `<tr><td colspan="9" style="text-align:center;">未发现餐厅建筑</td></tr>`}
             </tbody>
           </table></div>
         `;
@@ -267,6 +432,11 @@ class restaurantDashboard extends BaseComponent {
         btn.disabled = false;
       }
     };
+
+    downloadAllBtn.addEventListener("click", () => {
+      if (allData) this.downloadJson({ mode: "all-restaurants", data: allData, time: new Date().toISOString() });
+      else tools.alert("请先扫描后再导出。");
+    });
 
     btn.addEventListener("click", doScan);
     doScan();
