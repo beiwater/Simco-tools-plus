@@ -57,6 +57,13 @@ class tools {
     // 高管信息
     executives: "https://www.simcompanies.com/api/v3/companies/me/executives/",
   };
+  static getPageWindow() {
+    try {
+      return typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+    } catch {
+      return window;
+    }
+  }
   static log() {
     if (!feature_config.debug) return;
     console.log.call(this, ...arguments);
@@ -300,7 +307,7 @@ class tools {
       return false;
     }
   }
-  static async getNetText(target, method = "GET", body = undefined) {
+  static async getNetText(target, method = "GET", body = undefined, header = []) {
     let netResp = await this.netRequest(target, method, body, header);
     if (!netResp) return false;
     return await netResp.text();
@@ -442,7 +449,7 @@ class tools {
   static async indexDB_addData(data, id) {
     return new Promise((resolve, reject) => {
       if (!this.dbOpenFlag) return reject("数据库未连接");
-      if (this.dbOpenTime == 0) return;
+      if (this.dbOpenTime == 0) return reject("数据库尚未就绪");
       if (data.id != "langData" && id != "langData" && new Date().getTime() - this.dbOpenTime <= 5 * 1000)
         return resolve("请等待");
       if (!data.id && !id) return reject("缺少主键");
@@ -458,7 +465,7 @@ class tools {
     return new Promise((resolve, reject) => {
       // console.log(data, id);
       if (!this.dbOpenFlag) return reject("数据库未连接");
-      if (this.dbOpenTime == 0) return;
+      if (this.dbOpenTime == 0) return reject("数据库尚未就绪");
       if (data.id != "langData" && id != "langData" && new Date().getTime() - this.dbOpenTime <= 5 * 1000)
         return resolve("请等待");
       if (!data.id && !id) return reject("缺少主键");
