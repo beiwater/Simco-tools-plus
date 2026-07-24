@@ -49,6 +49,20 @@ class unBusyHighLight extends BaseComponent {
     this.clearClassName();
   }
 
+  // 判定建筑是否空闲
+  isBuildingIdle(building) {
+    // 有 busy 字段且尚未过期 → 忙碌
+    if (building.busy != null) {
+      return new Date(building.busy) < new Date();
+    }
+    // 有 busyUntil 且已过期 → 空闲；未过期 → 忙碌
+    if (building.busyUntil) {
+      return new Date(building.busyUntil) < new Date();
+    }
+    // 无任何忙碌标记（如 Fashion Store API 省略字段）→ 空闲
+    return true;
+  }
+
   // 主入口函数
   async mainFunc() {
     if (Object.values(document.querySelectorAll("div#page>div>div>div>div>a")).length === 0) return;
@@ -57,7 +71,7 @@ class unBusyHighLight extends BaseComponent {
 
     // 生成当前不忙的建筑数组 跳过大楼建筑
     let unBusyList = indexDBData.basisCPT.building[realm]
-      .filter(build => build.busy == undefined && !this.componentData.blackList.includes(build.kind))
+      .filter(build => this.isBuildingIdle(build) && !this.componentData.blackList.includes(build.kind))
       .map(build => build.id + "");
     this.changeClassName(unBusyList);
 
@@ -86,7 +100,7 @@ class unBusyHighLight extends BaseComponent {
   clearClassName() {
     let buildingList = Object.values(document.querySelectorAll("div#page>div>div>div>div>a"));
     let addClassName = this.genClassName();
-    for (let i = 0; i < buildingList.length; i++) buildingList[i].className.replace(addClassName, "");
+    for (let i = 0; i < buildingList.length; i++) buildingList[i].className = buildingList[i].className.replace(addClassName, "");
   }
 
   // 生成className

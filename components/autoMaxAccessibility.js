@@ -151,6 +151,8 @@ class autoMaxAccessibility extends BaseComponent {
       if (!kind || ["n", "y", "3", "4", "5"].includes(String(kind))) continue;
       if (!componentList.autoMaxMapIdleHighlight?.allowsKind(kind)) continue;
       if (String(kind) === "B" && building.salesContract) continue;
+      // Restaurant: 满员时不算空闲
+      if (building.occupancy != null && building.occupancy >= 1.0 && building.keepOpen !== false) continue;
       link.dataset.automaxIdleHighlight = "true";
     }
   }
