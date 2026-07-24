@@ -62,6 +62,38 @@ class restaurantDashboard extends BaseComponent {
     this.describe = "查看餐厅当前菜单与历史结算；使用 SCT IndexedDB 长效保存并去重，可导出 CSV。";
     this.enable = false;
     this.tagList = ["工具"];
+    this.commonFuncList = [{
+      match: () => this.isRestaurantPage(),
+      func: this.mountInlineButton,
+    }];
+  }
+
+  isRestaurantPage() {
+    if (!/\/b\/\d+\/?$/.test(location.href)) return false;
+    // 判断是否在餐厅建筑页面（判断页面内是否有餐厅特定的DOM元素或通过API缓存）
+    const realm = runtimeData.basisCPT?.realm ?? 0;
+    const buildings = indexDBData.basisCPT?.building?.[realm] || [];
+    const bId = buildingIdFromUrl();
+    if (!bId) return false;
+    const b = buildings.find(item => String(item.id) === String(bId));
+    if (b) return b.kind === "r" || b.kind === "R" || Boolean(b.restaurantProperties);
+    // DOM 兜底判断
+    return Boolean(document.querySelector("#page > div > div > div > div.col-md-9.col-sm-8 > div > div > div > div:nth-child(2)"));
+  }
+
+  mountInlineButton() {
+    if (!this.enable) return;
+    if (document.querySelector("#sct_restaurant_inline_btn")) return;
+    const targetContainer = document.querySelector("#page > div > div > div > div.col-md-9.col-sm-8 > div > div > div > div:nth-child(2)");
+    if (!targetContainer) return;
+
+    const btn = document.createElement("button");
+    btn.id = "sct_restaurant_inline_btn";
+    btn.className = "btn btn-primary";
+    btn.style.cssText = "margin-bottom:10px; width:100%; font-weight:bold;";
+    btn.textContent = "📊 打开餐厅实时看板";
+    btn.addEventListener("click", () => this.open());
+    targetContainer.before(btn);
   }
 
   indexDBData = { historyByBuilding: {}, restaurantByBuilding: {}, maxHistoryPerBuilding: 1000 }
