@@ -30,57 +30,86 @@ function requestRiskAcknowledgement(component) {
 }
 
 const SETTINGS_WINDOW_THEME = `
-  #script_cpt_setting_container {
-    background: linear-gradient(145deg, var(--sct-surface-elevated, rgba(26, 32, 29, 0.96)), var(--sct-surface, rgba(15, 19, 17, 0.96)) 58%) !important;
-    border: 1px solid var(--sct-border-strong, rgba(255, 255, 255, 0.24));
+  #script_cpt_setting_container:has(#script_setting_basisCPT) {
+    background: linear-gradient(145deg, var(--sct-surface-elevated, rgba(26, 32, 29, 0.98)), var(--sct-surface, rgba(15, 19, 17, 0.98)) 58%) !important;
     border-radius: 12px;
-    box-shadow: var(--sct-panel-shadow, 0 24px 64px rgba(0, 0, 0, 0.55), 0 2px 12px rgba(0, 0, 0, 0.28));
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
     box-sizing: border-box;
-    max-height: min(84dvh, 760px);
-    max-width: calc(100vw - 16px);
-    min-width: min(435px, calc(100vw - 16px));
+    height: 94vh !important;
+    max-height: 94vh !important;
+    max-width: 96vw !important;
+    min-width: min(800px, 96vw) !important;
     overflow: hidden;
     padding: 16px;
-    width: min(680px, calc(100vw - 16px));
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 96vw !important;
   }
-  #script_setting_head {
-    align-items: center;
-    background: var(--sct-surface-opaque, #0f1311);
-    border-bottom: 1px solid var(--sct-border, rgba(255, 255, 255, 0.14));
-    cursor: grab;
+  #script_cpt_setting_container:has(#script_setting_basisCPT) #script_setting_body {
+    height: calc(94vh - 72px) !important;
+    max-height: calc(94vh - 72px) !important;
+    overflow: hidden !important;
+  }
+  .sct-basis-fullscreen-layout {
     display: flex;
-    font-size: 20px;
-    font-weight: 700;
-    justify-content: space-between;
-    line-height: 1.25;
-    margin: -16px -16px 16px;
-    max-height: none;
-    min-height: 56px;
-    padding: 10px 16px;
-    touch-action: none;
-    user-select: none;
+    gap: 16px;
+    height: 100%;
+    width: 100%;
   }
-  #script_cpt_setting_container[data-sct-dragging="true"] #script_setting_head { cursor: grabbing; }
-  #script_setting_head > span { font-size: inherit !important; left: auto !important; position: static !important; }
-  #script_setting_head > button {
-    background: var(--sct-control, rgba(255, 255, 255, 0.08)) !important;
+  .sct-basis-left-pane {
+    display: flex;
+    flex: 1 1 65%;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+  }
+  .sct-basis-right-pane {
+    background: var(--sct-surface-muted, rgba(0, 0, 0, 0.3));
+    border-left: 1px solid var(--sct-border, rgba(255, 255, 255, 0.1));
+    display: flex;
+    flex: 0 0 35%;
+    flex-direction: column;
+    height: 100%;
+    min-width: 320px;
+    overflow-y: auto;
+    padding-left: 16px;
+  }
+  .sct-basis-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .sct-basis-filter-bar input[type="text"] {
+    background: var(--sct-control, rgba(255, 255, 255, 0.08));
     border: 1px solid var(--sct-border, rgba(255, 255, 255, 0.14));
     border-radius: 8px;
     color: var(--fontColor);
-    cursor: pointer;
-    height: 36px !important;
-    line-height: normal !important;
-    min-width: 60px;
-    position: static !important;
+    flex: 1 1 200px;
+    padding: 6px 12px;
   }
-  #script_setting_head > button:hover { background: var(--sct-control-hover, rgba(255, 255, 255, 0.15)) !important; }
-  #script_setting_body { box-sizing: border-box; max-height: calc(min(84dvh, 760px) - 88px); overflow: auto; padding: 0; scrollbar-color: var(--sct-control-hover, rgba(255, 255, 255, 0.15)) transparent; }
-  #script_setting_body .setting-container .header { background: transparent; color: var(--fontColor); font-size: 18px; text-align: left; }
-  #script_setting_body .setting-container :is(button, input, select, textarea) { border: 1px solid var(--sct-border, rgba(255, 255, 255, 0.14)); border-radius: 8px; }
-  @media (max-width: 576px) {
-    #script_cpt_setting_container { max-height: calc(100dvh - 16px); min-width: 0; padding: 12px; width: calc(100vw - 16px); }
-    #script_setting_head { margin: -12px -12px 12px; padding: 10px 12px; }
-    #script_setting_body { max-height: calc(100dvh - 84px); }
+  .sct-basis-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .sct-basis-tag-btn {
+    background: var(--sct-control, rgba(255, 255, 255, 0.08));
+    border: 1px solid var(--sct-border, rgba(255, 255, 255, 0.14));
+    border-radius: 6px;
+    color: var(--fontColor);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  .sct-basis-tag-btn.active {
+    background: #14541d;
+    border-color: #339841;
+  }
+  .sct-basis-table-wrap {
+    flex: 1;
+    overflow-y: auto;
   }
 `;
 
@@ -914,13 +943,41 @@ class basisCPT extends BaseComponent {
   }
   // 基础组件设置界面
   uisetting() {
-    // 组件开关和基础插件的所有设置
     tools.log(feature_config);
     let newNode = document.createElement("div");
     newNode.id = "script_setting_basisCPT";
     newNode.className = "col-sm-12 setting-container";
-    let htmlText = `<div><div class="header">插件基础功能设置</div><div class="container"><div><div><button class="btn script_opt_submit">保存</button></div></div><div><table class="sct-cpt-switch-table"><thead><tr><td>组件名</td><td>功能介绍</td><td>开关</td></tr></thead><tbody>`;
-    let tempCPTList = Object.values(componentList).filter(c => !c.hideSetting);
+    newNode.style.height = "100%";
+
+    let tempCPTList = Object.values(componentList).filter((c) => !c.hideSetting);
+    const tagSet = new Set();
+    tempCPTList.forEach((c) => normalizedTags(c).forEach((t) => tagSet.add(t)));
+    const allTags = TAG_ORDER.filter((t) => tagSet.has(t));
+
+    let htmlText = `
+      <div class="sct-basis-fullscreen-layout">
+        <!-- 左侧组件控制与过滤 -->
+        <div class="sct-basis-left-pane">
+          <div class="header" style="margin-bottom:8px; font-size:18px;">组件功能管理</div>
+          <div class="sct-basis-filter-bar">
+            <input type="text" id="sct_basis_search" placeholder="搜索组件名称或功能说明..." />
+            <div class="sct-basis-tags" id="sct_basis_tags">
+              <button type="button" class="sct-basis-tag-btn active" data-tag="ALL">全部</button>
+              ${allTags.map((t) => `<button type="button" class="sct-basis-tag-btn" data-tag="${t}">${t}</button>`).join("")}
+            </div>
+          </div>
+          <div class="sct-basis-table-wrap">
+            <table class="sct-cpt-switch-table">
+              <thead>
+                <tr>
+                  <td style="width:140px;">组件名</td>
+                  <td>功能介绍</td>
+                  <td style="width:70px;">标签</td>
+                  <td style="width:60px;">开关</td>
+                </tr>
+              </thead>
+              <tbody id="sct_basis_cpt_body">`;
+
     for (let i = 0; i < tempCPTList.length; i++) {
       let component = tempCPTList[i];
       let name = component.name;
@@ -928,15 +985,103 @@ class basisCPT extends BaseComponent {
       let enable = component.enable;
       let canDisable = component.canDisable;
       let cptKey = component.constructor.name;
-      htmlText += `<tr><td><span style="font-weight:bold;">${name}</span></td><td><span style="color:var(--sct-text-secondary, #aaa); font-size:12px;">${describe}</span></td><td><input class='form-control sct-cpt-checkbox' data-cpt-key="${cptKey}" type="checkbox" ${
+      let tags = normalizedTags(component).join(",");
+      htmlText += `
+        <tr data-cpt-key="${cptKey}" data-tags="${tags}" data-search-text="${(name + " " + describe).toLowerCase()}">
+          <td><span style="font-weight:bold;">${name}</span></td>
+          <td><span style="color:var(--sct-text-secondary, #aaa); font-size:12px;">${describe}</span></td>
+          <td><span style="color:var(--sct-focus, wheat); font-size:11px;">${tags}</span></td>
+          <td><input class='form-control sct-cpt-checkbox' data-cpt-key="${cptKey}" type="checkbox" ${
         enable ? "checked" : ""
-      } ${canDisable ? "" : "disabled"}></td></tr>`;
+      } ${canDisable ? "" : "disabled"}></td>
+        </tr>`;
     }
-    htmlText += `</table></div><div><table class="sct-feature-config-table"><thead><tr><td>功能<td>设置<tbody><tr><td title=打开debug模式会有大量信息输出,可能会影响到性能,如非必要不要打开.>DEBUG模式<td><input class='form-control' data-config-key="debug" type='checkbox' #####><tr><td title="只有插件主动发起的请求会被此项目限制\n官方文档说明低于5分钟就不安全了,用户请酌情设置. \n默认[10000ms]=10s">插件主动网络请求最小间隔<td><input type=number class=form-control data-config-key="net_gap_ms" value=#####><tr><td title="允许使用hex代码 and rgb标号. \n默认 #ffffff">插件通用文字配色<td><input class=form-control data-config-key="fontColor" value=#####><tr><td title="允许使用hex代码和rgb标号. \n默认 100 ">网页缩放比例<td><input type=number class=form-control data-config-key="zoomRate" value=#####> <tr><td title='地图界面上方的间隔，注意与网页缩放比例搭配使用。'>地图上方间距<td><input type='number' class=form-control data-config-key="mapMarginTop" value=#####>  <tr><td title="首要通知模式,默认是 网页内通知">主要通知模式<td><select class=form-control data-config-key="notificationMode0"><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="次要通知模式,默认是 无">次要通知模式<td><select class=form-control data-config-key="notificationMode1"><option value=-1>无<option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)<option value=1>网页内通知<option value=2>安卓通知通道</select><tr><td title="默认不勾选,勾选后SCT悬浮窗使用横向布局">悬浮窗横向排列</td><td><input type="checkbox" class="form-control" data-config-key="SCT_divHorizontal" ${
-      this.indexDBData.SCT_divHorizontal ? "checked" : ""
-    } ></td></tr><tr><td title="默认不勾选,勾选后SCT悬浮窗会固定在右下角不受hover影响">悬浮窗固定位置</td><td><input type="checkbox" class="form-control" data-config-key="SCT_divFixedDisplay" ${
-      this.indexDBData.SCT_divFixedDisplay ? "checked" : ""
-    } ></td></tr><tr><td title="无确认,删除插件所有缓存.非必要不用点">清除插件缓存</td><td><button class="btn form-control" id="script_reset">清除</button></td></tr><tr><td>插件缓存读写</td><td><button class="btn form-control" id="script_confEdit_enter">进入读写操作</button></td></tr></table></div></div></div>`;
+
+    htmlText += `
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 右侧全局配置 -->
+        <div class="sct-basis-right-pane">
+          <div class="header" style="margin-bottom:8px; font-size:18px;">插件参数配置</div>
+          <div style="margin-bottom:12px;"><button class="btn script_opt_submit" style="width:100%;">保存当前全部设置</button></div>
+          <table class="sct-feature-config-table">
+            <thead>
+              <tr>
+                <td>功能</td>
+                <td>设置</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td title="打开debug模式会有大量信息输出,可能会影响到性能,如非必要不要打开.">DEBUG模式</td>
+                <td><input class='form-control' data-config-key="debug" type='checkbox' #####></td>
+              </tr>
+              <tr>
+                <td title="只有插件主动发起的请求会被此项目限制\n官方文档说明低于5分钟就不安全了,用户请酌情设置. \n默认[10000ms]=10s">插件主动网络请求最小间隔</td>
+                <td><input type=number class=form-control data-config-key="net_gap_ms" value=#####></td>
+              </tr>
+              <tr>
+                <td title="允许使用hex代码 and rgb标号. \n默认 #ffffff">插件通用文字配色</td>
+                <td><input class=form-control data-config-key="fontColor" value=#####></td>
+              </tr>
+              <tr>
+                <td title="允许使用hex代码和rgb标号. \n默认 100 ">网页缩放比例</td>
+                <td><input type=number class=form-control data-config-key="zoomRate" value=#####></td>
+              </tr>
+              <tr>
+                <td title='地图界面上方的间隔，注意与网页缩放比例搭配使用。'>地图上方间距</td>
+                <td><input type='number' class=form-control data-config-key="mapMarginTop" value=#####></td>
+              </tr>
+              <tr>
+                <td title="首要通知模式,默认是 网页内通知">主要通知模式</td>
+                <td>
+                  <select class=form-control data-config-key="notificationMode0">
+                    <option value=-1>无</option>
+                    <option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)</option>
+                    <option value=1>网页内通知</option>
+                    <option value=2>安卓通知通道</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td title="次要通知模式,默认是 无">次要通知模式</td>
+                <td>
+                  <select class=form-control data-config-key="notificationMode1">
+                    <option value=-1>无</option>
+                    <option value=0>网页浏览器原生Notification对象(仅pc浏览器可用)</option>
+                    <option value=1>网页内通知</option>
+                    <option value=2>安卓通知通道</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td title="默认不勾选,勾选后SCT悬浮窗使用横向布局">悬浮窗横向排列</td>
+                <td><input type="checkbox" class="form-control" data-config-key="SCT_divHorizontal" ${
+                  this.indexDBData.SCT_divHorizontal ? "checked" : ""
+                }></td>
+              </tr>
+              <tr>
+                <td title="默认不勾选,勾选后SCT悬浮窗会固定在右下角不受hover影响">悬浮窗固定位置</td>
+                <td><input type="checkbox" class="form-control" data-config-key="SCT_divFixedDisplay" ${
+                  this.indexDBData.SCT_divFixedDisplay ? "checked" : ""
+                }></td>
+              </tr>
+              <tr>
+                <td title="无确认,删除插件所有缓存.非必要不用点">清除插件缓存</td>
+                <td><button class="btn form-control" id="script_reset">清除</button></td>
+              </tr>
+              <tr>
+                <td>插件缓存读写</td>
+                <td><button class="btn form-control" id="script_confEdit_enter">进入读写操作</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
     // 修改input已有参数
     htmlText = htmlText.replace("#####", feature_config.debug ? "checked" : "");
     htmlText = htmlText.replace("#####", feature_config.net_gap_ms.toString());
@@ -944,6 +1089,38 @@ class basisCPT extends BaseComponent {
     htmlText = htmlText.replace("#####", parseFloat(feature_config.zoomRate));
     htmlText = htmlText.replace("#####", parseInt(this.indexDBData.mapMarginTop));
     newNode.innerHTML = htmlText;
+
+    // 绑定搜索与标签联动
+    let activeTag = "ALL";
+    let searchText = "";
+    const rows = newNode.querySelectorAll("#sct_basis_cpt_body > tr");
+
+    const filterRows = () => {
+      rows.forEach((row) => {
+        const rowTags = (row.dataset.tags || "").split(",");
+        const rowSearch = row.dataset.searchText || "";
+        const tagMatch = activeTag === "ALL" || rowTags.includes(activeTag);
+        const searchMatch = !searchText || rowSearch.includes(searchText);
+        row.style.display = tagMatch && searchMatch ? "" : "none";
+      });
+    };
+
+    const searchInput = newNode.querySelector("#sct_basis_search");
+    searchInput?.addEventListener("input", (e) => {
+      searchText = e.target.value.toLowerCase().trim();
+      filterRows();
+    });
+
+    const tagContainer = newNode.querySelector("#sct_basis_tags");
+    tagContainer?.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-tag]");
+      if (!btn) return;
+      tagContainer.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeTag = btn.dataset.tag;
+      filterRows();
+    });
+
     newNode.querySelectorAll("input.sct-cpt-checkbox").forEach((checkbox) => {
       checkbox.addEventListener("change", () => {
         const component = componentList[checkbox.dataset.cptKey];
@@ -958,11 +1135,13 @@ class basisCPT extends BaseComponent {
         tools.alert(`已完成风险确认。“${component.name}”将在点击“保存”并刷新后启用。`);
       });
     });
+
     // 修改select的已有参数
     let select0 = newNode.querySelector('[data-config-key="notificationMode0"]');
     if (select0) select0.value = feature_config.notificationMode[0];
     let select1 = newNode.querySelector('[data-config-key="notificationMode1"]');
     if (select1) select1.value = feature_config.notificationMode[1];
+
     // 绑定按键
     newNode.querySelector("button#script_reset")?.addEventListener("click", async () => {
       if (!(await tools.confirm("确定清理?"))) return;
