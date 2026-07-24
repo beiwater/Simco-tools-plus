@@ -65,22 +65,38 @@ class unBusyHighLight extends BaseComponent {
 
   // 主入口函数
   async mainFunc() {
-    if (Object.values(document.querySelectorAll("div#page>div>div>div>div>a")).length === 0) return;
+    let buildingLinks = Object.values(document.querySelectorAll("div#page>div>div>div>div>a"));
+    if (buildingLinks.length === 0) return;
     this.clearClassName();
     let realm = await tools.getRealm();
+    let buildingData = indexDBData.basisCPT?.building?.[realm];
 
-    // 生成当前不忙的建筑数组 跳过大楼建筑
-    let unBusyList = indexDBData.basisCPT.building[realm]
-      .filter(build => this.isBuildingIdle(build) && !this.componentData.blackList.includes(build.kind))
-      .map(build => build.id + "");
-    this.changeClassName(unBusyList);
+    if (Array.isArray(buildingData) && buildingData.length > 0) {
+      // 有缓存数据：精确判定空闲
+      let unBusyList = buildingData
+        .filter(build => this.isBuildingIdle(build) && !this.componentData.blackList.includes(build.kind))
+        .map(build => build.id + "");
+      this.changeClassName(unBusyList);
 
-    // 额外处理大楼建筑
-    let unBustSaleOfficeList = indexDBData.basisCPT.building[realm].filter(build => build.kind == "B" && !Boolean(build.salesContract));
-    for (let i = 0; i < unBustSaleOfficeList.length; i++) {
-      let officeContrate = await tools.getNetData(`https://www.simcompanies.com/api/v2/companies/buildings/${unBustSaleOfficeList[i].id}/sales-orders/`);
-      if (!officeContrate) continue;
-      if (officeContrate.length == 0) this.changeClassName([unBustSaleOfficeList[i].id + ""]);
+      // 额外处理大楼建筑
+      let unBustSaleOfficeList = buildingData.filter(build => build.kind == "B" && !Boolean(build.salesContract));
+      for (let i = 0; i < unBustSaleOfficeList.length; i++) {
+        let officeContrate = await tools.getNetData(`https://www.simcompanies.com/api/v2/companies/buildings/${unBustSaleOfficeList[i].id}/sales-orders/`);
+        if (!officeContrate) continue;
+        if (officeContrate.length == 0) this.changeClassName([unBustSaleOfficeList[i].id + ""]);
+      }
+    } else {
+      // 无缓存数据：回退到 DOM class 提取建筑类型，高亮所有非排除建筑
+      let domIdleList = buildingLinks
+        .filter(link => {
+          let classMatch = link.className.match(/test-building-([A-Za-z0-9])/i);
+          if (!classMatch) return false;
+          let kind = classMatch[1];
+          return !this.componentData.blackList.includes(kind) && !["n", "y", "3", "4", "5"].includes(kind);
+        })
+        .map(link => link.href.match(/\/b\/(\d+)/)?.[1])
+        .filter(Boolean);
+      this.changeClassName(domIdleList);
     }
   }
 
