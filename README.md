@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="doc/images/logo.png" alt="SimComps Tools Logo" width="220" />
+  <img src="docs/images/logo.png" alt="SimComps Tools Logo" width="220" />
 </p>
 
 <h1 align="center">SimComps Tools (SCT / AutoMax)</h1>
@@ -53,7 +53,7 @@
 <p align="center">
   <b>全屏组件管理与分类 Tag 筛选</b>
   <br/>
-  <img src="doc/images/screenshot1.png" alt="插件基础功能全屏设置" width="100%" />
+  <img src="docs/images/screenshot1.png" alt="插件基础功能全屏设置" width="100%" />
 </p>
 
 <br/>
@@ -62,7 +62,7 @@
 
 | 全局面板与功能控制 | 关键词实时搜索与组件开关 |
 | :---: | :---: |
-| <img src="doc/images/screenshot2.png" alt="组件管理与过滤" width="460" /> | <img src="doc/images/screenshot3.png" alt="组件分类与搜索" width="460" /> |
+| <img src="docs/images/screenshot2.png" alt="组件管理与过滤" width="460" /> | <img src="docs/images/screenshot3.png" alt="组件分类与搜索" width="460" /> |
 
 </div>
 
@@ -71,7 +71,7 @@
 <p align="center">
   <b>悬浮控制节点与游戏实操页面增强</b>
   <br/>
-  <img src="doc/images/screenshot4.png" alt="悬浮控制与实际页面效果" width="100%" />
+  <img src="docs/images/screenshot4.png" alt="悬浮控制与实际页面效果" width="100%" />
 </p>
 
 ---
@@ -89,7 +89,7 @@
 
 ## 🛠️ 功能概览
 
-> 📖 详细功能的逐项操作说明请阅读 [FEATURE_GUIDE.md](FEATURE_GUIDE.md)。
+> 📖 详细功能的逐项操作说明请阅读 [FEATURE_GUIDE.md](docs/FEATURE_GUIDE.md)。
 
 | 模块分类 | 代表功能 | 说明 |
 | :--- | :--- | :--- |
@@ -126,7 +126,7 @@
 
 - 插件基础框架及 LIYUE 编写的核心组件采用 **[MIT License](LICENSE)** 协议开源。
 - 涉及 AutoMax 相关的组件采用 **[AGPL-3.0-or-later](LICENSE)** 协议。
-- 详细的文件协议归属与声明参见 [LICENSE-MAP.md](LICENSE-MAP.md) 及 [NOTICE.md](NOTICE.md)。
+- 详细的文件协议归属与声明参见 [LICENSE-MAP.md](docs/LICENSE-MAP.md) 及 [NOTICE.md](docs/NOTICE.md)。
 
 **项目致谢**：
 - [gangbaRuby/SimCompanies-Scripts](https://github.com/gangbaRuby/SimCompanies-Scripts)

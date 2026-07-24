@@ -7,7 +7,7 @@
     "dev": "npx webpack --config webpack.config.js --watch --mode development",
     "test": "node --test",
     "build": "npx webpack --config webpack.config.js",
-    "postbuild": "node postBuild.js",
+    "postbuild": "node scripts/postBuild.js",
     "verify:userscript": "node scripts/verify-userscript.js dist/build.user.js"
   },
   "keywords": [],

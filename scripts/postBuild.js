@@ -1,8 +1,8 @@
 let fs = require('node:fs');
 let path = require('node:path');
 let { execSync } = require('node:child_process');
-let distPath = path.join(__dirname, 'dist');
-let componentsDir = path.join(__dirname, 'components');
+let distPath = path.join(__dirname, '..', 'dist');
+let componentsDir = path.join(__dirname, '..', 'components');
 
 // 统计组件总数 (BaseComponent 类实例)
 const countComponents = () => {

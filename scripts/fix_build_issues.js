@@ -3,7 +3,7 @@ const path = require('node:path');
 
 // 修复 webpack.config.js
 function fixWebpackConfig() {
-  const configPath = path.join(__dirname, 'webpack.config.js');
+  const configPath = path.join(__dirname, '..', 'webpack.config.js');
   let configContent = fs.readFileSync(configPath, 'utf-8');
   
   // 检查是否已经导入了path模块
