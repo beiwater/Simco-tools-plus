@@ -12,6 +12,7 @@ const AUTO_MAX_UI_THEME_CSS = `
     --sct-border: rgba(255, 255, 255, 0.14);
     --sct-border-strong: rgba(255, 255, 255, 0.24);
     --sct-control: rgba(255, 255, 255, 0.08);
+    --sct-control-opaque: #252b28;
     --sct-control-hover: rgba(255, 255, 255, 0.15);
     --sct-enabled: #14541d;
     --sct-enabled-hover: #339841;
@@ -78,6 +79,92 @@ const AUTO_MAX_UI_THEME_CSS = `
   #script_cptSearch_input::placeholder {
     color: var(--sct-text-secondary);
     opacity: 1;
+  }
+
+  /*
+   * SimCompanies' form-control styles can switch to a white surface while SCT
+   * keeps a light foreground. Keep this rule inside SCT-owned windows so game
+   * forms are untouched, including controls rendered later by legacy modules.
+   */
+  :is(
+    #script_cpt_setting_container,
+    #script_dialog_main,
+    #script_confirm_main,
+    #script_cpt_node,
+    #automax_forecast_panel,
+    #automax_mp_profit_panel,
+    #automax_saturation_panel,
+    .automax-exec-modal,
+    .automax-market-summary
+  ) :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), select, textarea) {
+    -webkit-text-fill-color: var(--fontColor, #f8faf9);
+    background-color: var(--sct-control-opaque, #252b28) !important;
+    border-color: var(--sct-border-strong, rgba(255, 255, 255, 0.24));
+    caret-color: var(--fontColor, #f8faf9);
+    color: var(--fontColor, #f8faf9) !important;
+    color-scheme: dark;
+  }
+
+  :is(
+    #script_cpt_setting_container,
+    #script_dialog_main,
+    #script_confirm_main,
+    #script_cpt_node,
+    #automax_forecast_panel,
+    #automax_mp_profit_panel,
+    #automax_saturation_panel,
+    .automax-exec-modal,
+    .automax-market-summary
+  ) :is(input, textarea)::placeholder {
+    -webkit-text-fill-color: var(--sct-text-secondary, #aeb8b1);
+    color: var(--sct-text-secondary, #aeb8b1);
+    opacity: 1;
+  }
+
+  :is(
+    #script_cpt_setting_container,
+    #script_dialog_main,
+    #script_confirm_main,
+    #script_cpt_node,
+    #automax_forecast_panel,
+    #automax_mp_profit_panel,
+    #automax_saturation_panel,
+    .automax-exec-modal,
+    .automax-market-summary
+  ) select option {
+    background-color: var(--sct-control-opaque, #252b28);
+    color: var(--fontColor, #f8faf9);
+  }
+
+  :is(
+    #script_cpt_setting_container,
+    #script_dialog_main,
+    #script_confirm_main,
+    #script_cpt_node,
+    #automax_forecast_panel,
+    #automax_mp_profit_panel,
+    #automax_saturation_panel,
+    .automax-exec-modal,
+    .automax-market-summary
+  ) :is(input, select, textarea):disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+  }
+
+  :is(
+    #script_cpt_setting_container,
+    #script_dialog_main,
+    #script_confirm_main,
+    #script_cpt_node,
+    #automax_forecast_panel,
+    #automax_mp_profit_panel,
+    #automax_saturation_panel,
+    .automax-exec-modal,
+    .automax-market-summary
+  ) input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px var(--sct-control-opaque, #252b28) inset;
+    -webkit-text-fill-color: var(--fontColor, #f8faf9);
+    caret-color: var(--fontColor, #f8faf9);
   }
 
   #script_cptSearch_input:focus-visible,
@@ -475,8 +562,8 @@ class autoMaxUITheme extends BaseComponent {
     super();
     this.name = "AutoMax 界面主题";
     this.describe = "统一 AutoMax 面板、表格和控件的视觉与无障碍状态。";
-    this.enable = false;
-    this.canDisable = true;
+    this.enable = true;
+    this.canDisable = false;
     this.hideSetting = true;
     this.tagList = ["AutoMax", "基础"];
   }
