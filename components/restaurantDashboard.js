@@ -6,205 +6,243 @@ function buildingIdFromUrl(url = location.href) {
   return String(url).match(/\/(?:b|buildings)\/(\d+)(?:\/restaurant)?\/?$/)?.[1] || "";
 }
 
-function toArray(value) {
-  if (Array.isArray(value)) return value;
-  return Array.isArray(value?.data) ? value.data : Array.isArray(value?.buildings) ? value.buildings : [];
+function formatMoney(value) {
+  if (value == null || !Number.isFinite(Number(value))) return "-";
+  return `$${Math.round(Number(value)).toLocaleString()}`;
 }
 
-function number(value) {
-  if (value == null || value === "") return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function valueOf(record, names) {
-  for (const name of names) if (record?.[name] != null) return record[name];
-  return null;
-}
-
-function profit(run) {
-  const stored = number(valueOf(run, ["profit", "netProfit"]));
-  if (stored != null) return stored;
-  const revenue = number(valueOf(run, ["revenue", "income"]));
-  if (revenue == null) return null;
-  return revenue - (number(valueOf(run, ["cogs", "cost", "materialCost"])) || 0) - (number(valueOf(run, ["wages", "wageCost"])) || 0);
-}
-
-function csvEscape(value) {
-  const text = String(value ?? "");
-  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-}
-
-function runIdentity(run) {
-  const direct = valueOf(run, ["id", "uuid", "runId"]);
-  if (direct != null) return `id:${direct}`;
-  return JSON.stringify([
-    valueOf(run, ["datetime", "createdAt", "date"]),
-    valueOf(run, ["revenue", "income"]),
-    valueOf(run, ["cogs", "cost", "materialCost"]),
-    valueOf(run, ["wages", "wageCost"]),
-    valueOf(run, ["resolved", "status"]),
-  ]);
-}
-
-function mergeRuns(stored, incoming, limit = 1000) {
-  const merged = new Map();
-  for (const run of [...toArray(stored), ...toArray(incoming)]) merged.set(runIdentity(run), run);
-  return [...merged.values()]
-    .sort((left, right) => String(valueOf(right, ["datetime", "createdAt", "date"]) || "").localeCompare(String(valueOf(left, ["datetime", "createdAt", "date"]) || "")))
-    .slice(0, limit);
+function formatPercent(value) {
+  if (value == null || !Number.isFinite(Number(value))) return "-";
+  return `${(Number(value) * 100).toFixed(1)}%`;
 }
 
 class restaurantDashboard extends BaseComponent {
   constructor() {
     super();
     this.name = "餐厅实时看板";
-    this.describe = "查看餐厅当前菜单与历史结算；使用 SCT IndexedDB 长效保存并去重，可导出 CSV。";
+    this.describe = "进入餐厅建筑管理页自动嵌入分析卡片；在地图页使用时汇总显示全厂所有餐厅的数据列表。";
     this.enable = false;
-    this.tagList = ["工具"];
-    this.commonFuncList = [{
-      match: () => this.isRestaurantPage(),
-      func: this.mountInlineButton,
-    }];
+    this.tagList = ["工具", "AutoMax"];
+    this.commonFuncList = [
+      {
+        match: () => this.isBuildingPage(),
+        func: this.mountInlinePanel,
+      },
+      {
+        match: () => this.isLandscapePage(),
+        func: this.mountLandscapePanel,
+      },
+    ];
   }
 
-  isRestaurantPage() {
-    if (!/\/b\/\d+\/?$/.test(location.href)) return false;
-    // 判断是否在餐厅建筑页面（判断页面内是否有餐厅特定的DOM元素或通过API缓存）
-    const realm = runtimeData.basisCPT?.realm ?? 0;
-    const buildings = indexDBData.basisCPT?.building?.[realm] || [];
-    const bId = buildingIdFromUrl();
-    if (!bId) return false;
-    const b = buildings.find(item => String(item.id) === String(bId));
-    if (b) return b.kind === "r" || b.kind === "R" || Boolean(b.restaurantProperties);
-    // DOM 兜底判断
-    return Boolean(document.querySelector("#page > div > div > div > div.col-md-9.col-sm-8 > div > div > div > div:nth-child(2)"));
+  frontUI = this.open;
+  cssText = [`
+    .sct-rt-card { background: var(--sct-surface-muted, rgba(20, 25, 22, 0.95)); border: 1px solid var(--sct-border-strong, rgba(255, 255, 255, 0.2)); border-radius: 8px; color: var(--fontColor, #fff); margin-bottom: 12px; padding: 12px; }
+    .sct-rt-card header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .sct-rt-card header strong { font-size: 15px; }
+    .sct-rt-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .sct-rt-actions button { background: var(--sct-control, #4c4c4c); border: 1px solid var(--sct-control-hover, #777); color: var(--fontColor); cursor: pointer; font-size: 12px; padding: 4px 10px; }
+    .sct-rt-status { color: var(--sct-text-secondary, #aaa); font-size: 12px; margin-bottom: 8px; }
+    .sct-rt-table-wrap { overflow-x: auto; }
+    .sct-rt-table-wrap table { border-collapse: collapse; width: 100%; }
+    .sct-rt-table-wrap th, .sct-rt-table-wrap td { border-bottom: 1px solid var(--sct-border, rgba(255,255,255,0.1)); font-size: 12px; padding: 6px 8px; text-align: left; }
+    .sct-rt-badge { border-radius: 3px; font-size: 11px; padding: 2px 6px; }
+    .sct-rt-badge-success { background: #2e7d32; color: #fff; }
+    .sct-rt-badge-warning { background: #ed6c02; color: #fff; }
+  `];
+
+  isBuildingPage() {
+    return /\/b\/\d+\/?$/.test(location.pathname);
   }
 
-  mountInlineButton() {
-    if (!this.enable) return;
-    if (document.querySelector("#sct_restaurant_inline_btn")) return;
-    const targetContainer = document.querySelector("#page > div > div > div > div.col-md-9.col-sm-8 > div > div > div > div:nth-child(2)");
-    if (!targetContainer) return;
-
-    const btn = document.createElement("button");
-    btn.id = "sct_restaurant_inline_btn";
-    btn.className = "btn btn-primary";
-    btn.style.cssText = "margin-bottom:10px; width:100%; font-weight:bold;";
-    btn.textContent = "📊 打开餐厅实时看板";
-    btn.addEventListener("click", () => this.open());
-    targetContainer.before(btn);
+  isLandscapePage() {
+    return /\/landscape\/?$/.test(location.pathname);
   }
 
-  indexDBData = { historyByBuilding: {}, restaurantByBuilding: {}, maxHistoryPerBuilding: 1000 }
-  componentData = { latest: null }
-  frontUI = this.open
-  cssText = [`.sct-restaurant-dashboard { color:var(--fontColor); display:grid; gap:10px; max-width:760px; min-width:min(620px, 86vw); } .sct-restaurant-dashboard__actions { display:flex; flex-wrap:wrap; gap:8px; } .sct-restaurant-dashboard button { background:var(--sct-control,#4c4c4c); color:var(--fontColor); min-height:34px; } .sct-restaurant-dashboard table { border-collapse:collapse; width:100%; } .sct-restaurant-dashboard td,.sct-restaurant-dashboard th { border-bottom:1px solid var(--sct-control-hover,#777); padding:6px; text-align:left; } .sct-restaurant-dashboard__note { color:var(--sct-muted,#aaa); font-size:12px; } @media(max-width:650px) { .sct-restaurant-dashboard { min-width:0; width:min(94vw,760px); } .sct-restaurant-dashboard table { display:block; overflow:auto; } }`]
-
-  async requestJson(path) {
-    const response = await fetch(path, { credentials: "include", headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error(`${path}：HTTP ${response.status}`);
-    return response.json();
+  async fetchJson(path) {
+    const res = await fetch(path, { credentials: "include", headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
   }
-  async load() {
-    const buildingId = buildingIdFromUrl();
-    if (!buildingId) throw new Error("请先进入一个餐厅建筑页面，再打开看板。");
+
+  async loadAllRestaurantsData() {
+    const buildingsRaw = await this.fetchJson("/api/v2/companies/me/buildings/");
+    const buildings = Array.isArray(buildingsRaw) ? buildingsRaw : [];
+    const restaurants = buildings.filter((b) => b.restaurantProperties || b.kind === "r" || b.kind === "R");
+    
+    const list = [];
+    for (const r of restaurants) {
+      let runs = [];
+      try {
+        runs = await this.fetchJson(`/api/v2/companies/buildings/${r.id}/restaurant-runs/`);
+      } catch (e) {}
+      const props = r.restaurantProperties || {};
+      const latestRun = Array.isArray(runs) && runs[0] ? runs[0] : null;
+      const profit = latestRun ? (latestRun.profit ?? (latestRun.revenue != null ? latestRun.revenue - (latestRun.cogs || 0) - (latestRun.wages || 0) : null)) : null;
+
+      list.push({
+        buildingId: r.id,
+        name: r.name || r.kind || "餐厅",
+        size: r.size ?? 1,
+        isLuxury: Boolean(props.isLuxury),
+        rating: props.rating ?? "-",
+        menuPrice: props.menuPrice ?? "-",
+        occupancy: props.occupancy != null ? formatPercent(props.occupancy) : "-",
+        openState: r.busy?.restaurant_open ? "营业中" : (r.busy ? "进行中" : "未营业"),
+        latestProfit: formatMoney(profit),
+      });
+    }
+    return list;
+  }
+
+  async loadSingleRestaurantData(buildingId) {
     const [buildingsRaw, runsRaw] = await Promise.all([
-      this.requestJson("/api/v2/companies/me/buildings/"),
-      this.requestJson(`/api/v2/companies/buildings/${buildingId}/restaurant-runs/`),
+      this.fetchJson("/api/v2/companies/me/buildings/"),
+      this.fetchJson(`/api/v2/companies/buildings/${buildingId}/restaurant-runs/`),
     ]);
-    const buildings = toArray(buildingsRaw);
-    const restaurant = buildings.find((building) => String(building.id || building.buildingId) === buildingId) || { id: buildingId };
-    const runs = toArray(runsRaw).sort((left, right) => String(valueOf(right, ["datetime", "createdAt", "date"]) || "").localeCompare(String(valueOf(left, ["datetime", "createdAt", "date"]) || "")));
-    return { buildingId, restaurant, runs, fetchedRuns: runs.length, loadedAt: new Date().toISOString() };
+    const buildings = Array.isArray(buildingsRaw) ? buildingsRaw : [];
+    const target = buildings.find((b) => String(b.id) === String(buildingId));
+    const runs = Array.isArray(runsRaw) ? runsRaw : [];
+    return { target, runs };
   }
-  stored(buildingId = buildingIdFromUrl()) {
-    if (!buildingId) return null;
-    const histories = this.indexDBData.historyByBuilding || {};
-    const restaurants = this.indexDBData.restaurantByBuilding || {};
-    const runs = toArray(histories[buildingId]);
-    if (!runs.length && !restaurants[buildingId]) return null;
-    return { buildingId, restaurant: restaurants[buildingId] || { id: buildingId }, runs, fetchedRuns: 0, loadedAt: "" };
+
+  mountInlinePanel() {
+    if (!this.enable) return;
+    const bId = buildingIdFromUrl();
+    if (!bId) return;
+
+    // 检查页面是否存在餐厅详情容器
+    const mountTarget = document.querySelector("#page > div > div > div > div.col-md-9.col-sm-8 > div > div > div > div:nth-child(2)");
+    if (!mountTarget) return;
+    if (document.getElementById("sct-restaurant-inline-card")) return;
+
+    const card = document.createElement("section");
+    card.id = "sct-restaurant-inline-card";
+    card.className = "sct-rt-card";
+    card.innerHTML = `
+      <header>
+        <strong>🍽️ 餐厅数据分析看板 (Simco-Dash)</strong>
+      </header>
+      <div class="sct-rt-actions">
+        <button type="button" class="btn-refresh">刷新当前餐厅数据</button>
+      </div>
+      <div class="sct-rt-status">建筑 #${bId} · 点击刷新获取最新数据</div>
+      <div class="sct-rt-body"></div>
+    `;
+
+    mountTarget.before(card);
+
+    const refreshBtn = card.querySelector(".btn-refresh");
+    const statusDiv = card.querySelector(".sct-rt-status");
+    const bodyDiv = card.querySelector(".sct-rt-body");
+
+    const doRefresh = async () => {
+      refreshBtn.disabled = true;
+      statusDiv.textContent = "正在加载餐厅数据与历史 Run...";
+      try {
+        const { target, runs } = await this.loadSingleRestaurantData(bId);
+        statusDiv.textContent = `更新时间: ${new Date().toLocaleTimeString()} · 成功获取 ${runs.length} 条结算历史`;
+        bodyDiv.innerHTML = this.renderSingleRunTable(runs);
+      } catch (err) {
+        statusDiv.textContent = `加载失败: ${err.message}`;
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    };
+
+    refreshBtn.addEventListener("click", doRefresh);
+    doRefresh();
   }
-  async persist(data) {
-    const buildingId = data.buildingId;
-    const limit = Math.max(100, Math.min(5000, Number(this.indexDBData.maxHistoryPerBuilding) || 1000));
-    this.indexDBData.historyByBuilding ||= {};
-    this.indexDBData.restaurantByBuilding ||= {};
-    const runs = mergeRuns(this.indexDBData.historyByBuilding[buildingId], data.runs, limit);
-    this.indexDBData.historyByBuilding[buildingId] = runs;
-    this.indexDBData.restaurantByBuilding[buildingId] = JSON.parse(JSON.stringify(data.restaurant || { id: buildingId }));
-    await tools.indexDB_updateIndexDBData();
-    return { ...data, runs, storedRuns: runs.length };
+
+  mountLandscapePanel() {
+    // 地图页可根据需求自动或通过窗口提供全厂餐厅大盘
   }
-  async clearStored(buildingId) {
-    if (!buildingId) return;
-    this.indexDBData.historyByBuilding ||= {};
-    this.indexDBData.restaurantByBuilding ||= {};
-    delete this.indexDBData.historyByBuilding[buildingId];
-    delete this.indexDBData.restaurantByBuilding[buildingId];
-    await tools.indexDB_updateIndexDBData();
-    this.componentData.latest = null;
+
+  renderSingleRunTable(runs) {
+    if (!runs.length) return `<div style="padding:8px; color:#aaa;">暂无结算历史记录。</div>`;
+    let html = `<div class="sct-rt-table-wrap"><table>
+      <thead><tr><th>时间</th><th>状态</th><th>评分</th><th>菜单价</th><th>COGS</th><th>工资</th><th>收入</th><th>利润</th></tr></thead>
+      <tbody>`;
+    for (const run of runs.slice(0, 15)) {
+      const dt = run.datetime ? new Date(run.datetime).toLocaleString() : "-";
+      const statusBadge = run.resolved === false ? `<span class="sct-rt-badge sct-rt-badge-warning">进行中</span>` : `<span class="sct-rt-badge sct-rt-badge-success">已结算</span>`;
+      const cogs = run.cogs ?? run.cost ?? 0;
+      const wages = run.wages ?? run.wageCost ?? 0;
+      const revenue = run.revenue ?? run.income ?? 0;
+      const profitVal = run.profit ?? (revenue ? revenue - cogs - wages : 0);
+
+      html += `<tr>
+        <td>${dt}</td>
+        <td>${statusBadge}</td>
+        <td>${run.rating ?? "-"}</td>
+        <td>${formatMoney(run.menuPrice)}</td>
+        <td>${formatMoney(cogs)}</td>
+        <td>${formatMoney(wages)}</td>
+        <td>${formatMoney(revenue)}</td>
+        <td><strong style="color:${profitVal >= 0 ? '#4caf50' : '#f44336'}">${formatMoney(profitVal)}</strong></td>
+      </tr>`;
+    }
+    html += `</tbody></table></div>`;
+    return html;
   }
+
   open() {
     const content = document.createElement("section");
-    content.className = "sct-restaurant-dashboard";
-    const actions = document.createElement("div"); actions.className = "sct-restaurant-dashboard__actions";
-    const refresh = document.createElement("button"); refresh.type = "button"; refresh.className = "btn"; refresh.textContent = "刷新实时数据";
-    const exportButton = document.createElement("button"); exportButton.type = "button"; exportButton.className = "btn"; exportButton.textContent = "导出最近结算 CSV"; exportButton.disabled = true;
-    const clearButton = document.createElement("button"); clearButton.type = "button"; clearButton.className = "btn"; clearButton.textContent = "清空本餐厅历史";
-    const result = document.createElement("div"); result.className = "sct-restaurant-dashboard__result";
-    const note = document.createElement("div"); note.className = "sct-restaurant-dashboard__note"; note.textContent = "历史保存在 SCT IndexedDB 中，按餐厅分开、自动去重，每个餐厅最多保留 1000 条；除非主动清空或删除浏览器站点数据，否则会跨刷新和重启保留。";
-    const refreshData = async () => {
-      result.textContent = "正在读取餐厅数据…"; exportButton.disabled = true;
-      try { this.componentData.latest = await this.persist(await this.load()); this.render(result, this.componentData.latest); exportButton.disabled = false; }
-      catch (error) { result.textContent = error.message || String(error); }
+    content.className = "sct-rt-card";
+    content.style.minWidth = "650px";
+    content.innerHTML = `
+      <header><strong>🍽️ 全厂餐厅汇总大盘</strong></header>
+      <div class="sct-rt-actions">
+        <button type="button" class="btn-refresh-all">扫描全厂餐厅数据</button>
+      </div>
+      <div class="sct-rt-status">点击按钮扫描公司所有餐厅状态</div>
+      <div class="sct-rt-body"></div>
+    `;
+
+    openSecondaryWindow({ id: "sct-restaurant-all-dashboard", title: "全厂餐厅大盘", content });
+
+    const btn = content.querySelector(".btn-refresh-all");
+    const status = content.querySelector(".sct-rt-status");
+    const body = content.querySelector(".sct-rt-body");
+
+    const doScan = async () => {
+      btn.disabled = true;
+      status.textContent = "正在拉取公司建筑与各餐厅运行记录...";
+      try {
+        const list = await this.loadAllRestaurantsData();
+        status.textContent = `共扫描到 ${list.length} 家餐厅 (更新于 ${new Date().toLocaleTimeString()})`;
+        body.innerHTML = `
+          <div class="sct-rt-table-wrap"><table>
+            <thead><tr><th>ID</th><th>名称</th><th>规模</th><th>类型</th><th>评分</th><th>菜单价</th><th>上座率</th><th>状态</th><th>上一轮利润</th></tr></thead>
+            <tbody>
+              ${list.length ? list.map(r => `
+                <tr>
+                  <td>${r.buildingId}</td>
+                  <td><strong>${r.name}</strong></td>
+                  <td>${r.size}</td>
+                  <td>${r.isLuxury ? "豪华" : "经济"}</td>
+                  <td>${r.rating}</td>
+                  <td>${r.menuPrice}</td>
+                  <td>${r.occupancy}</td>
+                  <td>${r.openState}</td>
+                  <td>${r.latestProfit}</td>
+                </tr>
+              `).join("") : `<tr><td colspan="9">未发现餐厅建筑</td></tr>`}
+            </tbody>
+          </table></div>
+        `;
+      } catch (err) {
+        status.textContent = `扫描失败: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+      }
     };
-    refresh.addEventListener("click", refreshData);
-    exportButton.addEventListener("click", () => this.downloadCsv(this.componentData.latest));
-    clearButton.addEventListener("click", async () => {
-      const buildingId = buildingIdFromUrl();
-      if (!buildingId || !window.confirm("确定清空当前餐厅在 SCT 中保存的全部历史吗？")) return;
-      await this.clearStored(buildingId); result.textContent = "当前餐厅的长期历史已清空。"; exportButton.disabled = true;
-    });
-    actions.append(refresh, exportButton, clearButton); content.append(actions, result, note);
-    openSecondaryWindow({ id: "restaurant-dashboard", title: "餐厅实时看板", content });
-    const stored = this.stored();
-    if (stored) { this.componentData.latest = stored; this.render(result, stored); exportButton.disabled = false; }
-    refreshData();
-  }
-  render(root, data) {
-    const latest = data.runs[0];
-    const name = valueOf(data.restaurant, ["name", "buildingName"]) || `餐厅 #${data.buildingId}`;
-    const menu = valueOf(data.restaurant, ["menu", "restaurantMenu"]);
-    const summary = document.createElement("div");
-    summary.textContent = `${name}｜长期保存 ${data.runs.length} 条${data.fetchedRuns ? `｜本次读取 ${data.fetchedRuns} 条` : ""}${latest ? `｜最近利润 ${this.money(profit(latest))}` : ""}`;
-    const table = document.createElement("table");
-    table.innerHTML = "<thead><tr><th>时间</th><th>收入</th><th>成本</th><th>工资</th><th>利润</th><th>状态</th></tr></thead>";
-    const body = document.createElement("tbody");
-    for (const run of data.runs.slice(0, 12)) {
-      const row = document.createElement("tr");
-      const cells = [valueOf(run, ["datetime", "createdAt", "date"]) || "-", this.money(valueOf(run, ["revenue", "income"])), this.money(valueOf(run, ["cogs", "cost", "materialCost"])), this.money(valueOf(run, ["wages", "wageCost"])), this.money(profit(run)), valueOf(run, ["resolved", "status"]) === false ? "未结算" : "已结算"];
-      for (const value of cells) { const cell = document.createElement("td"); cell.textContent = value; row.append(cell); }
-      body.append(row);
-    }
-    table.append(body); root.replaceChildren(summary, menu ? this.menuNode(menu) : document.createTextNode("未读取到菜单详情。"), table);
-  }
-  menuNode(menu) {
-    const node = document.createElement("div"); node.className = "sct-restaurant-dashboard__note";
-    const items = Array.isArray(menu) ? menu : Object.values(menu || {});
-    node.textContent = `当前菜单：${items.map((item) => typeof item === "string" ? item : item.name || item.resourceName || item.resourceId || "未知菜品").join("、") || "暂无"}`;
-    return node;
-  }
-  money(value) { const parsed = number(value); return parsed == null ? "-" : `$${parsed.toLocaleString(undefined, { maximumFractionDigits: 0 })}`; }
-  downloadCsv(data) {
-    if (!data?.runs?.length) return;
-    const rows = [["time", "revenue", "cost", "wages", "profit", "resolved"], ...data.runs.map((run) => [valueOf(run, ["datetime", "createdAt", "date"]), valueOf(run, ["revenue", "income"]), valueOf(run, ["cogs", "cost", "materialCost"]), valueOf(run, ["wages", "wageCost"]), profit(run), valueOf(run, ["resolved", "status"])])];
-    const url = URL.createObjectURL(new Blob([rows.map((row) => row.map(csvEscape).join(",")).join("\n")], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a"); link.href = url; link.download = `simcompanies-restaurant-${data.buildingId}.csv`; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 0);
+
+    btn.addEventListener("click", doScan);
+    doScan();
   }
 }
 
 new restaurantDashboard();
 
-module.exports = { buildingIdFromUrl, mergeRuns, profit, runIdentity, toArray };
+module.exports = restaurantDashboard;
