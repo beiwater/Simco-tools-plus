@@ -40,7 +40,7 @@ class autoMaxExecutive extends BaseComponent {
   startupFuncList = [this.startup]
 
   commonFuncList = [{
-    match: () => /\/headquarters\/executives\/?$/.test(location.pathname),
+    match: () => /^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?headquarters\/executives\/?$/i.test(location.pathname),
     func: this.refreshExecutivesPage,
   }]
 

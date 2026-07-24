@@ -27,6 +27,7 @@ function renderDetailPanel(data) {
 }
 
 function injectBoardroomButtons(component) {
+  if (!/^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?headquarters\/executives\/?$/i.test(location.pathname)) return;
   const targetHeader = document.querySelector("h3");
   const container = targetHeader?.closest("[class]");
   if (!container || !targetHeader) return;
