@@ -22,6 +22,16 @@
 
 首次启动会展示功能简介与使用免责声明，确认后才能继续使用。
 
+## 界面预览
+
+| 插件基础功能（全屏设置与组件管理） | 全局面板与功能控制 |
+| :---: | :---: |
+| ![插件基础功能设置](doc/images/screenshot1.png) | ![组件管理与过滤](doc/images/screenshot2.png) |
+
+| 组件开关与标签搜索 | 浮窗工具与页面增强 |
+| :---: | :---: |
+| ![组件分类与搜索](doc/images/screenshot3.png) | ![悬浮控制与实际页面效果](doc/images/screenshot4.png) |
+
 ## 功能概览
 
 详细使用方法请看 [FEATURE_GUIDE.md](FEATURE_GUIDE.md)。
