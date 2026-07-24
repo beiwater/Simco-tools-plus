@@ -30,6 +30,9 @@ function requestRiskAcknowledgement(component) {
 }
 
 const SETTINGS_WINDOW_THEME = `
+  #script_cpt_setting_container[hidden] {
+    display: none !important;
+  }
   #script_cpt_setting_container {
     background: linear-gradient(145deg, var(--sct-surface-elevated, rgba(26, 32, 29, 0.98)), var(--sct-surface, rgba(15, 19, 17, 0.98)) 58%) !important;
     border: 1px solid rgba(255, 255, 255, 0.14) !important;
