@@ -111,6 +111,15 @@ function createIndexHarness({ immediateDelays = false, now = Date.now, rootAvail
   const window = {
     XMLHttpRequest: FakeXHR,
     addEventListener(type, listener) { state.windowListeners.push({ listener, type }); },
+    fetch(request, init) {
+      const responseText = init?.responseText ?? "[]";
+      return Promise.resolve({
+        status: init?.status ?? 200,
+        clone() {
+          return { text: async () => responseText };
+        },
+      });
+    },
   };
   function localRequire(request) {
     if (request === "./tools/tools.js") {
@@ -127,6 +136,7 @@ function createIndexHarness({ immediateDelays = false, now = Date.now, rootAvail
   const startup = vm.runInNewContext(indexSource, {
     MutationObserver: FakeMutationObserver,
     Date: { now },
+    URL,
     console: { log() {} },
     document,
     require: localRequire,
@@ -153,6 +163,46 @@ test("startup waits for #root before registering observers and listeners", async
   assert.equal(harness.state.documentListeners.filter(({ type }) => type === "click").length, 1);
   assert.equal(harness.state.documentListeners.filter(({ type }) => type === "keydown").length, 1);
   assert.equal(harness.state.windowListeners.filter(({ type }) => type === "beforeunload").length, 1);
+});
+
+test("XHR responses captured before #root are replayed after components start", async () => {
+  const harness = createIndexHarness({ rootAvailable: false });
+  await Promise.resolve();
+
+  const xhr = new harness.window.XMLHttpRequest();
+  xhr.open("GET", "https://www.simcompanies.com/api/v2/companies/me/buildings/");
+  xhr.send();
+  assert.equal(harness.state.netEvents.length, 0, "early response must wait for component initialization");
+
+  harness.state.root = {};
+  harness.state.delayQueue.shift().resolve();
+  await harness.startup;
+
+  assert.deepEqual(harness.state.netEvents, [[
+    "https://www.simcompanies.com/api/v2/companies/me/buildings/",
+    "GET",
+    "[]",
+    200,
+  ]]);
+});
+
+test("fetch responses continue reaching the event bus after startup", async () => {
+  const harness = createIndexHarness();
+  await harness.startup;
+
+  const response = await harness.window.fetch(
+    "https://www.simcompanies.com/api/v2/companies/me/buildings/",
+    { method: "POST", responseText: "[{\"id\":1}]", status: 201 }
+  );
+  await Promise.resolve();
+
+  assert.equal(response.status, 201, "fetch must preserve the application response");
+  assert.deepEqual(harness.state.netEvents, [[
+    "https://www.simcompanies.com/api/v2/companies/me/buildings/",
+    "POST",
+    "[{\"id\":1}]",
+    201,
+  ]]);
 });
 
 test("XHR capture survives application onload assignment after open", async () => {

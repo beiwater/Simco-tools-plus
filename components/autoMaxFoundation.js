@@ -21,8 +21,8 @@ class autoMaxFoundation extends BaseComponent {
     super();
     this.name = "AutoMax 数据基础服务";
     this.describe = "为 AutoMax 功能提供安全的数据捕获、页面路由与缓存刷新。";
-    this.enable = false;
-    this.canDisable = true;
+    this.enable = true;
+    this.canDisable = false;
     this.tagList = ["AutoMax", "基础"];
   }
 
@@ -54,12 +54,13 @@ class autoMaxFoundation extends BaseComponent {
 
   startLifecycle() {
     if (this.componentData.lifecycle) return this.componentData.lifecycle;
+    const pageWindow = tools.getPageWindow?.() ?? window;
     const cacheSeed = this.indexDBData.cache && typeof this.indexDBData.cache === "object" && !Array.isArray(this.indexDBData.cache)
       ? this.indexDBData.cache
       : {};
     const cache = createAutoMaxCache(cacheSeed);
     this.indexDBData.cache = cache.state;
-    const requestClient = createRequestClient({ fetchImpl: (...args) => window.fetch(...args) });
+    const requestClient = createRequestClient({ fetchImpl: (...args) => pageWindow.fetch(...args) });
     const regionService = createRegionService({ requestJson: requestClient.requestJson });
     const persist = async () => {
       this.indexDBData.cache = cache.state;
@@ -88,21 +89,21 @@ class autoMaxFoundation extends BaseComponent {
     const router = createRouteRegistry([], reportError);
     router.register({ id: "automax-refresh", match: () => true, handler: () => scheduler.check() });
     const fetchCapture = installFetchCapture({
-      target: window,
+      target: pageWindow,
       onResponse: responseCapture.capture,
       onError: responseCapture.reportError,
     });
-    const routeMonitor = createRouteMonitor({ target: window, document, router });
+    const routeMonitor = createRouteMonitor({ target: pageWindow, document, router });
     const cleanup = () => {
       fetchCapture.cleanup();
       routeMonitor.cleanup();
       scheduler.cleanup();
-      window.removeEventListener("beforeunload", cleanup);
+      pageWindow.removeEventListener("beforeunload", cleanup);
       this.componentData.responseCapture = undefined;
       this.componentData.router = undefined;
       this.componentData.lifecycle = undefined;
     };
-    window.addEventListener("beforeunload", cleanup);
+    pageWindow.addEventListener("beforeunload", cleanup);
 
     this.componentData.responseCapture = responseCapture;
     this.componentData.router = router;

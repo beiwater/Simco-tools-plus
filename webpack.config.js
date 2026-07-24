@@ -11,10 +11,12 @@ const nowVersion = [3, 0];
 
 // 生成版本号
 const genVersion = () => {
-  let cptCount = fs.readdirSync(path.join(__dirname, "components")).length;
-  let timeVersion = moment().format(`YYMMDDHHmmss`);
-  // 发布版本固定使用：主版本.次版本.构建时间（YYMMDDHHmmss）。
-  nowVersion[2] = Number(timeVersion);
+  let oldFile = JSON.parse(fs.readFileSync(path.join(distPath, "version.json")));
+  let timeVersion = Number(moment().format(`YYMMDDHHmmss`));
+
+  // 构建机时区可能与上一版不同。版本号必须单调递增，否则 userscript
+  // 管理器会把新构建误判为旧版本而拒绝更新。
+  nowVersion[2] = Math.max(timeVersion, Number(oldFile.version[2] || 0) + 1);
 
   // 返回生成好的版本号数组
   return nowVersion;
