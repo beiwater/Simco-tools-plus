@@ -35,6 +35,14 @@ class restaurantDashboard extends BaseComponent {
     ];
   }
 
+  isBuildingPage = () => {
+    return /\/b\/\d+\/?$/.test(location.pathname);
+  };
+
+  isLandscapePage = () => {
+    return /\/landscape\/?$/.test(location.pathname);
+  };
+
   frontUI = this.open;
   cssText = [`
     .sct-rt-card { background: rgba(30, 35, 32, 0.75); backdrop-filter: blur(4px); border: 1px solid var(--sct-border-strong, rgba(255, 255, 255, 0.2)); border-radius: 8px; color: var(--fontColor, #fff); margin-bottom: 12px; padding: 14px; }
