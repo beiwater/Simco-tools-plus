@@ -69,24 +69,47 @@ class clickHarvest extends BaseComponent {
   }
 
   // 按钮点击处理函数
-  btnClickHandle() {
+  btnClickHandle = () => {
     // 如果不在对应界面，就删除挂载的元素。
-    if (!Boolean(location.href.match(/landscape\/$/))) {
-      return document.querySelector("#Script_oneClickHarvest_Btn").remove();
-    }
-    // 获取节点并过滤
-    const nodeList = Object.values(document.querySelectorAll("div > div > div > a"))
-      .filter(node => !node.className.match("headquarter")) // 排除总部建筑
-      .filter(node => Object.values(node.querySelectorAll("img")).length === 4) // 排除没有四个图像的节点
-
-    // 遍历节点并点击
-    for (let i = 0; i < nodeList.length; i++) {
-      nodeList[i].click();
+    if (!Boolean(location.href.match(/landscape\/?$/))) {
+      const btn = document.querySelector("#Script_oneClickHarvest_Btn");
+      if (btn) btn.remove();
+      return;
     }
 
-    // 发送消息
-    tools.msg_send("一键收取", "完成收取啦!", 1);
-  }
+    // 1. 获取所有建筑链接 (排除总部)
+    const buildings = Array.from(document.querySelectorAll("a[href*='/b/']"))
+      .filter(node => !node.className.includes("headquarter"));
+
+    // 2. 核心判定：子元素数量大于等于 3 的即为“有状态/可收菜”
+    const readyList = buildings.filter(node => node.children.length >= 3);
+
+    if (readyList.length === 0) {
+      tools.msg_send("一键收取", "当前没有发现可收取的建筑。", 1);
+      return;
+    }
+
+    tools.msg_send("一键收取", `发现 ${readyList.length} 个可收取建筑，开始依次点击...`, 1);
+
+    let i = 0;
+    const doClick = () => {
+      if (i >= readyList.length) {
+        tools.msg_send("一键收取", "全部建筑收取完成！", 1);
+        return;
+      }
+
+      const el = readyList[i];
+      // 随机延迟 0.5 - 0.9 秒 (500ms - 900ms)
+      const delay = Math.floor(Math.random() * 401) + 500;
+
+      el.click();
+
+      i++;
+      setTimeout(doClick, delay);
+    };
+
+    doClick();
+  };
 
   // 删除按钮标签
   clearBtn() {
