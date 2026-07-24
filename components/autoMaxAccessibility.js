@@ -140,34 +140,43 @@ class autoMaxAccessibility extends BaseComponent {
   refreshIdleHighlights() {
     this.clearIdleHighlights();
     if (!/\/landscape\/?$/.test(location.pathname) || !this.isActionEnabled("landscapeHighlight")) return this.clearIdleHighlights();
+
     const buildings = this.currentRealm()?.buildings;
     const byId = Array.isArray(buildings) ? new Map(buildings.map((item) => [String(item.id), item])) : null;
     const links = document.querySelectorAll("a[href*='/b/']");
     if (links.length === 0) return;
+
     for (const link of links) {
+      // --- DOM 状态直接检测（最准确） ---
+      // 1. DOM busy-info 存在且有内容（倒计时、金钱图标等）→ 忙碌中
+      const busyInfo = link.querySelector(".js-landscape-busy-info");
+      if (busyInfo && busyInfo.innerHTML.trim() !== "") continue;
+
+      // 2. aria-label 语义检查（生产/零售/营业中/维护/Researching/Searching 等）→ 忙碌中
+      const label = link.querySelector("[aria-label]")?.getAttribute("aria-label") || "";
+      if (/: (?:生产|零售|营业中|运行|维护|Researching|Searching|Training)/i.test(label)) continue;
+
+      // 3. 运行中动画检查 → 忙碌中
+      if (link.querySelector('[style*="animation-play-state: running"]')) continue;
+
+      // --- 基础过滤逻辑 ---
       const id = link.href.match(/\/b\/(\d+)/)?.[1];
       const building = byId?.get(id) ?? null;
-
-      // 提取建筑类型：优先用缓存数据，回退到 DOM class
       const kind = building?.kind ?? link.className.match(/test-building-([A-Za-z0-9])/i)?.[1] ?? null;
+
       if (!kind || ["n", "y", "3", "4", "5"].includes(String(kind))) continue;
       if (!componentList.autoMaxMapIdleHighlight?.allowsKind(kind)) continue;
 
-      // 有缓存数据时做精确判定
+      // --- 数据缓存补补充检测 ---
       if (building) {
-        // busy 字段存在（对象或时间戳）→ 忙碌
         if (building.busy != null) continue;
-        // Sales Office 有合同 → 忙碌
+        if (building.busyUntil && new Date(building.busyUntil) > new Date()) continue;
         if (String(kind) === "B" && building.salesContract) continue;
-        // Restaurant 满员 → 忙碌
-        if (building.occupancy != null && building.occupancy >= 1.0 && building.keepOpen !== false) continue;
+        if (building.occupancy != null && building.occupancy > 0) continue;
       }
-      // 无缓存数据时，只要类型不在排除列表且通过 allowsKind 检查即高亮（与参考脚本行为一致）
 
-      // 设置 dataset 标志
+      // 满足所有空闲条件，执行高亮
       link.dataset.automaxIdleHighlight = "true";
-
-      // 借鉴参考脚本：直接查找内部包含 Level/Lvl 的 span，确保样式直接应用到 DOM 节点文字上
       const lvlSpan = Array.from(link.querySelectorAll("span")).find((span) => /(?:lvl|level|\d+)/i.test(span.textContent));
       if (lvlSpan && lvlSpan.parentElement) {
         Array.from(lvlSpan.parentElement.children).forEach((child) => {
