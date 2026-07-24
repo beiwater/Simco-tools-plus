@@ -37,36 +37,58 @@ class restaurantDashboard extends BaseComponent {
 
   frontUI = this.open;
   cssText = [`
-    .sct-rt-card { background: var(--sct-surface-muted, rgba(20, 25, 22, 0.95)); border: 1px solid var(--sct-border-strong, rgba(255, 255, 255, 0.2)); border-radius: 8px; color: var(--fontColor, #fff); margin-bottom: 12px; padding: 12px; }
+    .sct-rt-card { background: rgba(30, 35, 32, 0.75); backdrop-filter: blur(4px); border: 1px solid var(--sct-border-strong, rgba(255, 255, 255, 0.2)); border-radius: 8px; color: var(--fontColor, #fff); margin-bottom: 12px; padding: 14px; }
     .sct-rt-card header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 8px; }
     .sct-rt-card header strong { font-size: 15px; }
     .sct-rt-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
-    .sct-rt-actions button { background: var(--sct-control, #4c4c4c); border: 1px solid var(--sct-control-hover, #777); color: var(--fontColor); cursor: pointer; font-size: 12px; padding: 4px 10px; }
-    .sct-rt-status { color: var(--sct-text-secondary, #aaa); font-size: 12px; margin-bottom: 8px; }
+    .sct-rt-actions button { background: var(--sct-control, rgba(255, 255, 255, 0.1)); border: 1px solid var(--sct-control-hover, rgba(255, 255, 255, 0.25)); color: var(--fontColor); cursor: pointer; font-size: 12px; padding: 4px 12px; border-radius: 4px; }
+    .sct-rt-actions button:hover { background: rgba(255, 255, 255, 0.2); }
+    .sct-rt-status { color: var(--sct-text-secondary, #ccc); font-size: 12px; margin-bottom: 8px; }
     .sct-rt-table-wrap { overflow-x: auto; }
     .sct-rt-table-wrap table { border-collapse: collapse; width: 100%; }
-    .sct-rt-table-wrap th, .sct-rt-table-wrap td { border-bottom: 1px solid var(--sct-border, rgba(255,255,255,0.1)); font-size: 12px; padding: 6px 8px; text-align: left; }
+    .sct-rt-table-wrap th, .sct-rt-table-wrap td { border-bottom: 1px solid var(--sct-border, rgba(255,255,255,0.15)); font-size: 12px; padding: 6px 8px; text-align: left; }
     .sct-rt-badge { border-radius: 3px; font-size: 11px; padding: 2px 6px; }
     .sct-rt-badge-success { background: #2e7d32; color: #fff; }
     .sct-rt-badge-warning { background: #ed6c02; color: #fff; }
   `];
 
-  isBuildingPage() {
-    return /\/b\/\d+\/?$/.test(location.pathname);
-  }
-
-  isLandscapePage() {
-    return /\/landscape\/?$/.test(location.pathname);
-  }
-
   async fetchJson(path) {
-    const res = await fetch(path, { credentials: "include", headers: { Accept: "application/json" } });
+    if (typeof GM_xmlhttpRequest === "function") {
+      return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+          method: "GET",
+          url: path.startsWith("http") ? path : `${location.origin}${path}`,
+          headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+          onload: (res) => {
+            if (res.status >= 200 && res.status < 300) {
+              try { resolve(JSON.parse(res.responseText)); } catch (e) { reject(e); }
+            } else {
+              reject(new Error(`HTTP ${res.status}`));
+            }
+          },
+          onerror: (err) => reject(err),
+        });
+      });
+    }
+    const res = await fetch(path, { credentials: "include", headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   }
 
+  async getBuildings() {
+    // 优先尝试从原生 API 获取，若被 403 / 防火墙拦截，则使用插件自身已有的 indexDB 缓存
+    try {
+      return await this.fetchJson("/api/v2/companies/me/buildings/");
+    } catch (e) {
+      const realm = runtimeData.basisCPT?.realm ?? 0;
+      const cached = indexDBData.basisCPT?.building?.[realm];
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+      throw e;
+    }
+  }
+
   async loadAllRestaurantsData() {
-    const buildingsRaw = await this.fetchJson("/api/v2/companies/me/buildings/");
+    const buildingsRaw = await this.getBuildings();
     const buildings = Array.isArray(buildingsRaw) ? buildingsRaw : [];
     const restaurants = buildings.filter((b) => b.restaurantProperties || b.kind === "r" || b.kind === "R");
     
@@ -97,7 +119,7 @@ class restaurantDashboard extends BaseComponent {
 
   async loadSingleRestaurantData(buildingId) {
     const [buildingsRaw, runsRaw] = await Promise.all([
-      this.fetchJson("/api/v2/companies/me/buildings/"),
+      this.getBuildings(),
       this.fetchJson(`/api/v2/companies/buildings/${buildingId}/restaurant-runs/`),
     ]);
     const buildings = Array.isArray(buildingsRaw) ? buildingsRaw : [];
