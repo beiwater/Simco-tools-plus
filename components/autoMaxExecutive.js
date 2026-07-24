@@ -208,14 +208,13 @@ new autoMaxExecutive();
 class autoMaxExecutiveTrainLog extends BaseComponent {
   constructor() {
     super();
-    this.name = "显示高管培训记录";
-    this.describe = "在高管详情页，展示高管的历史培训课程和属性加成记录。";
-    this.enable = false;
+    this.name = "高管培训履历显示";
+    this.describe = "查看具体高管详情弹窗/页面时，自动汇总并渲染其历史累计培训属性与当前进行中的培训。";
+    this.enable = true;
     this.canDisable = true;
     this.tagList = ["AutoMax", "高管"];
   }
 }
-
 new autoMaxExecutiveTrainLog();
 
 class autoMaxFormerExecEnhance extends BaseComponent {

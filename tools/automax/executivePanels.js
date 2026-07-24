@@ -8,22 +8,26 @@ const {
 const { componentList, tools } = require("../tools.js");
 
 function renderDetailPanel(data) {
-  const target = document.querySelector('[class*="executive"] button[type="button"], [role="dialog"] button[type="button"]')?.parentElement;
+  const target = document.querySelector('[role="dialog"], .modal-body, .modal-content, [class*="executive"]') || document.body;
   if (!target || document.getElementById("automax_executive_detail")) return;
   const panel = document.createElement("section");
   panel.id = "automax_executive_detail";
   panel.className = "automax-exec-panel";
+  panel.style.cssText = "background: var(--sct-surface-muted, rgba(0,0,0,0.7)); border: 1px solid var(--sct-enabled, #14541d); border-radius: 6px; padding: 10px; margin: 10px 0; color: var(--fontColor);";
   const title = document.createElement("strong");
   title.textContent = `高管记录：${data.name ?? "未知"}（ID ${data.id ?? "-"}）`;
   const totals = trainingTotals(data.trainings);
   const total = document.createElement("p");
+  total.style.margin = "4px 0";
   total.textContent = `培训累计：管理 +${totals.coo}；会计 +${totals.cfo}；沟通 +${totals.cmo}；科学 +${totals.cto}`;
   const training = document.createElement("p");
+  training.style.margin = "4px 0";
   training.textContent = data.currentTraining
     ? `进行中：${TRAINING_NAMES[data.currentTraining.training] ?? data.currentTraining.training}`
     : "当前无培训";
   panel.append(title, total, training);
-  target.after(panel);
+  const appendTarget = target.querySelector("button[type='button']")?.parentElement || target;
+  appendTarget.after(panel);
 }
 
 function injectBoardroomButtons(component) {
