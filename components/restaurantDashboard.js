@@ -1,5 +1,5 @@
 const BaseComponent = require("../tools/baseComponent.js");
-const { tools } = require("../tools/tools.js");
+const { tools, runtimeData, indexDBData } = require("../tools/tools.js");
 const { openSecondaryWindow } = require("../tools/secondaryWindowHost.js");
 
 function buildingIdFromUrl(url = location.href) {
