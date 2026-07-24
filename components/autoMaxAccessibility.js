@@ -164,7 +164,23 @@ class autoMaxAccessibility extends BaseComponent {
       }
       // 无缓存数据时，只要类型不在排除列表且通过 allowsKind 检查即高亮（与参考脚本行为一致）
 
+      // 设置 dataset 标志
       link.dataset.automaxIdleHighlight = "true";
+
+      // 借鉴参考脚本：直接查找内部包含 Level/Lvl 的 span，确保样式直接应用到 DOM 节点文字上
+      const lvlSpan = Array.from(link.querySelectorAll("span")).find((span) => /(?:lvl|level|\d+)/i.test(span.textContent));
+      if (lvlSpan && lvlSpan.parentElement) {
+        Array.from(lvlSpan.parentElement.children).forEach((child) => {
+          if (child.tagName === "SPAN") {
+            child.dataset.automaxIdleHighlight = "true";
+            child.style.backgroundColor = "#FFEB3B";
+            child.style.color = "#333";
+            child.style.padding = "1px 4px";
+            child.style.borderRadius = "3px";
+            child.style.fontWeight = "bold";
+          }
+        });
+      }
     }
   }
 

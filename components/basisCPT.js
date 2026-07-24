@@ -919,16 +919,16 @@ class basisCPT extends BaseComponent {
     let newNode = document.createElement("div");
     newNode.id = "script_setting_basisCPT";
     newNode.className = "col-sm-12 setting-container";
-    let htmlText = `<div><div class="header">插件基础功能设置</div><div class="container"><div><div><button class="btn script_opt_submit">保存</button></div></div><div><table class="sct-cpt-switch-table"><thead><tr><td>组件名</td><td>开关</td></tr></thead><tbody>`;
+    let htmlText = `<div><div class="header">插件基础功能设置</div><div class="container"><div><div><button class="btn script_opt_submit">保存</button></div></div><div><table class="sct-cpt-switch-table"><thead><tr><td>组件名</td><td>功能介绍</td><td>开关</td></tr></thead><tbody>`;
     let tempCPTList = Object.values(componentList).filter(c => !c.hideSetting);
     for (let i = 0; i < tempCPTList.length; i++) {
       let component = tempCPTList[i];
       let name = component.name;
-      let describe = component.describe;
+      let describe = component.describe || "";
       let enable = component.enable;
       let canDisable = component.canDisable;
       let cptKey = component.constructor.name;
-      htmlText += `<tr><td><span title='${describe}'>${name}</span></td><td><input class='form-control sct-cpt-checkbox' data-cpt-key="${cptKey}" type="checkbox" ${
+      htmlText += `<tr><td><span style="font-weight:bold;">${name}</span></td><td><span style="color:var(--sct-text-secondary, #aaa); font-size:12px;">${describe}</span></td><td><input class='form-control sct-cpt-checkbox' data-cpt-key="${cptKey}" type="checkbox" ${
         enable ? "checked" : ""
       } ${canDisable ? "" : "disabled"}></td></tr>`;
     }

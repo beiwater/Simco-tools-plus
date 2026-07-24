@@ -103,8 +103,8 @@ class unBusyHighLight extends BaseComponent {
   // 捕获建筑dom标签并过滤
   changeClassName(unBusyList) {
     // 捕获a建筑节点列表
-    let buildingList = Object.values(document.querySelectorAll("div#page>div>div>div>div>a"))
-      .filter(build => /\/b\/(\d+)\/$/.test(build.href) && unBusyList.includes(build.href.match(/\/b\/(\d+)\/$/)[1]))
+    let buildingList = Object.values(document.querySelectorAll("a[href*='/b/']"))
+      .filter(build => /\/b\/(\d+)\/?$/.test(build.href) && unBusyList.includes(build.href.match(/\/b\/(\d+)\/?$/)[1]))
       .filter(build => !/script_unBusyHighLight_aTag/.test(build.className));
     let addClassName = this.genClassName();
 
