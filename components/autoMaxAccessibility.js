@@ -149,15 +149,15 @@ class autoMaxAccessibility extends BaseComponent {
     for (const link of links) {
       // --- DOM 状态直接检测（最准确） ---
       // 1. DOM busy-info 存在且有内容（倒计时、金钱图标等）→ 忙碌中
-      const busyInfo = link.querySelector(".js-landscape-busy-info");
+      const busyInfo = link.querySelector?.(".js-landscape-busy-info");
       if (busyInfo && busyInfo.innerHTML.trim() !== "") continue;
 
       // 2. aria-label 语义检查（生产/零售/营业中/维护/Researching/Searching 等）→ 忙碌中
-      const label = link.querySelector("[aria-label]")?.getAttribute("aria-label") || "";
+      const label = link.querySelector?.("[aria-label]")?.getAttribute("aria-label") || "";
       if (/: (?:生产|零售|营业中|运行|维护|Researching|Searching|Training)/i.test(label)) continue;
 
       // 3. 运行中动画检查 → 忙碌中
-      if (link.querySelector('[style*="animation-play-state: running"]')) continue;
+      if (link.querySelector?.('[style*="animation-play-state: running"]')) continue;
 
       // --- 基础过滤逻辑 ---
       const id = link.href.match(/\/b\/(\d+)/)?.[1];
@@ -177,7 +177,7 @@ class autoMaxAccessibility extends BaseComponent {
 
       // 满足所有空闲条件，执行高亮
       link.dataset.automaxIdleHighlight = "true";
-      const lvlSpan = Array.from(link.querySelectorAll("span")).find((span) => /(?:lvl|level|\d+)/i.test(span.textContent));
+      const lvlSpan = link.querySelectorAll ? Array.from(link.querySelectorAll("span")).find((span) => /(?:lvl|level|\d+)/i.test(span.textContent)) : null;
       if (lvlSpan && lvlSpan.parentElement) {
         Array.from(lvlSpan.parentElement.children).forEach((child) => {
           if (child.tagName === "SPAN") {
@@ -357,4 +357,40 @@ class autoMaxAccessibility extends BaseComponent {
 
 new autoMaxAccessibility();
 
-module.exports = autoMaxAccessibility;
+class autoMaxMapIdleHighlight extends BaseComponent {
+  constructor() {
+    super();
+    this.name = "空闲建筑高亮";
+    this.enable = false;
+    this.canDisable = true;
+  }
+  indexDBData = {
+    allKinds: true,
+    selectedKinds: [],
+  };
+  allowsKind(kind) {
+    if (this.indexDBData.allKinds !== false) return true;
+    return Array.isArray(this.indexDBData.selectedKinds)
+      && this.indexDBData.selectedKinds.map(String).includes(String(kind));
+  }
+}
+if (!componentList.autoMaxMapIdleHighlight) new autoMaxMapIdleHighlight();
+
+
+
+
+
+class autoMaxChatAutoExpand extends BaseComponent {
+  constructor() {
+    super();
+    this.name = "聊天输入框自动扩大";
+    this.enable = false;
+    this.canDisable = true;
+  }
+}
+new autoMaxChatAutoExpand();
+
+
+if (typeof module !== "undefined") {
+  module.exports = autoMaxAccessibility;
+}

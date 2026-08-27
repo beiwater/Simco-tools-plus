@@ -54,6 +54,22 @@ function runProfitMargin(run) {
   return p / run.revenue;
 }
 
+
+function toArray(val) {
+  if (Array.isArray(val)) return val;
+  if (val && Array.isArray(val.data)) return val.data;
+  return [];
+}
+
+function mergeRuns(stored = [], incoming = [], limit = 50) {
+  const map = new Map();
+  stored.forEach(r => map.set(r.id, r));
+  incoming.forEach(r => map.set(r.id, r));
+  return Array.from(map.values())
+    .sort((a, b) => (new Date(b.datetime || 0) - new Date(a.datetime || 0)))
+    .slice(0, limit);
+}
+
 class restaurantDashboard extends BaseComponent {
   constructor() {
     super();
@@ -445,4 +461,15 @@ class restaurantDashboard extends BaseComponent {
 
 new restaurantDashboard();
 
-module.exports = restaurantDashboard;
+restaurantDashboard.buildingIdFromUrl = buildingIdFromUrl;
+restaurantDashboard.mergeRuns = mergeRuns;
+restaurantDashboard.profit = runProfit;
+restaurantDashboard.toArray = toArray;
+
+if (typeof module !== "undefined") {
+  module.exports = restaurantDashboard;
+  module.exports.buildingIdFromUrl = buildingIdFromUrl;
+  module.exports.mergeRuns = mergeRuns;
+  module.exports.profit = runProfit;
+  module.exports.toArray = toArray;
+}
