@@ -79,6 +79,9 @@ function runProfitMargin(run) {
   return p / run.revenue;
 }
 
+
+
+
 class restaurantDashboard extends BaseComponent {
   constructor() {
     super();
@@ -467,6 +470,7 @@ class restaurantDashboard extends BaseComponent {
     doScan();
   }
 }
+
 
 new restaurantDashboard();
 

@@ -150,10 +150,8 @@ class autoMaxAccessibility extends BaseComponent {
       // --- DOM 状态直接检测（最准确） ---
       // 1. DOM busy-info 存在且有内容（倒计时、金钱图标等）→ 忙碌中
       const busyInfo = link.querySelector?.(".js-landscape-busy-info");
-      if (busyInfo && busyInfo.innerHTML?.trim() !== "") continue;
-
-      // 2. aria-label 语义检查（生产/零售/营业中/维护/Researching/Searching 等）→ 忙碌中
-      const label = link.querySelector?.("[aria-label]")?.getAttribute?.("aria-label") || "";
+      if (busyInfo && busyInfo.innerHTML.trim() !== "") continue;
+      const label = link.querySelector?.("[aria-label]")?.getAttribute("aria-label") || "";
       if (/: (?:生产|零售|营业中|运行|维护|Researching|Searching|Training)/i.test(label)) continue;
 
       // 3. 运行中动画检查 → 忙碌中
@@ -177,7 +175,7 @@ class autoMaxAccessibility extends BaseComponent {
 
       // 满足所有空闲条件，执行高亮
       link.dataset.automaxIdleHighlight = "true";
-      const lvlSpan = Array.from(link.querySelectorAll?.("span") || []).find((span) => /(?:lvl|level|\d+)/i.test(span.textContent));
+const lvlSpan = Array.from(link.querySelectorAll?.("span") || []).find((span) => /(?:lvl|level|\d+)/i.test(span.textContent));
       if (lvlSpan && lvlSpan.parentElement) {
         Array.from(lvlSpan.parentElement.children).forEach((child) => {
           if (child.tagName === "SPAN") {
@@ -360,7 +358,6 @@ class autoMaxAccessibility extends BaseComponent {
 }
 
 new autoMaxAccessibility();
-
 if (typeof module !== "undefined") {
   module.exports = autoMaxAccessibility;
 }

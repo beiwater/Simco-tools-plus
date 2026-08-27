@@ -40,7 +40,7 @@ test("verifies the required AutoMax userscript contract", () => {
 });
 
 test("rejects a missing GM grant", () => {
-  const fixture = writeFixture(validHeader().filter((line) => !line.includes("@grant")));
+  const fixture = writeFixture(validHeader().filter((line) => !line.includes("GM_xmlhttpRequest")));
   try {
     const result = spawnSync(process.execPath, [verifierPath, fixture.filePath], { encoding: "utf8" });
     assert.equal(result.status, 1);
