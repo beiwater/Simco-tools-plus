@@ -47,7 +47,7 @@ const calculateBump = () => {
 // 获取与更新版本号
 const getAndUpdateVersion = () => {
   const versionFile = path.join(distPath, "version.json");
-  let versionData = { version: [3, 5, 0], cptCount: 67 };
+  let versionData = { version: [3, 5, 0], cptCount: 66 };
   if (fs.existsSync(versionFile)) {
     try {
       const content = fs.readFileSync(versionFile, 'utf-8');
@@ -60,16 +60,14 @@ const getAndUpdateVersion = () => {
   let currentMinor = Number(versionData.version[1]);
   if (!Number.isFinite(currentMinor) || currentMinor < 5) currentMinor = 5;
 
-  const bump = calculateBump();
-  const nextMinor = currentMinor + bump;
-  const timestamp = getFormattedTimestamp();
+  const timestamp = versionData.version[2] || getFormattedTimestamp();
   const cptCount = countComponents();
 
-  const newVersion = [major, nextMinor, Number(timestamp)];
-  const fullVersion = [major, nextMinor, `${timestamp}_cpt${cptCount}`];
+  const newVersion = [major, currentMinor, Number(timestamp)];
+  const fullVersion = [major, currentMinor, `${timestamp}_cpt${cptCount}`];
   
-  fs.writeFileSync(versionFile, JSON.stringify({ version: newVersion, cptCount, patch: timestamp }, null, 2), 'utf-8');
-  return { displayVersion: fullVersion.join('.'), major, minor: nextMinor, timestamp, cptCount };
+  fs.writeFileSync(versionFile, JSON.stringify({ version: newVersion, cptCount, patch: String(timestamp) }, null, 2), 'utf-8');
+  return { displayVersion: fullVersion.join('.'), major, minor: currentMinor, timestamp, cptCount };
 };
 
 // 添加 Userscript Header 前缀

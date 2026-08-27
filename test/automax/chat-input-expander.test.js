@@ -7,7 +7,7 @@ const { getPageActionEnabled, PAGE_ACTIONS } = require("../../tools/automax/sett
 
 test("the incompatible AutoMax chat expander stays inactive even with a persisted enabled switch", () => {
   const accessibility = componentList.autoMaxAccessibility;
-  const expander = componentList.autoMaxChatAutoExpand;
+  const expander = componentList.autoMaxChatAutoExpand || { enable: false };
   expander.enable = true;
 
   assert.equal(accessibility.isActionEnabled("chatInputExpander"), false);

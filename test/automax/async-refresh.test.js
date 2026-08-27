@@ -5,6 +5,7 @@ const { componentList } = require("../../tools/tools.js");
 
 require("../../components/autoMaxIncomingContractProfit.js");
 require("../../components/autoMaxWarehouseProfit.js");
+require("../../components/autoMaxMarketProfit.js");
 
 function deferred() {
   let resolve;
@@ -274,6 +275,96 @@ test("warehouse clear followed by refresh supersedes pending work", async () => 
     Object.assign(component, originals);
     component.componentData.pending = new WeakMap();
     component.componentData.revision = 0;
+    global.document = originalDocument;
+  }
+});
+
+test("market profit clear followed by refresh supersedes pending work", async () => {
+  const component = componentList.autoMaxMarketProfit;
+  const originalDocument = global.document;
+  const originals = {
+    calculateProfit: component.calculateProfit,
+    contextFor: component.contextFor,
+    enabled: component.enabled,
+    mountControls: component.mountControls,
+    parseOrder: component.parseOrder,
+    renderSummary: component.renderSummary,
+    resourceId: component.resourceId,
+  };
+  const calculations = [deferred(), deferred()];
+  let calculationCalls = 0;
+  const cells = [];
+  const row = {
+    __automaxMarketResult: undefined,
+    appendChild(cell) {
+      cell.isConnected = true;
+      cells.push(cell);
+    },
+    children: [],
+    getAttribute() { return "market order"; },
+    insertBefore(cell) {
+      cell.isConnected = true;
+      cells.push(cell);
+    },
+    querySelector() { return undefined; },
+    removeAttribute() {},
+  };
+
+  try {
+    component.enable = true;
+    component.componentData.refreshVersion = 0;
+    component.componentData.pending = new WeakSet();
+    component.componentData.pendingCount = 0;
+    component.enabled = () => true;
+    component.resourceId = () => 1;
+    component.contextFor = () => ({});
+    component.mountControls = () => {};
+    component.renderSummary = () => {};
+    component.parseOrder = () => ({ price: 10, quality: 0, quantity: 100 });
+    component.calculateProfit = () => calculations[calculationCalls++].promise;
+
+    global.document = {
+      createElement(tag) {
+        return {
+          appendChild(child) { this.child = child; },
+          isConnected: false,
+          remove() { this.isConnected = false; },
+          setAttribute() {},
+          style: {},
+          tagName: tag.toUpperCase(),
+        };
+      },
+      querySelectorAll(selector) {
+        if (selector === "tr[aria-label]") return [row];
+        if (selector.startsWith("td[")) return cells.filter((c) => c.isConnected);
+        return [];
+      },
+    };
+
+    component.refresh();
+    assert.equal(calculationCalls, 1);
+    assert.equal(component.componentData.pendingCount, 1);
+
+    component.clear();
+    assert.equal(component.componentData.pendingCount, 0);
+
+    component.refresh();
+    assert.equal(calculationCalls, 2);
+    assert.equal(component.componentData.pendingCount, 1);
+
+    calculations[0].resolve({ hourlyProfit: 50 });
+    await settle(calculations[0].promise);
+    assert.equal(cells[0].isConnected, false);
+
+    calculations[1].resolve({ hourlyProfit: 100 });
+    await settle(calculations[1].promise);
+    assert.equal(cells[1].isConnected, true);
+    assert.equal(row.__automaxMarketResult.hourlyProfit, 100);
+  } finally {
+    Object.assign(component, originals);
+    component.componentData.refreshVersion = 0;
+    component.componentData.pending = new WeakSet();
+    component.componentData.pendingCount = 0;
     global.document = originalDocument;
   }
 });

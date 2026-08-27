@@ -1,13 +1,13 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const requiredFields = new Map([
+const requiredFields = [
   ["@license", "AGPL-3.0-or-later"],
   ["@grant", "GM_xmlhttpRequest"],
   ["@grant", "unsafeWindow"],
   ["@run-at", "document-start"],
   ["@connect", "api.simcotools.com"],
-]);
+];
 
 const forbiddenText = [
   "sc.22-7.top",

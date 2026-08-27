@@ -42,59 +42,88 @@ simco-pluginDLchagne/
 
 ## 🧩 组件开发范式 (BaseComponent Workflow)
 
-每一个新增的功能模块都应当继承 `BaseComponent` 类并放置于 `components/` 目录下。
+每一个新增的功能模块都应当继承 `BaseComponent` 类并放置于 `components/` 目录下（Webpack 会通过 `require.context` 自动扫描引入）。
 
 ### 1. 组件标准结构模板
 
 ```javascript
-import { BaseComponent } from '../tools/baseComponent.js';
+const BaseComponent = require("../tools/baseComponent.js");
+const { tools, componentList, indexDBData, runtimeData } = require("../tools/tools.js");
 
-export class MyNewComponent extends BaseComponent {
+class MyNewComponent extends BaseComponent {
   constructor() {
-    super({
-      id: 'myNewComponent',            // 唯一的组件 ID
-      name: '我的新功能',               // 设置面板中显示的名称
-      description: '描述功能的作用',     // 组件详细说明
-      category: '交易与市场',           // 分类: 仓库与生产 | 交易与市场 | 餐厅与日报 | 聊天与资料 | 外观与特效 | AutoMax
-      defaultEnabled: false,           // 遵循默认关闭原则
-      isHighRisk: false                // 若涉及高频/自动页面交互，设为 true 并触发风险自担确认
-    });
+    super();
+    this.name = "我的新功能";             // 设置面板中显示的名称
+    this.describe = "描述功能的作用";      // 组件详细说明
+    this.enable = false;                  // 遵循默认关闭原则
+    this.canDisable = true;               // 是否允许用户关闭
+    this.tagList = ["交易", "工具"];      // 标签分类: AutoMax | 交易 | 仓库 | 聊天 | 工具 | 外观
+    this.requiresRiskAcknowledgement = false; // 若为高危自动化交互设为 true
+    this.riskNotice = "操作风险提示文案"; // 高危功能风险说明
   }
 
-  /**
-   * 组件初始化 Hook (插件启动时调用)
-   */
+  // 依赖声明 (可选)
+  dependence = {
+    cpt: [],  // 内部组件依赖名称
+    url: [],  // 外部脚本依赖
+  };
+
+  // 持久化存储数据 (IndexedDB)
+  indexDBData = {
+    mySetting: true,
+  };
+
+  // 运行时内存数据
+  componentData = {
+    activeTimer: null,
+  };
+
+  // 自启动函数列表 (插件加载完毕且组件开启时执行)
+  startupFuncList = [
+    this.init,
+  ];
+
+  // 通用事件响应函数列表 (URL/页面状态变化匹配)
+  commonFuncList = [{
+    match: (event) => Boolean(location.href.match(/\/market\//)),
+    func: this.onMarketPage,
+  }];
+
+  // 网络请求拦截响应函数列表 (XHR/Fetch 拦截)
+  netFuncList = [{
+    urlMatch: (url) => url.includes("/api/v3/market/"),
+    func: this.onMarketData,
+  }];
+
+  // 注入样式 (支持字符串数组)
+  cssText = [
+    `.my-custom-class { color: var(--fontColor); }`,
+  ];
+
   init() {
-    if (!this.isEnabled()) return;
-    this.bindEvents();
+    // 组件初始化逻辑
   }
 
-  /**
-   * 绑定事件与 DOM 注入
-   */
-  bindEvents() {
-    // 监听 URL 变化或页面 DOM 加载
+  onMarketPage(event) {
+    // 市场页面匹配时的 DOM 处理
   }
 
-  /**
-   * 组件关闭时的清理 Hook
-   */
-  destroy() {
-    // 解绑事件、移除注入的 DOM 节点
+  onMarketData(url, method, responseText) {
+    // 拦截到市场接口响应时的处理
   }
+}
+
+// 实例化即自动完成向 componentList 的注册
+new MyNewComponent();
+
+if (typeof module !== "undefined") {
+  module.exports = MyNewComponent;
 }
 ```
 
-### 2. 组件注册流程
+### 2. 组件自动加载机制
 
-在 `index.js` 中引入并完成注册：
-
-```javascript
-import { MyNewComponent } from './components/MyNewComponent.js';
-
-// 在 registerComponents() 方法中添加
-componentManager.register(new MyNewComponent());
-```
+项目在 `index.js` 中使用 Webpack 的 `require.context('./components', true, /\.js$/)` 动态引入 `components/` 目录下的所有 JavaScript 文件，因此只需在 `components/` 目录下新增文件并执行 `new MyNewComponent()` 即可自动完成全局注册，无需手动修改 `index.js`。
 
 ---
 

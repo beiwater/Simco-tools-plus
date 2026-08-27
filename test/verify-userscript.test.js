@@ -21,6 +21,8 @@ function validHeader() {
     "// @match        https://www.simcompanies.com/*",
     "// @license      AGPL-3.0-or-later",
     "// @grant        GM_xmlhttpRequest",
+    "// @grant        unsafeWindow",
+    "// @run-at       document-start",
     "// @connect      api.simcotools.com",
     "// ==/UserScript==",
   ];

@@ -24,8 +24,15 @@ const FOOD_MAP = {
   149: "南瓜汤",
 };
 
-function buildingIdFromUrl(url = location.href) {
-  return String(url).match(/\/(?:b|buildings)\/(\d+)(?:\/restaurant)?\/?$/)?.[1] || "";
+function buildingIdFromUrl(url) {
+  const target = url ?? (typeof location !== "undefined" ? location.href : "");
+  return String(target).match(/\/(?:b|buildings)\/(\d+)(?:\/restaurant)?\/?$/)?.[1] || "";
+}
+
+function toArray(value) {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  return [];
 }
 
 function formatMoney(value) {
@@ -43,14 +50,32 @@ function foodName(kind) {
 }
 
 function runProfit(run) {
+  if (!run) return null;
   if (run.profit != null) return run.profit;
   if (run.revenue == null) return null;
   return Number(run.revenue || 0) - Number(run.cogs || 0) - Number(run.wages || 0);
 }
 
+function profit(run) {
+  return runProfit(run);
+}
+
+function mergeRuns(stored = [], incoming = [], limit = 50) {
+  const map = new Map();
+  for (const item of toArray(stored)) {
+    if (item && item.id != null) map.set(item.id, item);
+  }
+  for (const item of toArray(incoming)) {
+    if (item && item.id != null) map.set(item.id, item);
+  }
+  return Array.from(map.values())
+    .sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0))
+    .slice(0, limit);
+}
+
 function runProfitMargin(run) {
   const p = runProfit(run);
-  if (p == null || !run.revenue) return null;
+  if (p == null || !run?.revenue) return null;
   return p / run.revenue;
 }
 
@@ -445,4 +470,14 @@ class restaurantDashboard extends BaseComponent {
 
 new restaurantDashboard();
 
-module.exports = restaurantDashboard;
+if (typeof module !== "undefined") {
+  module.exports = restaurantDashboard;
+  module.exports.buildingIdFromUrl = buildingIdFromUrl;
+  module.exports.formatMoney = formatMoney;
+  module.exports.formatPercent = formatPercent;
+  module.exports.foodName = foodName;
+  module.exports.runProfit = runProfit;
+  module.exports.profit = profit;
+  module.exports.mergeRuns = mergeRuns;
+  module.exports.toArray = toArray;
+}

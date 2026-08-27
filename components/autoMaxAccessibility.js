@@ -149,15 +149,15 @@ class autoMaxAccessibility extends BaseComponent {
     for (const link of links) {
       // --- DOM 状态直接检测（最准确） ---
       // 1. DOM busy-info 存在且有内容（倒计时、金钱图标等）→ 忙碌中
-      const busyInfo = link.querySelector(".js-landscape-busy-info");
-      if (busyInfo && busyInfo.innerHTML.trim() !== "") continue;
+      const busyInfo = link.querySelector?.(".js-landscape-busy-info");
+      if (busyInfo && busyInfo.innerHTML?.trim() !== "") continue;
 
       // 2. aria-label 语义检查（生产/零售/营业中/维护/Researching/Searching 等）→ 忙碌中
-      const label = link.querySelector("[aria-label]")?.getAttribute("aria-label") || "";
+      const label = link.querySelector?.("[aria-label]")?.getAttribute?.("aria-label") || "";
       if (/: (?:生产|零售|营业中|运行|维护|Researching|Searching|Training)/i.test(label)) continue;
 
       // 3. 运行中动画检查 → 忙碌中
-      if (link.querySelector('[style*="animation-play-state: running"]')) continue;
+      if (link.querySelector?.('[style*="animation-play-state: running"]')) continue;
 
       // --- 基础过滤逻辑 ---
       const id = link.href.match(/\/b\/(\d+)/)?.[1];
@@ -177,16 +177,11 @@ class autoMaxAccessibility extends BaseComponent {
 
       // 满足所有空闲条件，执行高亮
       link.dataset.automaxIdleHighlight = "true";
-      const lvlSpan = Array.from(link.querySelectorAll("span")).find((span) => /(?:lvl|level|\d+)/i.test(span.textContent));
+      const lvlSpan = Array.from(link.querySelectorAll?.("span") || []).find((span) => /(?:lvl|level|\d+)/i.test(span.textContent));
       if (lvlSpan && lvlSpan.parentElement) {
         Array.from(lvlSpan.parentElement.children).forEach((child) => {
           if (child.tagName === "SPAN") {
             child.dataset.automaxIdleHighlight = "true";
-            child.style.backgroundColor = "#FFEB3B";
-            child.style.color = "#333";
-            child.style.padding = "1px 4px";
-            child.style.borderRadius = "3px";
-            child.style.fontWeight = "bold";
           }
         });
       }
@@ -194,7 +189,16 @@ class autoMaxAccessibility extends BaseComponent {
   }
 
   clearIdleHighlights() {
-    for (const node of document.querySelectorAll("[data-automax-idle-highlight]")) delete node.dataset.automaxIdleHighlight;
+    for (const node of document.querySelectorAll("[data-automax-idle-highlight]")) {
+      delete node.dataset.automaxIdleHighlight;
+      if (node.style) {
+        node.style.removeProperty("background-color");
+        node.style.removeProperty("color");
+        node.style.removeProperty("padding");
+        node.style.removeProperty("border-radius");
+        node.style.removeProperty("font-weight");
+      }
+    }
   }
 
   async refreshQuestAnswers() {
@@ -357,4 +361,6 @@ class autoMaxAccessibility extends BaseComponent {
 
 new autoMaxAccessibility();
 
-module.exports = autoMaxAccessibility;
+if (typeof module !== "undefined") {
+  module.exports = autoMaxAccessibility;
+}

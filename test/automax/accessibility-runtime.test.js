@@ -8,6 +8,10 @@ const source = fs.readFileSync(
   path.join(__dirname, "..", "..", "components", "autoMaxAccessibility.js"),
   "utf8"
 );
+const idleSource = fs.readFileSync(
+  path.join(__dirname, "..", "..", "components", "autoMaxMapIdleHighlight.js"),
+  "utf8"
+);
 
 function createHarness(buildings, { allKinds = true, selectedKinds = [] } = {}) {
   const componentList = {};
@@ -15,6 +19,8 @@ function createHarness(buildings, { allKinds = true, selectedKinds = [] } = {}) 
     className: `test-building-${building.kind}`,
     dataset: {},
     href: `https://www.simcompanies.com/landscape/b/${building.id}/`,
+    querySelector: () => null,
+    querySelectorAll: () => [],
   }));
   const document = {
     querySelectorAll(selector) {
@@ -51,16 +57,19 @@ function createHarness(buildings, { allKinds = true, selectedKinds = [] } = {}) 
     if (request.endsWith("lifecycle.js")) return { getRealmIdFromDocument: () => 0 };
     throw new Error(`Unexpected dependency: ${request}`);
   }
-  vm.runInNewContext(source, {
+  const sandbox = {
     MutationObserver: class {},
     URL,
     document,
     fetch: async () => ({ ok: false }),
     localStorage: { getItem: () => null },
     location: { pathname: "/landscape/" },
+    module: { exports: {} },
     require: localRequire,
     window: { addEventListener() {}, setTimeout() {} },
-  }, { filename: "autoMaxAccessibility.js" });
+  };
+  vm.runInNewContext(`(function(require, module, exports) { ${idleSource}\n })(require, module, module.exports);`, sandbox, { filename: "autoMaxMapIdleHighlight.js" });
+  vm.runInNewContext(`(function(require, module, exports) { ${source}\n })(require, module, module.exports);`, sandbox, { filename: "autoMaxAccessibility.js" });
   componentList.autoMaxMapIdleHighlight.enable = true;
   componentList.autoMaxMapIdleHighlight.indexDBData.allKinds = allKinds;
   componentList.autoMaxMapIdleHighlight.indexDBData.selectedKinds = selectedKinds;

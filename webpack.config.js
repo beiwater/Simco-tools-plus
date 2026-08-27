@@ -11,21 +11,26 @@ const nowVersion = [3, 0];
 
 // 生成版本号
 const genVersion = () => {
-  let oldFile = JSON.parse(fs.readFileSync(path.join(distPath, "version.json")));
+  let oldFile = { version: [3, 5, 0] };
+  try {
+    oldFile = JSON.parse(fs.readFileSync(path.join(distPath, "version.json"), "utf8"));
+  } catch (e) {}
+  let major = Number(oldFile?.version?.[0]) || 3;
+  let minor = Number(oldFile?.version?.[1]);
+  if (!Number.isFinite(minor) || minor < 5) minor = 5;
   let timeVersion = Number(moment().format(`YYMMDDHHmmss`));
 
   // 构建机时区可能与上一版不同。版本号必须单调递增，否则 userscript
   // 管理器会把新构建误判为旧版本而拒绝更新。
-  nowVersion[2] = Math.max(timeVersion, Number(oldFile.version[2] || 0) + 1);
+  let patch = Math.max(timeVersion, Number(oldFile?.version?.[2] || 0) + 1);
 
-  // 返回生成好的版本号数组
-  return nowVersion;
+  return [major, minor, patch];
 }
 // 更新版本文件
-const updateVersionFile = (nowVersion) => {
-  let cptCount = fs.readdirSync(path.join(__dirname, "components")).length;
+const updateVersionFile = (version) => {
+  let cptCount = fs.readdirSync(path.join(__dirname, "components")).filter((f) => f.endsWith('.js')).length;
   let versionFilePath = path.join(distPath, "version.json");
-  fs.writeFileSync(versionFilePath, JSON.stringify({ version: nowVersion, cptCount }));
+  fs.writeFileSync(versionFilePath, JSON.stringify({ version, cptCount, patch: String(version[2]) }, null, 2));
 }
 
 let sctVersion = genVersion();

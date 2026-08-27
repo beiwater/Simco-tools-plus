@@ -76,6 +76,9 @@ class autoMaxMarketProfit extends BaseComponent {
   }
 
   clear() {
+    this.componentData.refreshVersion += 1;
+    this.componentData.pending = new WeakSet();
+    this.componentData.pendingCount = 0;
     for (const cell of document.querySelectorAll(`td[${CELL_MARKER}]`)) cell.remove();
     for (const row of document.querySelectorAll("tr[aria-label]")) {
       row.removeAttribute("data-automax-market-best");
